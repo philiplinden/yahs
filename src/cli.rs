@@ -4,8 +4,6 @@ use clap::{Parser, Subcommand};
 use log::{info, error};
 use toml::Value;
 
-mod status;
-
 use crate::simulator::{AsyncSim, Rate};
 
 #[derive(Parser)]
@@ -17,9 +15,6 @@ struct Cli {
 
 #[derive(Subcommand)]
 enum Commands {
-    /// Generate a system status report
-    Status {},
-
     /// Start a new simulation process
     ///
     /// Configure an asynchronous physics simulation in the background. This
@@ -64,7 +59,6 @@ pub fn parse_inputs() {
     // parse CLI input args and options
     let cli = Cli::parse();
     match &cli.command {
-        Commands::Status {} => status::full_report(),
         Commands::Start {
             sim_config,
             outfile,

@@ -5,13 +5,15 @@ mod gas;
 pub mod simulate;
 
 use log::{debug, error, info, warn};
-use std::fs::File;
-use std::path::PathBuf;
-use std::sync::mpsc;
-use std::sync::mpsc::{Receiver, Sender};
-use std::sync::{Arc, Mutex};
-use std::thread::JoinHandle;
-use std::time::{Duration, Instant};
+use std::{
+    fs::File,
+    path::PathBuf,
+    sync::mpsc,
+    sync::mpsc::{Receiver, Sender},
+    sync::{Arc, Mutex},
+    thread::JoinHandle,
+    time::{Duration, Instant},
+};
 use toml;
 
 pub struct SimCommands {

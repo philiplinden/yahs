@@ -1,0 +1,7 @@
+# flight controller definition
+controller_path = "../mfc-apps/control_apps"
+
+# controller properties
+vent_valve_mass_flow_kg_s = 0.007
+dump_valve_mass_flow_kg_s = 0.001
+ballast_mass_kg = 0.5
