@@ -105,6 +105,11 @@ impl GasVolume {
         }
     }
 
+    pub fn update_from_ambient(&mut self, atmo: Atmosphere) {
+        self.temperature = atmo.temperature();
+        self.pressure = atmo.pressure();
+    }
+
     pub fn set_temperature(&mut self, new_temperature: f32) {
         // set the temperature (K) of the GasVolume
         self.temperature = new_temperature;

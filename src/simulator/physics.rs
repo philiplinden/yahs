@@ -1,8 +1,9 @@
 // ----------------------------------------------------------------------------
-// Forces
-// ------
-// Forces that act in the vertical axis. All forces assume a positive-up
-// coordinate frame and aR_E R_Eported in Newtons.
+// Physics
+// -------
+// - Forces that act in the vertical axis. All forces assume a positive-up
+//   coordinate frame and aR_E R_Eported in Newtons.
+// - Heat transferred through and stored in materials
 // ----------------------------------------------------------------------------
 extern crate libm;
 

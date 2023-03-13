@@ -15,6 +15,16 @@ pub struct Material {
     pub max_stress: f32, // tangential stress at failure (Pa)
 }
 
+impl Material {
+    pub fn new(name: &str) -> Self {
+        match name {
+            "RUBBER" => RUBBER,
+            "LDPE" | "LOW DENSITY POLYETHYLENE" => LOW_DENSITY_POLYETHYLENE,
+            _ => NOTHING
+        }
+    }
+}
+
 pub const NOTHING: Material = Material {
     // nothing
     max_temperature: f32::INFINITY,

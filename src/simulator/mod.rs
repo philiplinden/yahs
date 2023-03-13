@@ -1,8 +1,9 @@
 mod balloon;
-mod force;
+mod physics;
 mod gas;
 mod materials;
 mod constants;
+mod tools;
 
 pub mod simulate;
 
@@ -95,10 +96,6 @@ impl AsyncSim {
         *self.sim_output.lock().unwrap()
     }
 
-    pub fn send_commands(&self, command: SimCommands) {
-        self.command_sender.as_ref().unwrap().send(command).unwrap()
-    }
-
     /// Start a thread to run the sim
     pub fn start(&mut self) {
         if self.run_handle.is_some() {
@@ -131,8 +128,9 @@ impl AsyncSim {
         let mut current_dump_flow_percentage = 0.0;
 
         // configure simulation
-        let physics_rate = config["physics_rate_hz"].as_float().unwrap() as f32;
-        let max_sim_time = config["max_sim_time_s"].as_float().unwrap() as f32;
+        let physics_rate = tools::read_as_f32(&config, "physics_rate_hz");
+        let max_sim_time = tools::read_as_f32(&config, "max_sim_time_s");
+        let real_time = tools::read_as_bool(&config, "real_time");
         let mut rate_sleeper = Rate::new(physics_rate);
 
         // set up data logger
@@ -140,7 +138,9 @@ impl AsyncSim {
 
         debug!("Simulation run initialized. Starting loop...");
         loop {
-            rate_sleeper.sleep();
+            if real_time {
+                rate_sleeper.sleep();
+            }
             if let Ok(new_flow_percentages) = command_channel.try_recv() {
                 current_vent_flow_percentage = new_flow_percentages.vent_flow_percentage;
                 current_dump_flow_percentage = new_flow_percentages.dump_flow_percentage;

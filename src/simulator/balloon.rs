@@ -22,7 +22,6 @@ pub struct Balloon {
     coating: materials::Material,  // what material is applied on top of the balloon
     initial_volume: f32,           // internal volume (m^3) at zero pressure
     balloon_thickness: f32,        // thickness of the skin of the balloon (m)
-    pressure_difference: f32,      // pressure (Pa) in the balloon compared to ambient
 }
 
 impl Balloon {
@@ -44,7 +43,6 @@ impl Balloon {
             mass: bladder_mass + coating_mass,
             temperature: 293.0,
             volume: initial_volume,
-            pressure_difference: 0.0,
             drag_coeff: 0.3,
             lift_gas,
             material,
@@ -62,13 +60,7 @@ impl Balloon {
         }
     }
 
-    pub fn set_relative_pressure(&mut self, external_pressure: f32) {
-        // pressure (Pa) in the balloon compared to ambient
-        self.pressure_difference = self.lift_gas.pressure() - external_pressure;
-        self.stretch()
-    }
-
-    fn stretch(&mut self) {
+    pub fn stretch(&mut self, external_pressure: f32) {
         // stretch the balloon and/or compress the gas inside.
         // - the gas wants to be at the same pressure as ambient
         // - the balloon will stretch in response to the pressure difference
@@ -80,35 +72,35 @@ impl Balloon {
         //   than the material's yield stress
 
         let mut equilibrium_gas = self.lift_gas.clone();
-        equilibrium_gas.set_pressure(self.lift_gas.pressure() + self.pressure_difference);
+        equilibrium_gas.set_pressure(external_pressure);
 
         // percent elongation aka tangential strain (m/m)
         let original_radius = sphere_radius_from_volume(self.initial_volume);
         let equilibrium_radius = sphere_radius_from_volume(equilibrium_gas.volume());
         let elongation = (equilibrium_radius - original_radius) / original_radius;
         if elongation < self.material.max_elongation {
-            self.volume = equilibrium_gas.volume();
-            self.pressure_difference = 0.0;
+            self.volume = self.lift_gas.volume();
+            self.lift_gas.set_pressure(external_pressure);
         } else {
-            self.volume = spherical_volume(original_radius * self.material.max_elongation);
-            self.lift_gas.set_volume(self.volume);
-            self.pressure_difference = equilibrium_gas.pressure() - self.lift_gas.pressure();
+            self.burst()
+            // self.volume = spherical_volume(original_radius * self.material.max_elongation);
+            // self.lift_gas.set_volume(self.volume);
         }
-        if tangential_stress(
-            self.pressure_difference,
-            self.volume,
-            self.balloon_thickness,
-        ) > self.material.max_stress
-        {
-            self.burst();
-        }
+        // let stress = tangential_stress(
+        //     self.lift_gas.pressure() - external_pressure,
+        //     self.volume,
+        //     self.balloon_thickness,
+        // );
+        // if stress > self.material.max_stress
+        // {
+        //     self.burst();
+        // }
     }
 
     fn burst(&mut self) {
         // Assert new balloon attributes to reflect that it has burst
         self.intact = false;
         self.volume = 0.0;
-        self.pressure_difference = 0.0;
         self.lift_gas.set_mass(0.0);
     }
 }

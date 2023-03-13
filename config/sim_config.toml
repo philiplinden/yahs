@@ -1,14 +1,18 @@
 # physics configuration
-physics_rate_hz = 40.0
-max_sim_time_s = 600.0
-initial_altitude_m = 22_975.793
-initial_velocity_m_s = 16.0131
-ballast_mass_kg = 0.5
-lift_gas_mass_kg = 1.5
+real_time = false
+physics_rate_hz = 10.0
+max_sim_time_s = 3_600.0
+initial_altitude_m = 20_000.0
+initial_velocity_m_s = 0.0
+ballast_mass_kg = 0.0
+lift_gas_mass_kg = 3.0
 
 # balloon properties
-balloon_material = "Rubber"
-balloon_coating = "Nothing"
+balloon_material = "RUBBER"
+balloon_thickness_m = 0.005
+balloon_barely_inflated_diameter_m = 1.0
+coating_material = "NOTHING"
+coating_thickness_m = 0.0
 lift_gas_species = "Helium"
 
 # payload box properties
