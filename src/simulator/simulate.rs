@@ -3,9 +3,10 @@
 // --------
 // Coordinate execution of a discrete-time simulation.
 // ----------------------------------------------------------------------------
-use crate::simulator::balloon::{Balloon, BalloonType};
-use crate::simulator::force::{sphere_area_from_volume, net_force, gross_lift, free_lift};
-use crate::simulator::gas::{Atmosphere, GasSpecies, GasVolume};
+use super::balloon::Balloon;
+use super::force::{projected_spherical_area, net_force, gross_lift, free_lift};
+use super::gas::{Atmosphere, GasSpecies, GasVolume};
+use super::materials;
 
 use toml::Value;
 
@@ -31,7 +32,6 @@ pub struct SimConfig {
     pub lift_gas_species: GasSpecies,
     pub box_area: f32,
     pub box_drag_coeff: f32,
-    pub balloon_part_id: BalloonType,
     pub parachute_area: f32,
     pub parachute_open_alt: f32,
     pub parachute_drag_coeff: f32,
@@ -41,14 +41,20 @@ pub struct SimConfig {
 
 pub fn init(config: &Value) -> (SimInstant, SimConfig) {
     // create an initial time step based on the config
-    let balloon_part_id = BalloonType::Hab2000;
     let altitude = config["initial_altitude_m"].as_float().unwrap() as f32;
     let atmo = Atmosphere::new(altitude);
     let gas = GasVolume::new(
         GasSpecies::Helium,
         config["lift_gas_mass_kg"].as_float().unwrap() as f32,
     );
-    let balloon = Balloon::new(balloon_part_id, gas);
+    let balloon = Balloon::new(
+        materials::RUBBER, // balloon skin
+        0.005, // balloon skin thickness (m)
+        materials::NOTHING, // coating on top of balloon skin
+        0.0, // coating thickness (m)
+        3.0, // ballon diameter (m)
+        gas, // lift gas
+    );
     let dry_mass = config["dry_mass_kg"].as_float().unwrap() as f32;
     let initial_ballast_mass = config["ballast_mass_kg"].as_float().unwrap() as f32;
     let total_dry_mass = dry_mass + initial_ballast_mass;
@@ -74,7 +80,6 @@ pub fn init(config: &Value) -> (SimInstant, SimConfig) {
             lift_gas_species: GasSpecies::Helium,
             box_area: config["box_area_m2"].as_float().unwrap() as f32,
             box_drag_coeff: config["box_drag_coeff"].as_float().unwrap() as f32,
-            balloon_part_id,
             parachute_area: config["parachute_area_m2"].as_float().unwrap() as f32,
             parachute_open_alt: config["parachute_open_altitude_m"].as_float().unwrap() as f32,
             parachute_drag_coeff: config["parachute_drag_coeff"].as_float().unwrap() as f32,
@@ -89,9 +94,9 @@ pub fn step(input: SimInstant, config: &SimConfig) -> SimInstant {
     let time = input.time + config.delta_t;
     let mut atmosphere = input.atmosphere;
     let mut balloon = input.balloon;
-    balloon.lift_gas.update_from_ambient(atmosphere);
+    balloon.set_relative_pressure(atmosphere.pressure());
 
-    // mass properties -- pretend to open valves as continuous control
+    // mass properties
     let ballast_mass =
         (input.ballast_mass - (input.dump_pwm * config.dump_mass_flow_rate)).max(0.0);
     balloon
@@ -99,13 +104,13 @@ pub fn step(input: SimInstant, config: &SimConfig) -> SimInstant {
         .set_mass((balloon.lift_gas.mass() - input.vent_pwm * config.vent_mass_flow_rate).max(0.0));
     let total_dry_mass = config.dry_mass + ballast_mass;
 
-    // switch drag conditions
+    // switch drag conditions if the balloon has popped
     let projected_area: f32;
     let drag_coeff: f32;
-    balloon.check_burst_condition(); // has the balloon popped?
+
     if balloon.intact {
         // balloon is intact
-        projected_area = sphere_area_from_volume(balloon.lift_gas.volume());
+        projected_area = projected_spherical_area(balloon.lift_gas.volume());
         drag_coeff = balloon.drag_coeff;
     } else {
         // balloon has popped
@@ -119,6 +124,9 @@ pub fn step(input: SimInstant, config: &SimConfig) -> SimInstant {
             drag_coeff = config.box_drag_coeff;
         }
     }
+
+    // heat transfer
+    balloon.lift_gas.set_temperature(atmosphere.temperature());
 
     // calculate the net force
     let net_force = net_force(

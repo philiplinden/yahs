@@ -6,11 +6,9 @@
 // ----------------------------------------------------------------------------
 extern crate libm;
 
-use crate::simulator::gas;
 use std::f32::consts::PI;
-
-const STANDARD_G: f32 = 9.80665; // [m/s^2] standard gravitational acceleration
-const EARTH_RADIUS_M: f32 = 6371007.2; // [m] mean radius of Earth
+use super::gas;
+use super::constants::{STANDARD_G, EARTH_RADIUS_M};
 
 fn g(altitude: f32) -> f32 {
     // Acceleration (m/s^2) from gravity at an altitude (m) above mean sea level.
@@ -66,7 +64,7 @@ pub fn free_lift(atmo: gas::Atmosphere, lift_gas: gas::GasVolume, total_dry_mass
     gross_lift(atmo, lift_gas) - total_dry_mass
 }
 
-pub fn sphere_area_from_volume(volume: f32) -> f32 {
+pub fn projected_spherical_area(volume: f32) -> f32 {
     // Get the projected area (m^2) of a sphere with a given volume (m^3)
     libm::powf(libm::powf(volume / (PI * (4.0 / 3.0)), 1.0 / 3.0), 2.0) * PI
 }

@@ -16,15 +16,9 @@
 //  https://www.grc.nasa.gov/WWW/K-12/airplane/atmosmet.html
 // ----------------------------------------------------------------------------
 
-use std::fmt;
-
+use super::constants::{R, STANDARD_PRESSURE, STANDARD_TEMPERATURE};
 use log::error;
-
-const STANDARD_TEMPERATURE: f32 = 273.15; // [K]
-const STANDARD_PRESSURE: f32 = 101325.0; // [Pa]
-const BOLTZMANN_CONSTANT: f32 = 1.38e-23_f32; // [J/K]
-const AVOGADRO_CONSTANT: f32 = 6.022e+23_f32; // [1/mol]
-const R: f32 = BOLTZMANN_CONSTANT * AVOGADRO_CONSTANT; // [J/K-mol] Ideal gas constant
+use std::fmt;
 
 #[derive(Copy, Clone)]
 pub enum GasSpecies {
@@ -121,6 +115,13 @@ impl GasVolume {
         self.pressure = new_pressure;
     }
 
+    pub fn set_volume(&mut self, new_volume: f32) {
+        // set the volume (m^3) of the GasVolume and update the pressure
+        // according to the ideal gas law.
+        self.volume = new_volume;
+        self.pressure = ((self.mass / self.molar_mass) * R * self.temperature) / self.volume;
+    }
+
     pub fn set_mass(&mut self, new_mass: f32) {
         // set the mass (kg) of the GasVolume
         if new_mass >= 0.0 {
@@ -134,11 +135,6 @@ impl GasVolume {
         // set the mass (kg) based on the current volume (m^3),
         // density (kg/m^3), and molar mass (kg/mol)
         self.mass = self.volume * (self.molar_mass / R) * (self.pressure / self.temperature);
-    }
-
-    pub fn update_from_ambient(&mut self, atmo: Atmosphere) {
-        self.temperature = atmo.temperature();
-        self.pressure = atmo.pressure();
     }
 
     pub fn temperature(self) -> f32 {
