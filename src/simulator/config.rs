@@ -41,7 +41,7 @@ pub struct GasConfig {
 pub struct PayloadConfig{
     pub bus: BusConfig,
     pub parachute: ParachuteConfig,
-    pub control: ControlConfig,
+    // pub control: ControlConfig,
 }
 
 #[derive(Clone, Deserialize)]
@@ -58,13 +58,13 @@ pub struct ParachuteConfig {
     pub open_altitude_m: f32, // altitude when the parachute fully deploys
 }
 
-#[derive(Clone, Deserialize)]
-pub struct ControlConfig {
-    controller_path: PathBuf, 
-    vent_valve_mass_flow_kg_s: f32,
-    pub dump_mass_flow_kg_s: f32,
-    ballast_mass_kg: f32,
-}
+// #[derive(Clone, Deserialize)]
+// pub struct ControlConfig {
+//     controller_path: PathBuf, 
+//     pub vent_valve_mass_flow_kg_s: f32,
+//     pub dump_mass_flow_kg_s: f32,
+//     ballast_mass_kg: f32,
+// }
 
 pub fn parse_config(filepath: &PathBuf) -> Config {
     // Read the contents of the configuration file as string
@@ -82,17 +82,6 @@ pub fn parse_config(filepath: &PathBuf) -> Config {
     };
 
     // unpack the config TOML from string
-    let cfg: Config = match toml::from_str(&contents) {
-        // If successful, return data as `Config` struct.
-        // `d` is a local variable.
-        Ok(cfg) => cfg,
-        // Handle the `error` case.
-        Err(_) => {
-            // Write `msg` to `stderr`.
-            eprintln!("Unable to load config from `{}`", filepath.to_string_lossy());
-            // Exit the program with exit code `2`.
-            exit(2);
-        }
-    };
+    let cfg: Config = toml::from_str(&contents).unwrap();
     return cfg
 }
