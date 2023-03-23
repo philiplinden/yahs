@@ -1,0 +1,32 @@
+[physics]
+real_time = false
+tick_rate_hz = 10.0
+max_elapsed_time_s = 600.0
+initial_altitude_m = 22_975.793
+initial_velocity_m_s = 16.0131
+
+[balloon]
+material = "Rubber"
+thickness_m = 0.005
+mass_kg = 0.8
+barely_inflated_diameter_m = 1.0
+
+[balloon.lift_gas]
+species = "Helium"
+mass_kg = 1.5
+
+[payload.bus]
+dry_mass_kg = 1.427
+drag_area_m2 = 0.04
+drag_coeff = 2.1
+
+[payload.parachute]
+area_m2 = 1.1
+drag_coeff = 1.3
+open_altitude_m = 18_000.0
+
+[payload.control]
+controller_path = "../mfc-apps/control_apps"
+vent_valve_mass_flow_kg_s = 0.007
+dump_valve_mass_flow_kg_s = 0.001
+ballast_mass_kg = 0.5

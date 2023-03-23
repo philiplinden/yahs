@@ -6,10 +6,11 @@
 
 extern crate libm;
 
-use super::gas;
-use super::materials;
-
+use serde::Deserialize;
 use std::f32::consts::PI;
+use std::fmt;
+
+use super::gas;
 
 pub struct Balloon {
     pub intact: bool,              // whether or not it has burst
@@ -18,45 +19,31 @@ pub struct Balloon {
     pub volume: f32,               // internal volume of the balloon (m^3)
     pub drag_coeff: f32,           // drag coefficient
     pub lift_gas: gas::GasVolume,  // gas inside the balloon
-    material: materials::Material, // what the balloon is made of
-    coating: materials::Material,  // what material is applied on top of the balloon
+    material: Material, // what the balloon is made of
     initial_volume: f32,           // internal volume (m^3) at zero pressure
-    balloon_thickness: f32,        // thickness of the skin of the balloon (m)
+    skin_thickness: f32,        // thickness of the skin of the balloon (m)
 }
 
 impl Balloon {
     pub fn new(
-        material: materials::Material, // material of balloon skin
-        balloon_thickness: f32,        // balloon skin thickness (m) at zero pressure
-        coating: materials::Material,  // surface coating of balloon skin
-        coating_thickness: f32,        // balloon coating thickness
+        material: Material, // material of balloon skin
+        skin_thickness: f32,        // balloon skin thickness (m) at zero pressure
         barely_inflated_diameter: f32, // internal diameter (m) at zero pressure
         lift_gas: gas::GasVolume,      // species of gas inside balloon
     ) -> Self {
         let initial_radius = barely_inflated_diameter / 2.0;
         let initial_volume = spherical_volume(initial_radius);
-        let bladder_mass = shell_volume(initial_radius, balloon_thickness) * material.density;
-        let coating_mass =
-            shell_volume(initial_radius + balloon_thickness, coating_thickness) * coating.density;
+        let mass = shell_volume(initial_radius, skin_thickness) * material.density;
         Balloon {
             intact: true,
-            mass: bladder_mass + coating_mass,
+            mass,
             temperature: 293.0,
             volume: initial_volume,
             drag_coeff: 0.3,
             lift_gas,
             material,
-            coating,
             initial_volume,
-            balloon_thickness,
-        }
-    }
-
-    pub fn emissivity(self) -> f32 {
-        if self.coating == materials::NOTHING {
-            self.material.emissivity
-        } else {
-            self.coating.emissivity
+            skin_thickness,
         }
     }
 
@@ -124,3 +111,78 @@ fn tangential_stress(pressure_difference: f32, internal_volume: f32, shell_thick
     // tangential stress (Pa) of hollow sphere from internal pressure
     pressure_difference * sphere_radius_from_volume(internal_volume) / (2.0 * shell_thickness)
 }
+
+// ----------------------------------------------------------------------------
+// Materials
+// ---------
+// Properties, attributes and functions related to the material properties.
+// Source: https://www.matweb.com/
+// ----------------------------------------------------------------------------
+
+#[derive(Clone, PartialEq)]
+pub struct Material {
+    pub max_temperature: f32, // temperature (K) where the given material fails
+    pub density: f32, // density (kg/m^3)
+    pub emissivity: f32, // emissivity coefficient of the material for blackbody light
+    pub thermal_conductivity: f32, // thermal conductivity (W/mK) of the material at room temperature
+    pub max_elongation: f32, // elongation at failure (decimal, unitless) 1 = original size
+    pub max_stress: f32, // tangential stress at failure (Pa)
+}
+
+impl Material {
+    pub fn new(material_type: MaterialType) -> Self {
+        match material_type {
+            MaterialType::Rubber => RUBBER,
+            MaterialType::LowDensityPolyethylene => LOW_DENSITY_POLYETHYLENE,
+            _ => NOTHING
+        }
+    }
+}
+
+#[derive(Copy, Clone, PartialEq, Deserialize)]
+pub enum MaterialType {
+    // Species of gas with a known molar mass (kg/mol)
+    Nothing,
+    Rubber,
+    LowDensityPolyethylene,
+}
+
+impl fmt::Display for MaterialType {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match *self {
+            MaterialType::Nothing => write!(f, "nothing"),
+            MaterialType::Rubber => write!(f, "rubber"),
+            MaterialType::LowDensityPolyethylene => write!(f, "low-density polyethylene (LDPE)"),
+        }
+    }
+}
+
+pub const NOTHING: Material = Material {
+    // nothing
+    max_temperature: f32::INFINITY,
+    density: 0.0,
+    emissivity: 1.0,
+    thermal_conductivity: f32::INFINITY,
+    max_elongation: f32::INFINITY,
+    max_stress: f32::INFINITY,
+};
+
+pub const RUBBER: Material = Material {
+    // Natural Rubber, Vulcanized (NR, IR, Polyisoprene)
+    max_temperature: 400.0,
+    density: 950.0,
+    emissivity: 0.86,
+    thermal_conductivity: 0.34,
+    max_elongation: 8.0,
+    max_stress: 150_000_000.0,
+};
+
+pub const LOW_DENSITY_POLYETHYLENE: Material = Material {
+    // Low Density Polyethylene (LDPE), Film Grade
+    max_temperature: 380.0,
+    density: 910.0,
+    emissivity: 0.94,
+    thermal_conductivity: 0.15,
+    max_elongation: 1.0,
+    max_stress: 300_000_000.0,
+};

@@ -1,23 +1,26 @@
 mod balloon;
-mod physics;
-mod gas;
-mod materials;
+mod config;
 mod constants;
-mod tools;
-
-pub mod simulate;
+mod gas;
+mod payload;
+mod physics;
 
 use log::{debug, error, info, warn};
 use std::{
     fs::File,
     path::PathBuf,
+    process::exit,
     sync::mpsc,
     sync::mpsc::{Receiver, Sender},
     sync::{Arc, Mutex},
     thread::JoinHandle,
     time::{Duration, Instant},
 };
-use toml;
+
+use balloon::{Balloon, Material};
+use config::{parse_config, Config};
+use gas::{Atmosphere, GasVolume};
+use physics::{net_force, projected_spherical_area};
 
 pub struct SimCommands {
     pub vent_flow_percentage: f32,
@@ -30,12 +33,12 @@ pub struct SimOutput {
     pub altitude: f32,
     pub ascent_rate: f32,
     pub acceleration: f32,
-    pub ballast_mass: f32,
-    pub lift_gas_mass: f32,
-    pub vent_pwm: f32,
-    pub dump_pwm: f32,
-    pub gross_lift: f32,
-    pub free_lift: f32,
+    // pub ballast_mass: f32,
+    // pub lift_gas_mass: f32,
+    // pub vent_pwm: f32,
+    // pub dump_pwm: f32,
+    // pub gross_lift: f32,
+    // pub free_lift: f32,
     pub atmo_temp: f32,
     pub atmo_pres: f32,
 }
@@ -73,7 +76,7 @@ impl Rate {
 }
 
 pub struct AsyncSim {
-    config: toml::Value,
+    config: Config,
     sim_output: Arc<Mutex<SimOutput>>,
     outpath: PathBuf,
     command_sender: Option<Sender<SimCommands>>,
@@ -82,11 +85,11 @@ pub struct AsyncSim {
 }
 
 impl AsyncSim {
-    pub fn new(config: toml::Value, outpath: PathBuf) -> Self {
+    pub fn new(config_path: &PathBuf, outpath: PathBuf) -> Self {
         Self {
-            config,
+            config: parse_config(config_path),
             sim_output: Arc::new(Mutex::new(SimOutput::default())),
-            outpath: outpath,
+            outpath,
             command_sender: None,
             run_handle: None,
         }
@@ -101,7 +104,6 @@ impl AsyncSim {
         if self.run_handle.is_some() {
             panic!("Can't start again, sim already ran. Need to stop.")
         }
-
         let config = self.config.clone();
         let output = self.sim_output.clone();
         let outpath = self.outpath.clone();
@@ -117,20 +119,17 @@ impl AsyncSim {
     }
 
     fn run_sim(
-        config: toml::Value,
+        config: Config,
         command_channel: Receiver<SimCommands>,
         sim_output: Arc<Mutex<SimOutput>>,
         outpath: PathBuf,
     ) {
-        let (mut step_input, step_config) = simulate::init(&config);
-
-        let mut current_vent_flow_percentage = 0.0;
-        let mut current_dump_flow_percentage = 0.0;
+        let mut sim_state = initialize(&config);
 
         // configure simulation
-        let physics_rate = tools::read_as_f32(&config, "physics_rate_hz");
-        let max_sim_time = tools::read_as_f32(&config, "max_sim_time_s");
-        let real_time = tools::read_as_bool(&config, "real_time");
+        let physics_rate = config.physics.tick_rate_hz;
+        let max_sim_time = config.physics.max_elapsed_time_s;
+        let real_time = config.physics.real_time;
         let mut rate_sleeper = Rate::new(physics_rate);
 
         // set up data logger
@@ -141,54 +140,46 @@ impl AsyncSim {
             if real_time {
                 rate_sleeper.sleep();
             }
-            if let Ok(new_flow_percentages) = command_channel.try_recv() {
-                current_vent_flow_percentage = new_flow_percentages.vent_flow_percentage;
-                current_dump_flow_percentage = new_flow_percentages.dump_flow_percentage;
-            }
-
-            step_input.vent_pwm = current_vent_flow_percentage;
-            step_input.dump_pwm = current_dump_flow_percentage;
-            step_input = simulate::step(step_input, &step_config);
+            sim_state = step(sim_state, &config);
             // Sync update all the fields
             {
                 let mut output = sim_output.lock().unwrap();
-                output.time_s = step_input.time;
-                output.altitude = step_input.altitude;
-                output.ascent_rate = step_input.ascent_rate;
-                output.acceleration = step_input.acceleration;
-                output.lift_gas_mass = step_input.balloon.lift_gas.mass();
-                output.ballast_mass = step_input.ballast_mass;
-                output.vent_pwm = step_input.vent_pwm;
-                output.dump_pwm = step_input.dump_pwm;
-                output.atmo_temp = step_input.atmo_temp;
-                output.atmo_pres = step_input.atmo_pres;
+                output.time_s = sim_state.time;
+                output.altitude = sim_state.altitude;
+                output.ascent_rate = sim_state.ascent_rate;
+                output.acceleration = sim_state.acceleration;
+                output.atmo_temp = sim_state.atmosphere.temperature();
+                output.atmo_pres = sim_state.atmosphere.pressure();
                 log_to_file(&output, &mut writer);
             }
-            
+
             // Print log to terminal
             debug!(
                 "[{:.3} s] | Atmosphere @ {:} m: {:} K, {:} Pa",
-                step_input.time, step_input.altitude, step_input.atmo_temp, step_input.atmo_pres
+                sim_state.time,
+                sim_state.altitude,
+                sim_state.atmosphere.temperature(),
+                sim_state.atmosphere.temperature()
             );
             info!(
-                "[{:.3} s] | HAB @ {:.2} m, {:.3} m/s, {:.3} m/s^2 | {:.2} kg gas, {:.2} kg ballast",
-                step_input.time,
-                step_input.altitude,
-                step_input.ascent_rate,
-                step_input.acceleration,
-                step_input.balloon.lift_gas.mass(),
-                step_input.ballast_mass
+                "[{:.3} s] | HAB @ {:.2} m, {:.3} m/s, {:.3} m/s^2 | {:.2} kg gas",
+                sim_state.time,
+                sim_state.altitude,
+                sim_state.ascent_rate,
+                sim_state.acceleration,
+                sim_state.balloon.lift_gas.mass(),
             );
             // Run for a certain amount of sim time or to a certain altitude
-            if step_input.time >= max_sim_time {
+            if sim_state.time >= max_sim_time {
                 warn!("Simulation reached maximum time step. Stopping...");
                 break;
             }
-            if step_input.altitude < 0.0 {
+            if sim_state.altitude < 0.0 {
                 error!("Simulation altitude cannot be below zero. Stopping...");
                 break;
             }
         }
+        exit(0);
     }
 }
 
@@ -200,12 +191,6 @@ fn init_log_file(outpath: PathBuf) -> csv::Writer<File> {
             "altitude_m",
             "ascent_rate_m_s",
             "acceleration_m_s2",
-            "lift_gas_mass_kg",
-            "ballast_mass_kg",
-            "vent_pwm",
-            "dump_pwm",
-            "gross_lift_N",
-            "free_lift_N",
             "atmo_temp_K",
             "atmo_pres_Pa",
         ])
@@ -220,15 +205,117 @@ fn log_to_file(sim_output: &SimOutput, writer: &mut csv::Writer<File>) {
             sim_output.altitude.to_string(),
             sim_output.ascent_rate.to_string(),
             sim_output.acceleration.to_string(),
-            sim_output.lift_gas_mass.to_string(),
-            sim_output.ballast_mass.to_string(),
-            sim_output.vent_pwm.to_string(),
-            sim_output.dump_pwm.to_string(),
-            sim_output.gross_lift.to_string(),
-            sim_output.free_lift.to_string(),
             sim_output.atmo_temp.to_string(),
             sim_output.atmo_pres.to_string(),
         ])
         .unwrap();
     writer.flush().unwrap();
+}
+
+pub struct SimInstant {
+    pub time: f32,
+    pub altitude: f32,
+    pub ascent_rate: f32,
+    pub acceleration: f32,
+    pub atmosphere: Atmosphere,
+    pub balloon: Balloon,
+}
+
+fn initialize(config: &Config) -> SimInstant {
+    // create an initial time step based on the config
+    SimInstant {
+        time: 0.0,
+        altitude: config.physics.initial_altitude_m,
+        ascent_rate: config.physics.initial_velocity_m_s,
+        acceleration: 0.0,
+        atmosphere: Atmosphere::new(config.physics.initial_altitude_m),
+        balloon: Balloon::new(
+            Material::new(config.balloon.material), // balloon skin material
+            config.balloon.thickness_m,
+            config.balloon.barely_inflated_diameter_m, // ballon diameter (m)
+            GasVolume::new(
+                config.balloon.lift_gas.species,
+                config.balloon.lift_gas.mass_kg,
+            ), // lift gas
+        ),
+    }
+}
+
+pub fn step(input: SimInstant, config: &Config) -> SimInstant {
+    // propagate the closed loop simulation forward by one time step
+    let delta_t = 1.0 / config.physics.tick_rate_hz;
+    let time = input.time + delta_t;
+    let mut atmosphere = input.atmosphere;
+    let mut balloon = input.balloon;
+    // balloon.lift_gas.update_from_ambient(atmosphere);
+    balloon.stretch(atmosphere.pressure());
+
+    // mass properties
+    // let dump_mass_flow_rate = config.payload.control.dump_mass_flow_kg_s;
+    // let ballast_mass =
+    //     (input.ballast_mass - (input.dump_pwm * dump_mass_flow_rate)).max(0.0);
+    // balloon
+    //     .lift_gas
+    //     .set_mass((balloon.lift_gas.mass() - input.vent_pwm * config.vent_mass_flow_rate).max(0.0));
+    // let payload_dry_mass = input.bus.dry_mass;
+    // let total_dry_mass = payload_dry_mass + ballast_mass;
+    let total_dry_mass = config.payload.bus.dry_mass_kg;
+
+    // switch drag conditions if the balloon has popped
+    let projected_area: f32;
+    let drag_coeff: f32;
+
+    if balloon.intact {
+        // balloon is intact
+        projected_area = projected_spherical_area(balloon.lift_gas.volume());
+        drag_coeff = balloon.drag_coeff;
+    } else {
+        // balloon has popped
+        if input.altitude <= config.payload.parachute.open_altitude_m {
+            // parachute open
+            projected_area = config.payload.parachute.area_m2;
+            drag_coeff = config.payload.parachute.drag_coeff;
+        } else {
+            // free fall, parachute not open
+            projected_area = config.payload.bus.drag_area_m2;
+            drag_coeff = config.payload.bus.drag_coeff;
+        }
+    }
+
+    // heat transfer
+    balloon.lift_gas.set_temperature(atmosphere.temperature());
+
+    // calculate the net force
+    let net_force = net_force(
+        input.altitude,
+        input.ascent_rate,
+        atmosphere,
+        balloon.lift_gas,
+        projected_area,
+        drag_coeff,
+        total_dry_mass,
+    );
+
+    let acceleration = net_force / total_dry_mass;
+    let ascent_rate = input.ascent_rate + acceleration * delta_t;
+    let altitude = input.altitude + ascent_rate * delta_t;
+
+    atmosphere.set_altitude(altitude);
+
+    // derived outputs
+    // let gross_lift = gross_lift(atmosphere, balloon.lift_gas);
+    // let free_lift = free_lift(atmosphere, balloon.lift_gas, total_dry_mass);
+
+    // // atmosphere stats
+    // let atmo_temp = atmosphere.temperature();
+    // let atmo_pres = atmosphere.pressure();
+
+    SimInstant {
+        time,
+        altitude,
+        ascent_rate,
+        acceleration,
+        atmosphere,
+        balloon,
+    }
 }

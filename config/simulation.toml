@@ -1,5 +1,0 @@
-# physics configuration
-physics_rate_hz = 40.0
-max_sim_time_s = 600.0
-initial_altitude_m = 22_975.793
-initial_velocity_m_s = 16.0131

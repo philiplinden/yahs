@@ -18,9 +18,10 @@
 
 use super::constants::{R, STANDARD_PRESSURE, STANDARD_TEMPERATURE};
 use log::error;
+use serde::Deserialize;
 use std::fmt;
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Deserialize)]
 pub enum GasSpecies {
     // Species of gas with a known molar mass (kg/mol)
     Air,
