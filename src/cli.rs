@@ -2,7 +2,6 @@ use std::path::PathBuf;
 
 use clap::{Parser, Subcommand};
 use log::{info, error};
-use toml::Value;
 
 use crate::simulator::{AsyncSim, Rate};
 
@@ -26,9 +25,9 @@ enum Commands {
             short,
             long,
             value_name = "TOML",
-            default_value = "config/sim_config.toml"
+            default_value = "config/default.toml"
         )]
-        sim_config: PathBuf,
+        config: PathBuf,
 
         /// Sets a custom output file
         #[clap(
@@ -37,7 +36,7 @@ enum Commands {
             value_name = "CSV",
             default_value = "./out.csv"
         )]
-        outfile: PathBuf,
+        outpath: PathBuf,
     },
 
     /// Inspect a physics parameter in an existing simulation
@@ -60,10 +59,10 @@ pub fn parse_inputs() {
     let cli = Cli::parse();
     match &cli.command {
         Commands::Start {
-            sim_config,
-            outfile,
+            config,
+            outpath,
         } => {
-            start_sim(sim_config, outfile);
+            start_sim(config, outpath);
         }
         _ => {
             error!("Command not implemented yet!")
@@ -71,17 +70,9 @@ pub fn parse_inputs() {
     }
 }
 
-pub fn start_sim(sim_config: &PathBuf, outfile: &PathBuf) {
-    let config = std::fs::read_to_string(sim_config)
-        .unwrap()
-        .as_str()
-        .parse::<Value>()
-        .unwrap();
-
-    info!("Setting up sim with the following config: \n{}", config);
-
+pub fn start_sim(config: &PathBuf, outpath: &PathBuf) {
     // initialize the simulation
-    let mut sim = AsyncSim::new(config, outfile.clone());
+    let mut sim = AsyncSim::new(config, outpath.clone());
     let mut rate_sleeper = Rate::new(1.0);
 
     // start the sim
