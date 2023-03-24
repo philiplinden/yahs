@@ -1,4 +1,4 @@
-[physics]
+[environment]
 real_time = false
 tick_rate_hz = 10.0
 max_elapsed_time_s = 600.0

@@ -3,7 +3,8 @@ mod config;
 mod constants;
 mod gas;
 mod payload;
-mod physics;
+mod forces;
+mod heat;
 
 use log::{debug, error, info, warn};
 use std::{
@@ -20,7 +21,7 @@ use std::{
 use balloon::{Balloon, Material};
 use config::{parse_config, Config};
 use gas::{Atmosphere, GasVolume};
-use physics::{net_force, projected_spherical_area};
+use forces::{net_force, projected_spherical_area};
 
 pub struct SimCommands {
     pub vent_flow_percentage: f32,
@@ -127,9 +128,9 @@ impl AsyncSim {
         let mut sim_state = initialize(&config);
 
         // configure simulation
-        let physics_rate = config.physics.tick_rate_hz;
-        let max_sim_time = config.physics.max_elapsed_time_s;
-        let real_time = config.physics.real_time;
+        let physics_rate = config.environment.tick_rate_hz;
+        let max_sim_time = config.environment.max_elapsed_time_s;
+        let real_time = config.environment.real_time;
         let mut rate_sleeper = Rate::new(physics_rate);
 
         // set up data logger
@@ -225,10 +226,10 @@ fn initialize(config: &Config) -> SimInstant {
     // create an initial time step based on the config
     SimInstant {
         time: 0.0,
-        altitude: config.physics.initial_altitude_m,
-        ascent_rate: config.physics.initial_velocity_m_s,
+        altitude: config.environment.initial_altitude_m,
+        ascent_rate: config.environment.initial_velocity_m_s,
         acceleration: 0.0,
-        atmosphere: Atmosphere::new(config.physics.initial_altitude_m),
+        atmosphere: Atmosphere::new(config.environment.initial_altitude_m),
         balloon: Balloon::new(
             Material::new(config.balloon.material), // balloon skin material
             config.balloon.thickness_m,
@@ -243,7 +244,7 @@ fn initialize(config: &Config) -> SimInstant {
 
 pub fn step(input: SimInstant, config: &Config) -> SimInstant {
     // propagate the closed loop simulation forward by one time step
-    let delta_t = 1.0 / config.physics.tick_rate_hz;
+    let delta_t = 1.0 / config.environment.tick_rate_hz;
     let time = input.time + delta_t;
     let mut atmosphere = input.atmosphere;
     let mut balloon = input.balloon;
