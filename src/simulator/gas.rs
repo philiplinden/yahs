@@ -25,16 +25,26 @@ use std::fmt;
 pub enum GasSpecies {
     // Species of gas with a known molar mass (kg/mol)
     Air,
-    He, Helium,
-    H2, Hydrogen,
-    N2, Nitrogen,
-    O2, Oxygen,
-    Ar, Argon,
-    CO2, CarbonDioxide,
-    Ne, Neon,
-    Kr, Krypton,
-    Xe, Xenon,
-    CH4, Methane,
+    He,
+    Helium,
+    H2,
+    Hydrogen,
+    N2,
+    Nitrogen,
+    O2,
+    Oxygen,
+    Ar,
+    Argon,
+    CO2,
+    CarbonDioxide,
+    Ne,
+    Neon,
+    Kr,
+    Krypton,
+    Xe,
+    Xenon,
+    CH4,
+    Methane,
 }
 
 impl fmt::Display for GasSpecies {
@@ -125,7 +135,8 @@ impl GasVolume {
         // set the volume (m^3) of the GasVolume and update the pressure
         // according to the ideal gas law.
         self.volume = new_volume;
-        self.pressure = ((self.mass / self.molar_mass) * R * self.temperature) / self.volume;
+        let new_pressure = ((self.mass / self.molar_mass) * R * self.temperature) / self.volume;
+        self.set_pressure(new_pressure);
     }
 
     pub fn set_mass(&mut self, new_mass: f32) {

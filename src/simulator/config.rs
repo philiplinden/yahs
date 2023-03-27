@@ -9,13 +9,13 @@ use super::gas::GasSpecies;
 
 #[derive(Clone, Deserialize)]
 pub struct Config {
-    pub physics: PhysicsConfig,
+    pub environment: EnvConfig,
     pub balloon: BalloonConfig,
     pub payload: PayloadConfig,
 }
 
 #[derive(Clone, Deserialize)]
-pub struct PhysicsConfig {
+pub struct EnvConfig {
     pub real_time: bool,
     pub tick_rate_hz: f32,
     pub max_elapsed_time_s: f32,

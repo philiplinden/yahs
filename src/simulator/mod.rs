@@ -1,9 +1,10 @@
 mod balloon;
 mod config;
 mod constants;
+mod forces;
 mod gas;
+mod heat;
 mod payload;
-mod physics;
 
 use log::{debug, error, info, warn};
 use std::{
@@ -19,8 +20,8 @@ use std::{
 
 use balloon::{Balloon, Material};
 use config::{parse_config, Config};
+use forces::{net_force, projected_spherical_area};
 use gas::{Atmosphere, GasVolume};
-use physics::{net_force, projected_spherical_area};
 
 pub struct SimCommands {
     pub vent_flow_percentage: f32,
@@ -41,6 +42,11 @@ pub struct SimOutput {
     // pub free_lift: f32,
     pub atmo_temp: f32,
     pub atmo_pres: f32,
+    pub balloon_pres: f32,
+    pub balloon_radius: f32,
+    pub balloon_stress: f32,
+    pub balloon_strain: f32,
+    pub balloon_thickness: f32,
 }
 
 pub struct Rate {
@@ -127,9 +133,9 @@ impl AsyncSim {
         let mut sim_state = initialize(&config);
 
         // configure simulation
-        let physics_rate = config.physics.tick_rate_hz;
-        let max_sim_time = config.physics.max_elapsed_time_s;
-        let real_time = config.physics.real_time;
+        let physics_rate = config.environment.tick_rate_hz;
+        let max_sim_time = config.environment.max_elapsed_time_s;
+        let real_time = config.environment.real_time;
         let mut rate_sleeper = Rate::new(physics_rate);
 
         // set up data logger
@@ -150,6 +156,11 @@ impl AsyncSim {
                 output.acceleration = sim_state.acceleration;
                 output.atmo_temp = sim_state.atmosphere.temperature();
                 output.atmo_pres = sim_state.atmosphere.pressure();
+                output.balloon_pres = sim_state.balloon.pressure();
+                output.balloon_radius = sim_state.balloon.radius();
+                output.balloon_stress = sim_state.balloon.stress();
+                output.balloon_strain = sim_state.balloon.strain();
+                output.balloon_thickness = sim_state.balloon.skin_thickness;
                 log_to_file(&output, &mut writer);
             }
 
@@ -162,13 +173,23 @@ impl AsyncSim {
                 sim_state.atmosphere.temperature()
             );
             info!(
-                "[{:.3} s] | HAB @ {:.2} m, {:.3} m/s, {:.3} m/s^2 | {:.2} kg gas",
+                "[{:.3} s] | HAB @ {:.2} m, {:.3} m/s, {:.3} m/s^2 | {:.2} m radius, {:.2} Pa stress, {:.2} % strain",
                 sim_state.time,
                 sim_state.altitude,
                 sim_state.ascent_rate,
                 sim_state.acceleration,
-                sim_state.balloon.lift_gas.mass(),
+                sim_state.balloon.radius(),
+                sim_state.balloon.stress(),
+                sim_state.balloon.strain(),
             );
+            // Stop if there is a problem
+            if sim_state.altitude.is_nan()
+                | sim_state.ascent_rate.is_nan()
+                | sim_state.acceleration.is_nan()
+            {
+                error!("Something went wrong, a physical value is NaN!");
+                exit(1);
+            }
             // Run for a certain amount of sim time or to a certain altitude
             if sim_state.time >= max_sim_time {
                 warn!("Simulation reached maximum time step. Stopping...");
@@ -193,6 +214,11 @@ fn init_log_file(outpath: PathBuf) -> csv::Writer<File> {
             "acceleration_m_s2",
             "atmo_temp_K",
             "atmo_pres_Pa",
+            "balloon_pres_Pa",
+            "balloon_radius_m",
+            "balloon_stress_Pa",
+            "balloon_strain_pct",
+            "balloon_thickness_m",
         ])
         .unwrap();
     writer
@@ -207,6 +233,11 @@ fn log_to_file(sim_output: &SimOutput, writer: &mut csv::Writer<File>) {
             sim_output.acceleration.to_string(),
             sim_output.atmo_temp.to_string(),
             sim_output.atmo_pres.to_string(),
+            sim_output.balloon_pres.to_string(),
+            sim_output.balloon_radius.to_string(),
+            sim_output.balloon_stress.to_string(),
+            sim_output.balloon_strain.to_string(),
+            sim_output.balloon_thickness.to_string(),
         ])
         .unwrap();
     writer.flush().unwrap();
@@ -223,33 +254,34 @@ pub struct SimInstant {
 
 fn initialize(config: &Config) -> SimInstant {
     // create an initial time step based on the config
+    let atmo = Atmosphere::new(config.environment.initial_altitude_m);
+    let material = Material::new(config.balloon.material);
+    let mut lift_gas = GasVolume::new(
+        config.balloon.lift_gas.species,
+        config.balloon.lift_gas.mass_kg,
+    );
+    lift_gas.update_from_ambient(atmo);
     SimInstant {
         time: 0.0,
-        altitude: config.physics.initial_altitude_m,
-        ascent_rate: config.physics.initial_velocity_m_s,
+        altitude: config.environment.initial_altitude_m,
+        ascent_rate: config.environment.initial_velocity_m_s,
         acceleration: 0.0,
-        atmosphere: Atmosphere::new(config.physics.initial_altitude_m),
+        atmosphere: atmo,
         balloon: Balloon::new(
-            Material::new(config.balloon.material), // balloon skin material
+            material,
             config.balloon.thickness_m,
             config.balloon.barely_inflated_diameter_m, // ballon diameter (m)
-            GasVolume::new(
-                config.balloon.lift_gas.species,
-                config.balloon.lift_gas.mass_kg,
-            ), // lift gas
+            lift_gas,
         ),
     }
 }
 
 pub fn step(input: SimInstant, config: &Config) -> SimInstant {
     // propagate the closed loop simulation forward by one time step
-    let delta_t = 1.0 / config.physics.tick_rate_hz;
+    let delta_t = 1.0 / config.environment.tick_rate_hz;
     let time = input.time + delta_t;
     let mut atmosphere = input.atmosphere;
     let mut balloon = input.balloon;
-    // balloon.lift_gas.update_from_ambient(atmosphere);
-    balloon.stretch(atmosphere.pressure());
-
     // mass properties
     // let dump_mass_flow_rate = config.payload.control.dump_mass_flow_kg_s;
     // let ballast_mass =
@@ -265,8 +297,33 @@ pub fn step(input: SimInstant, config: &Config) -> SimInstant {
     let projected_area: f32;
     let drag_coeff: f32;
 
+    let radius_before_stretch = balloon.radius();
+
     if balloon.intact {
         // balloon is intact
+        // balloon.lift_gas.set_temperature(atmosphere.temperature());
+        balloon.stretch(atmosphere.pressure());
+        // check if the balloon burst after stretching
+        if !balloon.intact {
+            // elevate info to stdout when burst event occurs
+            warn!(
+                "[{:.3} s] | Atmosphere @ {:} m: {:} K, {:} Pa",
+                time,
+                input.altitude,
+                atmosphere.temperature(),
+                atmosphere.temperature()
+            );
+            warn!(
+                "[{:.3} s] | HAB @ {:.2} m, {:.3} m/s, {:.3} m/s^2 | {:.2} m radius, {:.2} MPa stress, {:.2} % strain",
+                time,
+                input.altitude,
+                input.ascent_rate,
+                input.acceleration,
+                radius_before_stretch,
+                balloon.stress() / 1_000_000.0,
+                balloon.strain() * 100.0,
+            );
+        }
         projected_area = projected_spherical_area(balloon.lift_gas.volume());
         drag_coeff = balloon.drag_coeff;
     } else {
@@ -281,9 +338,6 @@ pub fn step(input: SimInstant, config: &Config) -> SimInstant {
             drag_coeff = config.payload.bus.drag_coeff;
         }
     }
-
-    // heat transfer
-    balloon.lift_gas.set_temperature(atmosphere.temperature());
 
     // calculate the net force
     let net_force = net_force(
