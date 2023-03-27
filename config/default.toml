@@ -1,15 +1,15 @@
 [environment]
 real_time = false
 tick_rate_hz = 10.0
-max_elapsed_time_s = 600.0
+max_elapsed_time_s = 10_000.0
 initial_altitude_m = 0.0
 initial_velocity_m_s = 0.0
 
 [balloon]
 material = "Rubber"
-thickness_m = 0.005
+thickness_m = 0.005 # thicker balloons have less stress
 mass_kg = 1.2
-barely_inflated_diameter_m = 0.144
+barely_inflated_diameter_m = 1.5 # larger balloons have less strain
 
 [balloon.lift_gas]
 species = "Helium"

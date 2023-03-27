@@ -163,12 +163,12 @@ impl AsyncSim {
                 sim_state.atmosphere.temperature()
             );
             info!(
-                "[{:.3} s] | HAB @ {:.2} m, {:.3} m/s, {:.3} m/s^2 | {:.2} kg gas",
+                "[{:.3} s] | HAB @ {:.2} m, {:.3} m/s, {:.3} m/s^2 | {:.2} m radius",
                 sim_state.time,
                 sim_state.altitude,
                 sim_state.ascent_rate,
                 sim_state.acceleration,
-                sim_state.balloon.lift_gas.mass(),
+                sim_state.balloon.radius(),
             );
             // Stop if there is a problem
             if sim_state.altitude.is_nan()
@@ -275,9 +275,24 @@ pub fn step(input: SimInstant, config: &Config) -> SimInstant {
     let projected_area: f32;
     let drag_coeff: f32;
 
+    let radius_before_stretch = balloon.radius();
+
     if balloon.intact {
         // balloon is intact
+        // balloon.lift_gas.set_temperature(atmosphere.temperature());
         balloon.stretch(atmosphere.pressure());
+        // check if the balloon burst after stretching
+        if !balloon.intact {
+            // elevate info to stdout when burst event occurs
+            warn!(
+                "[{:.3} s] | Atmosphere @ {:} m: {:} K, {:} Pa | Balloon @ {:.2} m radius",
+                time,
+                input.altitude,
+                atmosphere.temperature(),
+                atmosphere.temperature(),
+                radius_before_stretch,
+            );
+        }
         projected_area = projected_spherical_area(balloon.lift_gas.volume());
         drag_coeff = balloon.drag_coeff;
     } else {
@@ -292,9 +307,6 @@ pub fn step(input: SimInstant, config: &Config) -> SimInstant {
             drag_coeff = config.payload.bus.drag_coeff;
         }
     }
-
-    // heat transfer
-    balloon.lift_gas.set_temperature(atmosphere.temperature());
 
     // calculate the net force
     let net_force = net_force(

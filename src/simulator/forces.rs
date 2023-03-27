@@ -6,9 +6,11 @@
 // ----------------------------------------------------------------------------
 extern crate libm;
 
+use log::debug;
 use std::f32::consts::PI;
+
+use super::constants::{EARTH_RADIUS_M, STANDARD_G};
 use super::gas;
-use super::constants::{STANDARD_G, EARTH_RADIUS_M};
 
 fn g(altitude: f32) -> f32 {
     // Acceleration (m/s^2) from gravity at an altitude (m) above mean sea level.
@@ -22,18 +24,20 @@ fn weight(altitude: f32, mass: f32) -> f32 {
 
 fn buoyancy(altitude: f32, atmo: gas::Atmosphere, lift_gas: gas::GasVolume) -> f32 {
     // Force (N) due to air displaced by the given gas volume.
-    let rho_atmo = atmo.density();
-    let rho_lift = lift_gas.density();
-    lift_gas.volume() * (rho_lift - rho_atmo) * g(altitude)
+    let v = lift_gas.volume();
+    if v > 0.0 {
+        let rho_atmo = atmo.density();
+        let rho_lift = lift_gas.density();
+        return lift_gas.volume() * (rho_lift - rho_atmo) * g(altitude)
+    } else {
+        return 0.0
+    }
 }
 
 fn drag(atmo: gas::Atmosphere, velocity: f32, projected_area: f32, drag_coeff: f32) -> f32 {
     // Force (N) due to drag against the balloon
     let direction = -libm::copysignf(1.0, velocity);
-    direction * drag_coeff / 2.0
-        * atmo.density()
-        * libm::powf(velocity, 2.0)
-        * projected_area
+    direction * drag_coeff / 2.0 * atmo.density() * libm::powf(velocity, 2.0) * projected_area
 }
 
 pub fn net_force(
@@ -49,6 +53,10 @@ pub fn net_force(
     let weight_force = weight(altitude, total_dry_mass);
     let buoyancy_force = buoyancy(altitude, atmo, lift_gas);
     let drag_force = drag(atmo, velocity, projected_area, drag_coeff);
+    debug!(
+        "weight: {:?} buoyancy: {:?} drag: {:?}",
+        weight_force, buoyancy_force, drag_force
+    );
     weight_force + buoyancy_force + drag_force
 }
 

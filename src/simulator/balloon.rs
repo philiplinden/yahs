@@ -22,7 +22,7 @@ pub struct Balloon {
     pub lift_gas: gas::GasVolume, // gas inside the balloon
     pub material: Material,       // what the balloon is made of
     pub skin_thickness: f32,      // thickness of the skin of the balloon (m)
-    unstretched_thickness: f32,      // thickness of the skin of the balloon without stretch (m)
+    unstretched_thickness: f32,   // thickness of the skin of the balloon without stretch (m)
     unstretched_radius: f32,      // radius of balloon without stretch (m)
 }
 
@@ -83,6 +83,13 @@ impl Balloon {
         self.gage_pressure(external_pressure) * self.radius() / (2.0 * self.skin_thickness)
     }
 
+    fn strain(self, external_pressure: f32) -> f32 {
+        // strain (%) of thin-walled hollow sphere from internal pressure
+        // https://en.wikipedia.org/wiki/Pressure_vessel#Stress_in_thin-walled_pressure_vessels
+        // https://pkel015.connect.amazon.auckland.ac.nz/SolidMechanicsBooks/Part_I/BookSM_Part_I/07_ElasticityApplications/07_Elasticity_Applications_03_Presure_Vessels.pdf
+        self.radial_displacement(external_pressure) / self.radius()
+    }
+
     fn radial_displacement(self, external_pressure: f32) -> f32 {
         // https://pkel015.connect.amazon.auckland.ac.nz/SolidMechanicsBooks/Part_I/BookSM_Part_I/07_ElasticityApplications/07_Elasticity_Applications_03_Presure_Vessels.pdf
         ((1.0 - self.material.poissons_ratio) / self.material.elasticity)
@@ -92,8 +99,15 @@ impl Balloon {
 
     fn compress(&mut self, radial_displacement: f32, external_pressure: f32) {
         // https://physics.stackexchange.com/questions/10372/inflating-a-balloon-expansion-resistance
-        self.set_thickness(self.unstretched_thickness * libm::powf(self.unstretched_radius / self.radius(), 2.0));
-        let internal_pressure = 2.0 * self.material.elasticity * radial_displacement * self.unstretched_thickness * self.unstretched_radius / libm::powf(self.radius(), 3.0);
+        self.set_thickness(
+            self.unstretched_thickness * libm::powf(self.unstretched_radius / self.radius(), 2.0),
+        );
+        let internal_pressure = 2.0
+            * self.material.elasticity
+            * radial_displacement
+            * self.unstretched_thickness
+            * self.unstretched_radius
+            / libm::powf(self.radius(), 3.0);
         self.set_pressure(internal_pressure + external_pressure)
     }
 
@@ -107,7 +121,6 @@ impl Balloon {
         // - the balloon fails when it starts to plasticly deform, in other
         //   words the balloon stretches as long as tangential stress is less
         //   than the material's yield stress
-
         debug!(
             "current gage pressure: {:?}",
             self.gage_pressure(external_pressure)
@@ -118,7 +131,11 @@ impl Balloon {
             stress, self.material.max_stress
         );
         if stress > self.material.max_stress {
-            self.burst("Hoop stress exceeded maximum stress");
+            self.burst(format!(
+                "Hoop stress ({:?} Pa) exceeded maximum stress ({:?} Pa)",
+                stress, self.material.max_stress
+            ));
+            return;
         }
         let delta_r = self.radial_displacement(external_pressure);
         debug!(
@@ -133,17 +150,21 @@ impl Balloon {
             self.gage_pressure(external_pressure)
         );
 
-        let strain = self.radius() / self.unstretched_radius;
+        let strain = (self.radius() - self.unstretched_radius) / self.unstretched_radius;
         debug!(
             "current strain: {:?} (max: {:?})",
             strain, self.material.max_strain
         );
         if strain > self.material.max_strain {
-            self.burst("Strain exceeded maximum strain");
+            self.burst(format!(
+                "Tangential strain ({:?} %) exceeded maximum strain ({:?} %)",
+                strain * 100.0, self.material.max_strain * 100.0
+            ));
+            return;
         }
     }
 
-    fn burst(&mut self, reason: &str) {
+    fn burst(&mut self, reason: String) {
         // Assert new balloon attributes to reflect that it has burst
         self.intact = false;
         self.set_volume(0.0);
@@ -246,9 +267,8 @@ pub const RUBBER: Material = Material {
     poissons_ratio: 0.5,
     elasticity: 4_000_000.0,
     // max_strain: 8.0,
-    max_strain: f32::INFINITY,
-    // max_stress: 15_000_000.0,
-    max_stress: f32::INFINITY,
+    max_strain: 8.0,
+    max_stress: 15_000_000.0,
 };
 
 pub const LOW_DENSITY_POLYETHYLENE: Material = Material {
