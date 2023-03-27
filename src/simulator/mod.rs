@@ -131,7 +131,6 @@ impl AsyncSim {
         outpath: PathBuf,
     ) {
         let mut sim_state = initialize(&config);
-
         // configure simulation
         let physics_rate = config.environment.tick_rate_hz;
         let max_sim_time = config.environment.max_elapsed_time_s;
@@ -187,23 +186,26 @@ impl AsyncSim {
                 | sim_state.ascent_rate.is_nan()
                 | sim_state.acceleration.is_nan()
             {
-                error!("Something went wrong, a physical value is NaN!");
-                exit(1);
+                terminate(1, format!("Something went wrong, a physical value is NaN!"));
             }
             // Run for a certain amount of sim time or to a certain altitude
             if sim_state.time >= max_sim_time {
-                warn!("Simulation reached maximum time step. Stopping...");
-                break;
+                terminate(0, format!("Reached maximum time step ({:?} s)", sim_state.time));
             }
             if sim_state.altitude < 0.0 {
-                error!("Simulation altitude cannot be below zero. Stopping...");
-                break;
+                terminate(0, format!("Altitude at or below zero."));
             }
         }
-        exit(0);
     }
 }
-
+fn terminate(code: i32, reason: String) {
+    if code > 0 {
+        error!("Simulation terminated abnormally with code {:?}. Reason: {:?}", code, reason);
+    } else {
+        warn!("Simulation terminated normally. Reason: {:?}", reason);
+    }
+    exit(code);
+}
 fn init_log_file(outpath: PathBuf) -> csv::Writer<File> {
     let mut writer = csv::Writer::from_path(outpath).unwrap();
     writer
