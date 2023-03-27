@@ -15,7 +15,7 @@ yahs --help
 
 ## Run a simulated flight
 ### Configure the sim
-Set the simulation configuration in `config/sim_config.toml`
+Set the simulation configuration in `config/default.toml`
 
 ### Start the sim
 Then use the `start` command to start a flight simulation. Use the `RUST_LOG`
