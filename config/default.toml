@@ -7,13 +7,12 @@ initial_velocity_m_s = 0.0
 
 [balloon]
 material = "Rubber"
-thickness_m = 0.005 # thicker balloons have less stress
-mass_kg = 1.2
+thickness_m = 0.0001 # thicker balloons have less stress
 barely_inflated_diameter_m = 1.5 # larger balloons have less strain
 
 [balloon.lift_gas]
 species = "Helium"
-mass_kg = 1.5
+mass_kg = 0.3
 
 [payload.bus]
 dry_mass_kg = 1.427

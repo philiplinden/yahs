@@ -24,6 +24,8 @@ pub struct Balloon {
     pub skin_thickness: f32,      // thickness of the skin of the balloon (m)
     unstretched_thickness: f32,   // thickness of the skin of the balloon without stretch (m)
     unstretched_radius: f32,      // radius of balloon without stretch (m)
+    stress: f32,
+    strain: f32,
 }
 
 impl Balloon {
@@ -45,6 +47,8 @@ impl Balloon {
             skin_thickness,
             unstretched_thickness: skin_thickness,
             unstretched_radius,
+            stress: 0.0,
+            strain: 1.0,
         }
     }
 
@@ -64,6 +68,10 @@ impl Balloon {
         self.lift_gas.set_volume(new_volume)
     }
 
+    pub fn pressure(&mut self) -> f32 {
+        self.lift_gas.pressure()
+    }
+
     fn set_pressure(&mut self, new_pressure: f32) {
         self.lift_gas.set_pressure(new_pressure)
     }
@@ -76,18 +84,39 @@ impl Balloon {
         self.lift_gas.pressure() - external_pressure
     }
 
-    fn stress(self, external_pressure: f32) -> f32 {
+    pub fn stress(self) -> f32 {
+        self.stress
+    }
+
+    fn set_stress(&mut self, external_pressure: f32) {
         // hoop stress (Pa) of thin-walled hollow sphere from internal pressure
         // https://en.wikipedia.org/wiki/Pressure_vessel#Stress_in_thin-walled_pressure_vessels
         // https://pkel015.connect.amazon.auckland.ac.nz/SolidMechanicsBooks/Part_I/BookSM_Part_I/07_ElasticityApplications/07_Elasticity_Applications_03_Presure_Vessels.pdf
-        self.gage_pressure(external_pressure) * self.radius() / (2.0 * self.skin_thickness)
+        self.stress = self.gage_pressure(external_pressure) * self.radius() / (2.0 * self.skin_thickness);
+        if self.stress > self.material.max_stress {
+            self.burst(format!(
+                "Hoop stress ({:?} Pa) exceeded maximum stress ({:?} Pa)",
+                self.stress, self.material.max_stress
+            ));
+        }
     }
 
-    fn strain(self, external_pressure: f32) -> f32 {
+    pub fn strain(self) -> f32 {
+        self.strain
+    }
+
+    fn set_strain(&mut self) {
         // strain (%) of thin-walled hollow sphere from internal pressure
         // https://en.wikipedia.org/wiki/Pressure_vessel#Stress_in_thin-walled_pressure_vessels
         // https://pkel015.connect.amazon.auckland.ac.nz/SolidMechanicsBooks/Part_I/BookSM_Part_I/07_ElasticityApplications/07_Elasticity_Applications_03_Presure_Vessels.pdf
-        self.radial_displacement(external_pressure) / self.radius()
+        self.strain = self.radius() / self.unstretched_radius;
+        if self.strain > self.material.max_strain {
+            self.burst(format!(
+                "Tangential strain ({:?} %) exceeded maximum strain ({:?} %)",
+                self.strain * 100.0,
+                self.material.max_strain * 100.0
+            ));
+        }
     }
 
     fn radial_displacement(self, external_pressure: f32) -> f32 {
@@ -97,18 +126,16 @@ impl Balloon {
                 * self.skin_thickness)
     }
 
-    fn compress(&mut self, radial_displacement: f32, external_pressure: f32) {
+    fn rebound(&mut self, radial_displacement: f32) -> f32 {
         // https://physics.stackexchange.com/questions/10372/inflating-a-balloon-expansion-resistance
         self.set_thickness(
             self.unstretched_thickness * libm::powf(self.unstretched_radius / self.radius(), 2.0),
         );
-        let internal_pressure = 2.0
-            * self.material.elasticity
+        2.0 * self.material.elasticity
             * radial_displacement
             * self.unstretched_thickness
             * self.unstretched_radius
-            / libm::powf(self.radius(), 3.0);
-        self.set_pressure(internal_pressure + external_pressure)
+            / libm::powf(self.radius(), 3.0)
     }
 
     pub fn stretch(&mut self, external_pressure: f32) {
@@ -125,43 +152,26 @@ impl Balloon {
             "current gage pressure: {:?}",
             self.gage_pressure(external_pressure)
         );
-        let stress = self.stress(external_pressure).abs();
-        debug!(
-            "current stress: {:?} (max: {:?})",
-            stress, self.material.max_stress
-        );
-        if stress > self.material.max_stress {
-            self.burst(format!(
-                "Hoop stress ({:?} Pa) exceeded maximum stress ({:?} Pa)",
-                stress, self.material.max_stress
-            ));
-            return;
-        }
-        let delta_r = self.radial_displacement(external_pressure);
-        debug!(
-            "radius before stretch: {:?} delta_r: {:?}",
-            self.radius(),
-            delta_r
-        );
-        self.compress(delta_r, external_pressure);
-        debug!("radius after stretch: {:?}", self.radius());
-        debug!(
-            "gage pressure after stretch: {:?}",
-            self.gage_pressure(external_pressure)
-        );
 
-        let strain = (self.radius() - self.unstretched_radius) / self.unstretched_radius;
-        debug!(
-            "current strain: {:?} (max: {:?})",
-            strain, self.material.max_strain
-        );
-        if strain > self.material.max_strain {
-            self.burst(format!(
-                "Tangential strain ({:?} %) exceeded maximum strain ({:?} %)",
-                strain * 100.0, self.material.max_strain * 100.0
-            ));
-            return;
+        self.set_stress(external_pressure);
+        self.set_strain();
+
+        if self.intact {
+            let delta_r = self.radial_displacement(external_pressure);
+            debug!(
+                "radius before stretch: {:?} delta_r: {:?}",
+                self.radius(),
+                delta_r
+            );
+            let internal_pressure = self.rebound(delta_r);
+            self.set_pressure(internal_pressure + external_pressure);
+            debug!("radius after stretch: {:?}", self.radius());
+            debug!(
+                "gage pressure after stretch: {:?}",
+                self.gage_pressure(external_pressure)
+            );
         }
+
     }
 
     fn burst(&mut self, reason: String) {
@@ -217,7 +227,7 @@ impl Material {
     pub fn new(material_type: MaterialType) -> Self {
         match material_type {
             MaterialType::Rubber => RUBBER,
-            MaterialType::LowDensityPolyethylene => LOW_DENSITY_POLYETHYLENE,
+            MaterialType::LDPE | MaterialType::LowDensityPolyethylene => LOW_DENSITY_POLYETHYLENE,
             _ => NOTHING,
         }
     }
@@ -228,6 +238,7 @@ pub enum MaterialType {
     // Species of gas with a known molar mass (kg/mol)
     Nothing,
     Rubber,
+    LDPE,
     LowDensityPolyethylene,
 }
 
@@ -236,7 +247,9 @@ impl fmt::Display for MaterialType {
         match *self {
             MaterialType::Nothing => write!(f, "nothing"),
             MaterialType::Rubber => write!(f, "rubber"),
-            MaterialType::LowDensityPolyethylene => write!(f, "low-density polyethylene (LDPE)"),
+            MaterialType::LDPE | MaterialType::LowDensityPolyethylene => {
+                write!(f, "low-density polyethylene (LDPE)")
+            }
         }
     }
 }
@@ -268,7 +281,7 @@ pub const RUBBER: Material = Material {
     elasticity: 4_000_000.0,
     // max_strain: 8.0,
     max_strain: 8.0,
-    max_stress: 15_000_000.0,
+    max_stress: 25_000_000.0,
 };
 
 pub const LOW_DENSITY_POLYETHYLENE: Material = Material {

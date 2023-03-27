@@ -1,7 +1,7 @@
 use std::path::PathBuf;
 
 use clap::{Parser, Subcommand};
-use log::{info, error};
+use log::error;
 
 use crate::simulator::{AsyncSim, Rate};
 

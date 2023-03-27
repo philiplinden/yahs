@@ -42,6 +42,11 @@ pub struct SimOutput {
     // pub free_lift: f32,
     pub atmo_temp: f32,
     pub atmo_pres: f32,
+    pub balloon_pres: f32,
+    pub balloon_radius: f32,
+    pub balloon_stress: f32,
+    pub balloon_strain: f32,
+    pub balloon_thickness: f32,
 }
 
 pub struct Rate {
@@ -151,6 +156,11 @@ impl AsyncSim {
                 output.acceleration = sim_state.acceleration;
                 output.atmo_temp = sim_state.atmosphere.temperature();
                 output.atmo_pres = sim_state.atmosphere.pressure();
+                output.balloon_pres = sim_state.balloon.pressure();
+                output.balloon_radius = sim_state.balloon.radius();
+                output.balloon_stress = sim_state.balloon.stress();
+                output.balloon_strain = sim_state.balloon.strain();
+                output.balloon_thickness = sim_state.balloon.skin_thickness;
                 log_to_file(&output, &mut writer);
             }
 
@@ -163,12 +173,14 @@ impl AsyncSim {
                 sim_state.atmosphere.temperature()
             );
             info!(
-                "[{:.3} s] | HAB @ {:.2} m, {:.3} m/s, {:.3} m/s^2 | {:.2} m radius",
+                "[{:.3} s] | HAB @ {:.2} m, {:.3} m/s, {:.3} m/s^2 | {:.2} m radius, {:.2} Pa stress, {:.2} % strain",
                 sim_state.time,
                 sim_state.altitude,
                 sim_state.ascent_rate,
                 sim_state.acceleration,
                 sim_state.balloon.radius(),
+                sim_state.balloon.stress(),
+                sim_state.balloon.strain(),
             );
             // Stop if there is a problem
             if sim_state.altitude.is_nan()
@@ -202,6 +214,11 @@ fn init_log_file(outpath: PathBuf) -> csv::Writer<File> {
             "acceleration_m_s2",
             "atmo_temp_K",
             "atmo_pres_Pa",
+            "balloon_pres_Pa",
+            "balloon_radius_m",
+            "balloon_stress_Pa",
+            "balloon_strain_pct",
+            "balloon_thickness_m",
         ])
         .unwrap();
     writer
@@ -216,6 +233,11 @@ fn log_to_file(sim_output: &SimOutput, writer: &mut csv::Writer<File>) {
             sim_output.acceleration.to_string(),
             sim_output.atmo_temp.to_string(),
             sim_output.atmo_pres.to_string(),
+            sim_output.balloon_pres.to_string(),
+            sim_output.balloon_radius.to_string(),
+            sim_output.balloon_stress.to_string(),
+            sim_output.balloon_strain.to_string(),
+            sim_output.balloon_thickness.to_string(),
         ])
         .unwrap();
     writer.flush().unwrap();
@@ -285,12 +307,21 @@ pub fn step(input: SimInstant, config: &Config) -> SimInstant {
         if !balloon.intact {
             // elevate info to stdout when burst event occurs
             warn!(
-                "[{:.3} s] | Atmosphere @ {:} m: {:} K, {:} Pa | Balloon @ {:.2} m radius",
+                "[{:.3} s] | Atmosphere @ {:} m: {:} K, {:} Pa",
                 time,
                 input.altitude,
                 atmosphere.temperature(),
-                atmosphere.temperature(),
+                atmosphere.temperature()
+            );
+            warn!(
+                "[{:.3} s] | HAB @ {:.2} m, {:.3} m/s, {:.3} m/s^2 | {:.2} m radius, {:.2} MPa stress, {:.2} % strain",
+                time,
+                input.altitude,
+                input.ascent_rate,
+                input.acceleration,
                 radius_before_stretch,
+                balloon.stress() / 1_000_000.0,
+                balloon.strain() * 100.0,
             );
         }
         projected_area = projected_spherical_area(balloon.lift_gas.volume());
