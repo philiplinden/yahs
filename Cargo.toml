@@ -24,6 +24,7 @@ clap = { version = "4.1", default-features = false, features = [
     "suggestions",
 ] }
 csv = "1.2.1"
+anyhow = "1.0.70"
 
 [[bin]]
 name = "yahs"

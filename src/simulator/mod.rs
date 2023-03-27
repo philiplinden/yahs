@@ -1,10 +1,10 @@
 mod balloon;
 mod config;
 mod constants;
-mod gas;
-mod payload;
 mod forces;
+mod gas;
 mod heat;
+mod payload;
 
 use log::{debug, error, info, warn};
 use std::{
@@ -20,8 +20,8 @@ use std::{
 
 use balloon::{Balloon, Material};
 use config::{parse_config, Config};
-use gas::{Atmosphere, GasVolume};
 use forces::{net_force, projected_spherical_area};
+use gas::{Atmosphere, GasVolume};
 
 pub struct SimCommands {
     pub vent_flow_percentage: f32,
@@ -170,6 +170,14 @@ impl AsyncSim {
                 sim_state.acceleration,
                 sim_state.balloon.lift_gas.mass(),
             );
+            // Stop if there is a problem
+            if sim_state.altitude.is_nan()
+                | sim_state.ascent_rate.is_nan()
+                | sim_state.acceleration.is_nan()
+            {
+                error!("Something went wrong, a physical value is NaN!");
+                exit(1);
+            }
             // Run for a certain amount of sim time or to a certain altitude
             if sim_state.time >= max_sim_time {
                 warn!("Simulation reached maximum time step. Stopping...");
@@ -224,20 +232,24 @@ pub struct SimInstant {
 
 fn initialize(config: &Config) -> SimInstant {
     // create an initial time step based on the config
+    let atmo = Atmosphere::new(config.environment.initial_altitude_m);
+    let material = Material::new(config.balloon.material);
+    let mut lift_gas = GasVolume::new(
+        config.balloon.lift_gas.species,
+        config.balloon.lift_gas.mass_kg,
+    );
+    lift_gas.update_from_ambient(atmo);
     SimInstant {
         time: 0.0,
         altitude: config.environment.initial_altitude_m,
         ascent_rate: config.environment.initial_velocity_m_s,
         acceleration: 0.0,
-        atmosphere: Atmosphere::new(config.environment.initial_altitude_m),
+        atmosphere: atmo,
         balloon: Balloon::new(
-            Material::new(config.balloon.material), // balloon skin material
+            material,
             config.balloon.thickness_m,
             config.balloon.barely_inflated_diameter_m, // ballon diameter (m)
-            GasVolume::new(
-                config.balloon.lift_gas.species,
-                config.balloon.lift_gas.mass_kg,
-            ), // lift gas
+            lift_gas,
         ),
     }
 }
@@ -248,9 +260,6 @@ pub fn step(input: SimInstant, config: &Config) -> SimInstant {
     let time = input.time + delta_t;
     let mut atmosphere = input.atmosphere;
     let mut balloon = input.balloon;
-    // balloon.lift_gas.update_from_ambient(atmosphere);
-    balloon.stretch(atmosphere.pressure());
-
     // mass properties
     // let dump_mass_flow_rate = config.payload.control.dump_mass_flow_kg_s;
     // let ballast_mass =
@@ -268,6 +277,7 @@ pub fn step(input: SimInstant, config: &Config) -> SimInstant {
 
     if balloon.intact {
         // balloon is intact
+        balloon.stretch(atmosphere.pressure());
         projected_area = projected_spherical_area(balloon.lift_gas.volume());
         drag_coeff = balloon.drag_coeff;
     } else {
