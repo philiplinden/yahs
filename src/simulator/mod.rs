@@ -179,7 +179,7 @@ impl AsyncSim {
                 sim_state.acceleration,
                 sim_state.balloon.radius(),
                 sim_state.balloon.stress(),
-                sim_state.balloon.strain(),
+                sim_state.balloon.strain() * 100.0,
             );
             // Stop if there is a problem
             if sim_state.altitude.is_nan()
