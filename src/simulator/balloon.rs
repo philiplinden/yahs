@@ -15,7 +15,7 @@ use super::geometry::{
     shell_volume, sphere_radius_from_volume, sphere_surface_area, sphere_volume,
 };
 
-#[derive(Copy, Clone, PartialEq)]
+#[derive(Copy, Clone, Debug, PartialEq)]
 pub enum BalloonStatus {
     Underinflated,
     Ok,
@@ -45,16 +45,8 @@ impl Balloon {
         let skin_thickness = material.unloaded_thickness;
         let unstretched_radius = barely_inflated_diameter / 2.0;
         let mass = shell_volume(unstretched_radius, skin_thickness) * material.density;
-        let status: BalloonStatus;
-        let unconstrained_volume = lift_gas.volume();
-        let base_volume = sphere_volume(unstretched_radius);
-        if unconstrained_volume < base_volume {
-            status = BalloonStatus::Underinflated;
-        } else {
-            status = BalloonStatus::Ok;
-        }
         Balloon {
-            status,
+            status: BalloonStatus::Ok,
             mass,
             temperature: 293.0,
             drag_coeff: 0.3,
@@ -65,6 +57,20 @@ impl Balloon {
             stress: 0.0,
             strain: 0.0,
         }
+    }
+
+    fn burst(&mut self, reason: Option<String>) {
+        // Assert new balloon attributes to reflect that it has burst
+        self.stress = 0.0;
+        self.strain = 0.0;
+        self.set_volume(0.0);
+        self.lift_gas.set_mass(0.0);
+        self.status = BalloonStatus::Burst;
+
+        match reason {
+            Some(r) => log::info!("The balloon has burst! Reason: {r}"),
+            None => log::info!("The balloon has burst!"),
+        };
     }
 
     pub fn surface_area(self) -> f32 {
@@ -84,7 +90,7 @@ impl Balloon {
     }
 
     fn set_volume(&mut self, new_volume: f32) {
-        self.lift_gas.set_volume(new_volume)
+        self.lift_gas.set_volume(new_volume);
     }
 
     pub fn pressure(&mut self) -> f32 {
@@ -92,7 +98,7 @@ impl Balloon {
     }
 
     fn set_pressure(&mut self, new_pressure: f32) {
-        self.lift_gas.set_pressure(new_pressure)
+        self.lift_gas.set_pressure(new_pressure);
     }
 
     fn set_thickness(&mut self, new_thickness: f32) {
@@ -107,8 +113,7 @@ impl Balloon {
         // hoop stress (Pa) of thin-walled hollow sphere from internal pressure
         // https://en.wikipedia.org/wiki/Pressure_vessel#Stress_in_thin-walled_pressure_vessels
         // https://pkel015.connect.amazon.auckland.ac.nz/SolidMechanicsBooks/Part_I/BookSM_Part_I/07_ElasticityApplications/07_Elasticity_Applications_03_Presure_Vessels.pdf
-        self.stress =
-            gage_pressure * self.radius() / (2.0 * self.skin_thickness);
+        self.stress = gage_pressure * self.radius() / (2.0 * self.skin_thickness);
         if self.stress > self.material.max_stress {
             self.burst(Some(format!(
                 "Hoop stress ({:?} Pa) exceeded maximum stress ({:?} Pa)",
@@ -155,7 +160,7 @@ impl Balloon {
             / libm::powf(self.radius(), 3.0)
     }
 
-    pub fn stretch(&mut self, external_pressure: f32) {
+    pub fn update(&mut self, external_pressure: f32) {
         // stretch the balloon and/or compress the gas inside.
         // - the gas wants to be at the same pressure as ambient
         // - the balloon will stretch in response to the pressure difference
@@ -165,38 +170,39 @@ impl Balloon {
         // - the balloon fails when it starts to plasticly deform, in other
         //   words the balloon stretches as long as tangential stress is less
         //   than the material's yield stress
-        let gage_pressure = self.lift_gas.pressure() - external_pressure;
-        debug!(
-            "gage pressure before stretch: {:?}",
-            gage_pressure
-        );
-
-        self.set_stress(gage_pressure);
-        self.set_strain();
-
         if self.status != BalloonStatus::Burst {
-            let delta_r = self.radial_displacement(gage_pressure);
-            debug!(
-                "radius before stretch: {:?} delta_r: {:?}",
-                self.radius(),
-                delta_r
-            );
-            let internal_pressure = self.rebound(delta_r);
-            self.set_pressure(internal_pressure + external_pressure);
-            debug!("radius after stretch: {:?}", self.radius());
-        }
-    }
-
-    fn burst(&mut self, reason: Option<String>) {
-        // Assert new balloon attributes to reflect that it has burst
-        self.status = BalloonStatus::Burst;
-        self.set_volume(0.0);
-        self.lift_gas.set_mass(0.0);
-
-        match reason {
-            Some(r) => log::info!("The balloon has burst! Reason: {r}"),
-            None => log::info!("The balloon has burst!"),
-        }
+            let unconstrained_volume = self.lift_gas.volume();
+            let base_volume = sphere_volume(self.unstretched_radius);
+            if unconstrained_volume < base_volume {
+                self.status = BalloonStatus::Underinflated;
+            } else {
+                self.status = BalloonStatus::Ok;
+            }
+        };
+        match self.status {
+            BalloonStatus::Underinflated => {
+                self.set_pressure(external_pressure);
+            },
+            BalloonStatus::Ok => {
+                let gage_pressure = self.lift_gas.pressure() - external_pressure;
+                debug!(
+                    "gage pressure before stretch: {:?}",
+                    gage_pressure
+                );
+                let delta_r = self.radial_displacement(gage_pressure);
+                debug!(
+                    "radius before stretch: {:?} delta_r: {:?}",
+                    self.radius(),
+                    delta_r
+                );
+                let internal_pressure = self.rebound(delta_r);
+                self.set_pressure(internal_pressure + external_pressure);
+                debug!("radius after stretch: {:?}", self.radius());
+                // self.set_stress(gage_pressure);
+                self.set_strain();
+            },
+            BalloonStatus::Burst => {/* do nothing */}
+        };
     }
 }
 

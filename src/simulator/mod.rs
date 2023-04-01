@@ -7,7 +7,7 @@ mod thermal;
 mod payload;
 mod geometry;
 
-use log::{debug, error, info};
+use log::{debug, error, info, warn};
 use std::{
     fs::File,
     path::PathBuf,
@@ -167,14 +167,13 @@ impl AsyncSim {
                 sim_state.atmosphere.temperature()
             );
             info!(
-                "[{:.3} s] | HAB @ {:.2} m, {:.3} m/s, {:.3} m/s^2 | {:.2} m radius, {:.2} Pa stress, {:.2} % strain",
+                "[{:.3} s] | HAB @ {:.2} m, {:.3} m/s, {:.3} m/s^2 | {:.2} m radius, {:?}",
                 sim_state.time,
                 sim_state.altitude,
                 sim_state.ascent_rate,
                 sim_state.acceleration,
                 sim_state.balloon.radius(),
-                sim_state.balloon.stress(),
-                sim_state.balloon.strain() * 100.0,
+                sim_state.balloon.status,
             );
             // Stop if there is a problem
             if sim_state.altitude.is_nan()
@@ -290,6 +289,7 @@ pub fn step(input: SimInstant, config: &Config) -> SimInstant {
     let projected_area: f32;
     let drag_coeff: f32;
 
+    balloon.update(atmosphere.pressure());
     match balloon.status {
         BalloonStatus::Burst => {
             // balloon has popped
@@ -305,9 +305,7 @@ pub fn step(input: SimInstant, config: &Config) -> SimInstant {
         },
         _ => {
             // balloon is intact
-            // balloon.lift_gas.set_temperature(atmosphere.temperature());
-            balloon.stretch(atmosphere.pressure());
-            projected_area = projected_spherical_area(balloon.lift_gas.volume());
+            projected_area = projected_spherical_area(balloon.volume());
             drag_coeff = balloon.drag_coeff;
         }
     }
