@@ -3,10 +3,11 @@ mod config;
 mod constants;
 mod forces;
 mod gas;
-mod heat;
+mod thermal;
 mod payload;
+mod geometry;
 
-use log::{debug, error, info, warn};
+use log::{debug, error, info};
 use std::{
     fs::File,
     path::PathBuf,
@@ -18,14 +19,14 @@ use std::{
     time::{Duration, Instant},
 };
 
-use balloon::{Balloon, Material};
+use balloon::{Balloon, BalloonStatus, Material};
 use config::{parse_config, Config};
-use forces::{net_force, projected_spherical_area};
+use geometry::projected_spherical_area;
+use forces::net_force;
 use gas::{Atmosphere, GasVolume};
 
 pub struct SimCommands {
-    pub vent_flow_percentage: f32,
-    pub dump_flow_percentage: f32,
+    pub open_vent: bool,
 }
 
 #[derive(Default, Copy, Clone)]
@@ -34,12 +35,6 @@ pub struct SimOutput {
     pub altitude: f32,
     pub ascent_rate: f32,
     pub acceleration: f32,
-    // pub ballast_mass: f32,
-    // pub lift_gas_mass: f32,
-    // pub vent_pwm: f32,
-    // pub dump_pwm: f32,
-    // pub gross_lift: f32,
-    // pub free_lift: f32,
     pub atmo_temp: f32,
     pub atmo_pres: f32,
     pub balloon_pres: f32,
@@ -171,54 +166,43 @@ impl AsyncSim {
                 sim_state.atmosphere.temperature(),
                 sim_state.atmosphere.temperature()
             );
-            if sim_state.balloon.intact {
-                info!(
-                    "[{:.3} s] | HAB @ {:.2} m, {:.3} m/s, {:.3} m/s^2 | {:.2} m radius, {:.2} Pa stress, {:.2} % strain",
-                    sim_state.time,
-                    sim_state.altitude,
-                    sim_state.ascent_rate,
-                    sim_state.acceleration,
-                    sim_state.balloon.radius(),
-                    sim_state.balloon.stress(),
-                    sim_state.balloon.strain() * 100.0,
-                );
-            } else {
-                info!(
-                    "[{:.3} s] | HAB @ {:.2} m, {:.3} m/s, {:.3} m/s^2 | balloon burst",
-                    sim_state.time,
-                    sim_state.altitude,
-                    sim_state.ascent_rate,
-                    sim_state.acceleration
-                );
-            }
+            info!(
+                "[{:.3} s] | HAB @ {:.2} m, {:.3} m/s, {:.3} m/s^2 | {:.2} m radius, {:.2} Pa stress, {:.2} % strain",
+                sim_state.time,
+                sim_state.altitude,
+                sim_state.ascent_rate,
+                sim_state.acceleration,
+                sim_state.balloon.radius(),
+                sim_state.balloon.stress(),
+                sim_state.balloon.strain() * 100.0,
+            );
             // Stop if there is a problem
             if sim_state.altitude.is_nan()
                 | sim_state.ascent_rate.is_nan()
                 | sim_state.acceleration.is_nan()
             {
-                terminate(1, format!("Something went wrong, a physical value is NaN!"));
+                terminate(1, Some(format!("Something went wrong, a physical value is NaN!")));
             }
             // Run for a certain amount of sim time or to a certain altitude
             if sim_state.time >= max_sim_time {
                 terminate(
                     0,
-                    format!("Reached maximum time step ({:?} s)", sim_state.time),
+                    Some(format!("Reached maximum time step ({:?} s)", sim_state.time)),
                 );
             }
             if sim_state.altitude < 0.0 {
-                terminate(0, format!("Altitude at or below zero."));
+                terminate(0, Some(format!("Altitude at or below zero.")));
             }
         }
     }
 }
-fn terminate(code: i32, reason: String) {
-    if code > 0 {
-        error!(
-            "Simulation terminated abnormally with code {:?}. Reason: {:?}",
-            code, reason
-        );
-    } else {
-        warn!("Simulation terminated normally. Reason: {:?}", reason);
+fn terminate(code: i32, reason: Option<String>) {
+    match code {
+        0 => info!("Simulation terminated normally."),
+        _ => match reason {
+            Some(r) => error!("Simulation terminated abnormally. Reason: {r}"),
+            None => error!("Simulation terminated abnormally with code {code}")
+        }
     }
     exit(code);
 }
@@ -300,60 +284,31 @@ pub fn step(input: SimInstant, config: &Config) -> SimInstant {
     let time = input.time + delta_t;
     let mut atmosphere = input.atmosphere;
     let mut balloon = input.balloon;
-    // mass properties
-    // let dump_mass_flow_rate = config.payload.control.dump_mass_flow_kg_s;
-    // let ballast_mass =
-    //     (input.ballast_mass - (input.dump_pwm * dump_mass_flow_rate)).max(0.0);
-    // balloon
-    //     .lift_gas
-    //     .set_mass((balloon.lift_gas.mass() - input.vent_pwm * config.vent_mass_flow_rate).max(0.0));
-    // let payload_dry_mass = input.bus.dry_mass;
-    // let total_dry_mass = payload_dry_mass + ballast_mass;
     let total_dry_mass = config.payload.bus.dry_mass_kg;
 
     // switch drag conditions if the balloon has popped
     let projected_area: f32;
     let drag_coeff: f32;
 
-    let radius_before_stretch = balloon.radius();
-
-    if balloon.intact {
-        // balloon is intact
-        // balloon.lift_gas.set_temperature(atmosphere.temperature());
-        balloon.stretch(atmosphere.pressure());
-        // check if the balloon burst after stretching
-        if !balloon.intact {
-            // elevate info to stdout when burst event occurs
-            warn!(
-                "[{:.3} s] | Atmosphere @ {:} m: {:} K, {:} Pa",
-                time,
-                input.altitude,
-                atmosphere.temperature(),
-                atmosphere.temperature()
-            );
-            warn!(
-                "[{:.3} s] | HAB @ {:.2} m, {:.3} m/s, {:.3} m/s^2 | {:.2} m radius, {:.2} MPa stress, {:.2} % strain",
-                time,
-                input.altitude,
-                input.ascent_rate,
-                input.acceleration,
-                radius_before_stretch,
-                balloon.stress() / 1_000_000.0,
-                balloon.strain() * 100.0,
-            );
-        }
-        projected_area = projected_spherical_area(balloon.lift_gas.volume());
-        drag_coeff = balloon.drag_coeff;
-    } else {
-        // balloon has popped
-        if input.altitude <= config.payload.parachute.open_altitude_m {
-            // parachute open
-            projected_area = config.payload.parachute.area_m2;
-            drag_coeff = config.payload.parachute.drag_coeff;
-        } else {
-            // free fall, parachute not open
-            projected_area = config.payload.bus.drag_area_m2;
-            drag_coeff = config.payload.bus.drag_coeff;
+    match balloon.status {
+        BalloonStatus::Burst => {
+            // balloon has popped
+            if input.altitude <= config.payload.parachute.open_altitude_m {
+                // parachute open
+                projected_area = config.payload.parachute.area_m2;
+                drag_coeff = config.payload.parachute.drag_coeff;
+            } else {
+                // free fall, parachute not open
+                projected_area = config.payload.bus.drag_area_m2;
+                drag_coeff = config.payload.bus.drag_coeff;
+            }
+        },
+        _ => {
+            // balloon is intact
+            // balloon.lift_gas.set_temperature(atmosphere.temperature());
+            balloon.stretch(atmosphere.pressure());
+            projected_area = projected_spherical_area(balloon.lift_gas.volume());
+            drag_coeff = balloon.drag_coeff;
         }
     }
 
@@ -373,14 +328,6 @@ pub fn step(input: SimInstant, config: &Config) -> SimInstant {
     let altitude = input.altitude + ascent_rate * delta_t;
 
     atmosphere.set_altitude(altitude);
-
-    // derived outputs
-    // let gross_lift = gross_lift(atmosphere, balloon.lift_gas);
-    // let free_lift = free_lift(atmosphere, balloon.lift_gas, total_dry_mass);
-
-    // // atmosphere stats
-    // let atmo_temp = atmosphere.temperature();
-    // let atmo_pres = atmosphere.pressure();
 
     SimInstant {
         time,

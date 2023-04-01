@@ -8,14 +8,23 @@ extern crate libm;
 
 use log::debug;
 use serde::Deserialize;
-use std::f32::consts::PI;
 use std::fmt;
 
 use super::gas;
+use super::geometry::{
+    shell_volume, sphere_radius_from_volume, sphere_surface_area, sphere_volume,
+};
+
+#[derive(Copy, Clone, PartialEq)]
+pub enum BalloonStatus {
+    Underinflated,
+    Ok,
+    Burst,
+}
 
 #[derive(Copy, Clone)]
 pub struct Balloon {
-    pub intact: bool,             // whether the balloon is intact or burst
+    pub status: BalloonStatus,    // status of the balloon
     pub mass: f32,                // balloon mass (kg)
     pub temperature: f32,         // temperature of the balloon skin (K)
     pub drag_coeff: f32,          // drag coefficient
@@ -36,8 +45,16 @@ impl Balloon {
         let skin_thickness = material.unloaded_thickness;
         let unstretched_radius = barely_inflated_diameter / 2.0;
         let mass = shell_volume(unstretched_radius, skin_thickness) * material.density;
+        let status: BalloonStatus;
+        let unconstrained_volume = lift_gas.volume();
+        let base_volume = sphere_volume(unstretched_radius);
+        if unconstrained_volume < base_volume {
+            status = BalloonStatus::Underinflated;
+        } else {
+            status = BalloonStatus::Ok;
+        }
         Balloon {
-            intact: true,
+            status,
             mass,
             temperature: 293.0,
             drag_coeff: 0.3,
@@ -82,24 +99,21 @@ impl Balloon {
         self.skin_thickness = new_thickness
     }
 
-    fn gage_pressure(self, external_pressure: f32) -> f32 {
-        self.lift_gas.pressure() - external_pressure
-    }
-
     pub fn stress(self) -> f32 {
         self.stress
     }
 
-    fn set_stress(&mut self, external_pressure: f32) {
+    fn set_stress(&mut self, gage_pressure: f32) {
         // hoop stress (Pa) of thin-walled hollow sphere from internal pressure
         // https://en.wikipedia.org/wiki/Pressure_vessel#Stress_in_thin-walled_pressure_vessels
         // https://pkel015.connect.amazon.auckland.ac.nz/SolidMechanicsBooks/Part_I/BookSM_Part_I/07_ElasticityApplications/07_Elasticity_Applications_03_Presure_Vessels.pdf
-        self.stress = self.gage_pressure(external_pressure) * self.radius() / (2.0 * self.skin_thickness);
+        self.stress =
+            gage_pressure * self.radius() / (2.0 * self.skin_thickness);
         if self.stress > self.material.max_stress {
-            self.burst(format!(
+            self.burst(Some(format!(
                 "Hoop stress ({:?} Pa) exceeded maximum stress ({:?} Pa)",
                 self.stress, self.material.max_stress
-            ));
+            )));
         }
     }
 
@@ -113,25 +127,26 @@ impl Balloon {
         // https://pkel015.connect.amazon.auckland.ac.nz/SolidMechanicsBooks/Part_I/BookSM_Part_I/07_ElasticityApplications/07_Elasticity_Applications_03_Presure_Vessels.pdf
         self.strain = (self.radius() / self.unstretched_radius) - 1.0;
         if self.strain > self.material.max_strain {
-            self.burst(format!(
+            self.burst(Some(format!(
                 "Tangential strain ({:?} %) exceeded maximum strain ({:?} %)",
                 self.strain * 100.0,
                 self.material.max_strain * 100.0
-            ));
+            )));
         }
     }
 
-    fn radial_displacement(self, external_pressure: f32) -> f32 {
+    fn radial_displacement(self, gage_pressure: f32) -> f32 {
         // https://pkel015.connect.amazon.auckland.ac.nz/SolidMechanicsBooks/Part_I/BookSM_Part_I/07_ElasticityApplications/07_Elasticity_Applications_03_Presure_Vessels.pdf
         ((1.0 - self.material.poissons_ratio) / self.material.elastic_modulus)
-            * ((self.gage_pressure(external_pressure) * libm::powf(self.radius(), 2.0)) / 2.0
+            * ((gage_pressure * libm::powf(self.radius(), 2.0)) / 2.0
                 * self.skin_thickness)
     }
 
     fn rebound(&mut self, radial_displacement: f32) -> f32 {
         // https://physics.stackexchange.com/questions/10372/inflating-a-balloon-expansion-resistance
         self.set_thickness(
-            self.material.unloaded_thickness * libm::powf(self.unstretched_radius / self.radius(), 2.0),
+            self.material.unloaded_thickness
+                * libm::powf(self.unstretched_radius / self.radius(), 2.0),
         );
         2.0 * self.material.elastic_modulus
             * radial_displacement
@@ -150,16 +165,17 @@ impl Balloon {
         // - the balloon fails when it starts to plasticly deform, in other
         //   words the balloon stretches as long as tangential stress is less
         //   than the material's yield stress
+        let gage_pressure = self.lift_gas.pressure() - external_pressure;
         debug!(
             "gage pressure before stretch: {:?}",
-            self.gage_pressure(external_pressure)
+            gage_pressure
         );
 
-        self.set_stress(external_pressure);
+        self.set_stress(gage_pressure);
         self.set_strain();
 
-        if self.intact {
-            let delta_r = self.radial_displacement(external_pressure);
+        if self.status != BalloonStatus::Burst {
+            let delta_r = self.radial_displacement(gage_pressure);
             debug!(
                 "radius before stretch: {:?} delta_r: {:?}",
                 self.radius(),
@@ -168,40 +184,20 @@ impl Balloon {
             let internal_pressure = self.rebound(delta_r);
             self.set_pressure(internal_pressure + external_pressure);
             debug!("radius after stretch: {:?}", self.radius());
-            debug!(
-                "gage pressure after stretch: {:?}",
-                self.gage_pressure(external_pressure)
-            );
         }
-
     }
 
-    fn burst(&mut self, reason: String) {
+    fn burst(&mut self, reason: Option<String>) {
         // Assert new balloon attributes to reflect that it has burst
-        self.intact = false;
+        self.status = BalloonStatus::Burst;
         self.set_volume(0.0);
         self.lift_gas.set_mass(0.0);
-        log::warn!("The balloon has burst! Reason: {:?}", reason)
+
+        match reason {
+            Some(r) => log::info!("The balloon has burst! Reason: {r}"),
+            None => log::info!("The balloon has burst!"),
+        }
     }
-}
-
-fn sphere_volume(radius: f32) -> f32 {
-    (4.0 / 3.0) * PI * libm::powf(radius, 3.0)
-}
-
-fn shell_volume(internal_radius: f32, thickness: f32) -> f32 {
-    let external_radius = internal_radius + thickness;
-    let internal_volume = sphere_volume(internal_radius);
-    let external_volume = sphere_volume(external_radius);
-    external_volume - internal_volume
-}
-
-fn sphere_radius_from_volume(volume: f32) -> f32 {
-    libm::powf(volume, 1.0 / 3.0) / (4.0 / 3.0) * PI
-}
-
-fn sphere_surface_area(radius: f32) -> f32 {
-    4.0 * PI * libm::powf(radius, 2.0)
 }
 
 // ----------------------------------------------------------------------------
@@ -213,15 +209,15 @@ fn sphere_surface_area(radius: f32) -> f32 {
 
 #[derive(Copy, Clone, PartialEq)]
 pub struct Material {
-    pub unloaded_thickness: f32, // thickness of material (m) with zero load
-    pub max_temperature: f32, // temperature (K) where the given material fails
-    pub density: f32,         // density (kg/m^3)
-    pub emissivity: f32,      // how much thermal radiation is emitted
-    pub absorptivity: f32,    // how much thermal radiation is absorbed
+    pub unloaded_thickness: f32,   // thickness of material (m) with zero load
+    pub max_temperature: f32,      // temperature (K) where the given material fails
+    pub density: f32,              // density (kg/m^3)
+    pub emissivity: f32,           // how much thermal radiation is emitted
+    pub absorptivity: f32,         // how much thermal radiation is absorbed
     pub thermal_conductivity: f32, // thermal conductivity (W/mK) of the material at room temperature
     pub specific_heat: f32,        // J/kgK
     pub poissons_ratio: f32,       // ratio of change in width for a given change in length
-    pub elastic_modulus: f32,           // Youngs Modulus aka Modulus of Elasticity (Pa)
+    pub elastic_modulus: f32,      // Youngs Modulus aka Modulus of Elasticity (Pa)
     pub max_strain: f32,           // elongation at failure (decimal, unitless) 1 = original size
     pub max_stress: f32,           // tangential stress at failure (Pa)
 }

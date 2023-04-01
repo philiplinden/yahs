@@ -116,6 +116,11 @@ impl GasVolume {
         }
     }
 
+    // System of equations for a fully inflated balloon:
+    //
+    //  V = V0 + dv_dp * (P_gas - P_amb)
+    //  P_gas = n * R * T_gas / V
+
     pub fn update_from_ambient(&mut self, atmo: Atmosphere) {
         self.temperature = atmo.temperature();
         self.pressure = atmo.pressure();
@@ -127,7 +132,8 @@ impl GasVolume {
     }
 
     pub fn set_pressure(&mut self, new_pressure: f32) {
-        // set the pressure (Pa) of the GasVolume
+        // set the pressure (Pa) of the GasVolume and update the temperature
+        // according to the ideal gas law.
         self.pressure = new_pressure;
     }
 

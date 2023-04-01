@@ -57,14 +57,6 @@ pub struct ParachuteConfig {
     pub open_altitude_m: f32, // altitude when the parachute fully deploys
 }
 
-// #[derive(Clone, Deserialize)]
-// pub struct ControlConfig {
-//     controller_path: PathBuf, 
-//     pub vent_valve_mass_flow_kg_s: f32,
-//     pub dump_mass_flow_kg_s: f32,
-//     ballast_mass_kg: f32,
-// }
-
 pub fn parse_config(filepath: &PathBuf) -> Config {
     // Read the contents of the configuration file as string
     let contents = match fs::read_to_string(filepath) {
