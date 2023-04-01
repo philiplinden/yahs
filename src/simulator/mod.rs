@@ -171,16 +171,26 @@ impl AsyncSim {
                 sim_state.atmosphere.temperature(),
                 sim_state.atmosphere.temperature()
             );
-            info!(
-                "[{:.3} s] | HAB @ {:.2} m, {:.3} m/s, {:.3} m/s^2 | {:.2} m radius, {:.2} Pa stress, {:.2} % strain",
-                sim_state.time,
-                sim_state.altitude,
-                sim_state.ascent_rate,
-                sim_state.acceleration,
-                sim_state.balloon.radius(),
-                sim_state.balloon.stress(),
-                sim_state.balloon.strain() * 100.0,
-            );
+            if sim_state.balloon.intact {
+                info!(
+                    "[{:.3} s] | HAB @ {:.2} m, {:.3} m/s, {:.3} m/s^2 | {:.2} m radius, {:.2} Pa stress, {:.2} % strain",
+                    sim_state.time,
+                    sim_state.altitude,
+                    sim_state.ascent_rate,
+                    sim_state.acceleration,
+                    sim_state.balloon.radius(),
+                    sim_state.balloon.stress(),
+                    sim_state.balloon.strain() * 100.0,
+                );
+            } else {
+                info!(
+                    "[{:.3} s] | HAB @ {:.2} m, {:.3} m/s, {:.3} m/s^2 | balloon burst",
+                    sim_state.time,
+                    sim_state.altitude,
+                    sim_state.ascent_rate,
+                    sim_state.acceleration
+                );
+            }
             // Stop if there is a problem
             if sim_state.altitude.is_nan()
                 | sim_state.ascent_rate.is_nan()
@@ -190,7 +200,10 @@ impl AsyncSim {
             }
             // Run for a certain amount of sim time or to a certain altitude
             if sim_state.time >= max_sim_time {
-                terminate(0, format!("Reached maximum time step ({:?} s)", sim_state.time));
+                terminate(
+                    0,
+                    format!("Reached maximum time step ({:?} s)", sim_state.time),
+                );
             }
             if sim_state.altitude < 0.0 {
                 terminate(0, format!("Altitude at or below zero."));
@@ -200,7 +213,10 @@ impl AsyncSim {
 }
 fn terminate(code: i32, reason: String) {
     if code > 0 {
-        error!("Simulation terminated abnormally with code {:?}. Reason: {:?}", code, reason);
+        error!(
+            "Simulation terminated abnormally with code {:?}. Reason: {:?}",
+            code, reason
+        );
     } else {
         warn!("Simulation terminated normally. Reason: {:?}", reason);
     }
@@ -258,23 +274,23 @@ fn initialize(config: &Config) -> SimInstant {
     // create an initial time step based on the config
     let atmo = Atmosphere::new(config.environment.initial_altitude_m);
     let material = Material::new(config.balloon.material);
-    let mut lift_gas = GasVolume::new(
+    let lift_gas = GasVolume::new(
         config.balloon.lift_gas.species,
         config.balloon.lift_gas.mass_kg,
     );
-    lift_gas.update_from_ambient(atmo);
+    let mut balloon = Balloon::new(
+        material,
+        config.balloon.barely_inflated_diameter_m,
+        lift_gas,
+    );
+    balloon.set_radius(config.balloon.barely_inflated_diameter_m / 2.0);
     SimInstant {
         time: 0.0,
         altitude: config.environment.initial_altitude_m,
         ascent_rate: config.environment.initial_velocity_m_s,
         acceleration: 0.0,
         atmosphere: atmo,
-        balloon: Balloon::new(
-            material,
-            config.balloon.thickness_m,
-            config.balloon.barely_inflated_diameter_m, // ballon diameter (m)
-            lift_gas,
-        ),
+        balloon,
     }
 }
 

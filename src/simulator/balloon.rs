@@ -15,14 +15,13 @@ use super::gas;
 
 #[derive(Copy, Clone)]
 pub struct Balloon {
-    pub intact: bool,             // whether or not it has burst
+    pub intact: bool,             // whether the balloon is intact or burst
     pub mass: f32,                // balloon mass (kg)
-    pub temperature: f32,         // fail if surface temperature exceeds this (K)
+    pub temperature: f32,         // temperature of the balloon skin (K)
     pub drag_coeff: f32,          // drag coefficient
     pub lift_gas: gas::GasVolume, // gas inside the balloon
     pub material: Material,       // what the balloon is made of
     pub skin_thickness: f32,      // thickness of the skin of the balloon (m)
-    unstretched_thickness: f32,   // thickness of the skin of the balloon without stretch (m)
     unstretched_radius: f32,      // radius of balloon without stretch (m)
     stress: f32,
     strain: f32,
@@ -31,10 +30,10 @@ pub struct Balloon {
 impl Balloon {
     pub fn new(
         material: Material,            // material of balloon skin
-        skin_thickness: f32,           // balloon skin thickness (m) at zero pressure
         barely_inflated_diameter: f32, // internal diameter (m) at zero pressure
         lift_gas: gas::GasVolume,      // species of gas inside balloon
     ) -> Self {
+        let skin_thickness = material.unloaded_thickness;
         let unstretched_radius = barely_inflated_diameter / 2.0;
         let mass = shell_volume(unstretched_radius, skin_thickness) * material.density;
         Balloon {
@@ -45,10 +44,9 @@ impl Balloon {
             lift_gas,
             material,
             skin_thickness,
-            unstretched_thickness: skin_thickness,
             unstretched_radius,
             stress: 0.0,
-            strain: 1.0,
+            strain: 0.0,
         }
     }
 
@@ -58,6 +56,10 @@ impl Balloon {
 
     pub fn radius(self) -> f32 {
         sphere_radius_from_volume(self.volume())
+    }
+
+    pub fn set_radius(&mut self, new_radius: f32) {
+        self.set_volume(sphere_volume(new_radius))
     }
 
     pub fn volume(self) -> f32 {
@@ -109,7 +111,7 @@ impl Balloon {
         // strain (%) of thin-walled hollow sphere from internal pressure
         // https://en.wikipedia.org/wiki/Pressure_vessel#Stress_in_thin-walled_pressure_vessels
         // https://pkel015.connect.amazon.auckland.ac.nz/SolidMechanicsBooks/Part_I/BookSM_Part_I/07_ElasticityApplications/07_Elasticity_Applications_03_Presure_Vessels.pdf
-        self.strain = self.radius() / self.unstretched_radius;
+        self.strain = (self.radius() / self.unstretched_radius) - 1.0;
         if self.strain > self.material.max_strain {
             self.burst(format!(
                 "Tangential strain ({:?} %) exceeded maximum strain ({:?} %)",
@@ -121,7 +123,7 @@ impl Balloon {
 
     fn radial_displacement(self, external_pressure: f32) -> f32 {
         // https://pkel015.connect.amazon.auckland.ac.nz/SolidMechanicsBooks/Part_I/BookSM_Part_I/07_ElasticityApplications/07_Elasticity_Applications_03_Presure_Vessels.pdf
-        ((1.0 - self.material.poissons_ratio) / self.material.elasticity)
+        ((1.0 - self.material.poissons_ratio) / self.material.elastic_modulus)
             * ((self.gage_pressure(external_pressure) * libm::powf(self.radius(), 2.0)) / 2.0
                 * self.skin_thickness)
     }
@@ -129,11 +131,11 @@ impl Balloon {
     fn rebound(&mut self, radial_displacement: f32) -> f32 {
         // https://physics.stackexchange.com/questions/10372/inflating-a-balloon-expansion-resistance
         self.set_thickness(
-            self.unstretched_thickness * libm::powf(self.unstretched_radius / self.radius(), 2.0),
+            self.material.unloaded_thickness * libm::powf(self.unstretched_radius / self.radius(), 2.0),
         );
-        2.0 * self.material.elasticity
+        2.0 * self.material.elastic_modulus
             * radial_displacement
-            * self.unstretched_thickness
+            * self.skin_thickness
             * self.unstretched_radius
             / libm::powf(self.radius(), 3.0)
     }
@@ -149,7 +151,7 @@ impl Balloon {
         //   words the balloon stretches as long as tangential stress is less
         //   than the material's yield stress
         debug!(
-            "current gage pressure: {:?}",
+            "gage pressure before stretch: {:?}",
             self.gage_pressure(external_pressure)
         );
 
@@ -211,6 +213,7 @@ fn sphere_surface_area(radius: f32) -> f32 {
 
 #[derive(Copy, Clone, PartialEq)]
 pub struct Material {
+    pub unloaded_thickness: f32, // thickness of material (m) with zero load
     pub max_temperature: f32, // temperature (K) where the given material fails
     pub density: f32,         // density (kg/m^3)
     pub emissivity: f32,      // how much thermal radiation is emitted
@@ -218,7 +221,7 @@ pub struct Material {
     pub thermal_conductivity: f32, // thermal conductivity (W/mK) of the material at room temperature
     pub specific_heat: f32,        // J/kgK
     pub poissons_ratio: f32,       // ratio of change in width for a given change in length
-    pub elasticity: f32,           // Youngs Modulus aka Modulus of Elasticity (Pa)
+    pub elastic_modulus: f32,           // Youngs Modulus aka Modulus of Elasticity (Pa)
     pub max_strain: f32,           // elongation at failure (decimal, unitless) 1 = original size
     pub max_stress: f32,           // tangential stress at failure (Pa)
 }
@@ -226,6 +229,7 @@ pub struct Material {
 impl Material {
     pub fn new(material_type: MaterialType) -> Self {
         match material_type {
+            MaterialType::Magic => MAGIC,
             MaterialType::Rubber => RUBBER,
             MaterialType::LDPE | MaterialType::LowDensityPolyethylene => LOW_DENSITY_POLYETHYLENE,
             _ => NOTHING,
@@ -237,6 +241,7 @@ impl Material {
 pub enum MaterialType {
     // Species of gas with a known molar mass (kg/mol)
     Nothing,
+    Magic,
     Rubber,
     LDPE,
     LowDensityPolyethylene,
@@ -246,6 +251,7 @@ impl fmt::Display for MaterialType {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {
             MaterialType::Nothing => write!(f, "nothing"),
+            MaterialType::Magic => write!(f, "magic"),
             MaterialType::Rubber => write!(f, "rubber"),
             MaterialType::LDPE | MaterialType::LowDensityPolyethylene => {
                 write!(f, "low-density polyethylene (LDPE)")
@@ -256,6 +262,7 @@ impl fmt::Display for MaterialType {
 
 pub const NOTHING: Material = Material {
     // nothing
+    unloaded_thickness: 0.0,
     max_temperature: f32::INFINITY,
     density: 0.0,
     emissivity: 1.0,
@@ -263,7 +270,22 @@ pub const NOTHING: Material = Material {
     thermal_conductivity: f32::INFINITY,
     specific_heat: 0.0,
     poissons_ratio: 0.5,
-    elasticity: f32::INFINITY,
+    elastic_modulus: f32::INFINITY,
+    max_strain: f32::INFINITY,
+    max_stress: f32::INFINITY,
+};
+
+pub const MAGIC: Material = Material {
+    // an imaginary material with arbitrary properties (for testing only)
+    unloaded_thickness: 0.000_000_1,
+    max_temperature: 500.0,
+    density: 0.01,
+    emissivity: 1.0,
+    absorptivity: 0.0,
+    thermal_conductivity: 1.0,
+    specific_heat: 1.0,
+    poissons_ratio: 0.8,
+    elastic_modulus: 1_000_000_000.0,
     max_strain: f32::INFINITY,
     max_stress: f32::INFINITY,
 };
@@ -271,15 +293,15 @@ pub const NOTHING: Material = Material {
 pub const RUBBER: Material = Material {
     // Nitrile Butadiene Rubber
     // https://designerdata.nl/materials/plastics/rubbers/nitrile-butadiene-rubber
+    unloaded_thickness: 0.000_002,
     max_temperature: 385.0,
     density: 1000.0,
     emissivity: 0.86,
     absorptivity: 0.86,
     thermal_conductivity: 0.25,
     specific_heat: 1490.0,
-    poissons_ratio: 0.5,
-    elasticity: 4_000_000.0,
-    // max_strain: 8.0,
+    poissons_ratio: 0.8,
+    elastic_modulus: 4_000_000.0,
     max_strain: 8.0,
     max_stress: 25_000_000.0,
 };
@@ -287,14 +309,15 @@ pub const RUBBER: Material = Material {
 pub const LOW_DENSITY_POLYETHYLENE: Material = Material {
     // Low Density Polyethylene (LDPE)
     // https://designerdata.nl/materials/plastics/thermo-plastics/low-density-polyethylene
+    unloaded_thickness: 0.000_002,
     max_temperature: 348.0,
     density: 919.0,
     emissivity: 0.94,
     absorptivity: 0.94,
     thermal_conductivity: 0.3175,
     specific_heat: 2600.0,
-    poissons_ratio: 0.5,
-    elasticity: 300_000_000.0,
+    poissons_ratio: 0.8,
+    elastic_modulus: 300_000_000.0,
     max_strain: 6.25,
     max_stress: 10_000_000.0,
 };

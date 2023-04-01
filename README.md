@@ -1,6 +1,12 @@
 # yet another HAB simulator
 
-A high altitude balloon flight simulator based on [tkschuler/EarthSHAB](https://github.com/tkschuler/EarthSHAB) and [brickworks/mfc-apps](https://github.com/Brickworks/mfc-apps), built on Rust.
+A high altitude balloon flight simulator built in Rust.
+
+Inspiration & References:
+
+1. [brickworks/mfc-apps](https://github.com/Brickworks/mfc-apps)
+2. [tkschuler/EarthSHAB](https://github.com/tkschuler/EarthSHAB)
+3. Greaves, J., Candido, S., Dumoulin, V., Goroshin, R., Ponda, S. S., Bellemare, M. G., & Castro, P. S. (2021). Balloon Learning Environment (Version 1.0.0) [Computer software]. https://github.com/google/balloon-learning-environment
 
 ## Installation
 ```sh

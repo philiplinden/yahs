@@ -26,7 +26,6 @@ pub struct EnvConfig {
 #[derive(Clone, Deserialize)]
 pub struct BalloonConfig {
     pub material: MaterialType, // balloon material
-    pub thickness_m: f32, // thickness of balloon membrane
     pub barely_inflated_diameter_m: f32, // assuming balloon is a sphere, diameter of "unstressed" balloon membrane when filled
     pub lift_gas: GasConfig,
 }
