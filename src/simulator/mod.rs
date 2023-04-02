@@ -305,7 +305,7 @@ pub fn step(input: SimInstant, config: &Config) -> SimInstant {
         },
         _ => {
             // balloon is intact
-            projected_area = projected_spherical_area(balloon.volume());
+            projected_area = projected_spherical_area(balloon.volume);
             drag_coeff = balloon.drag_coeff;
         }
     }

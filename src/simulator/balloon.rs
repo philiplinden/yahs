@@ -34,6 +34,7 @@ pub struct Balloon {
     unstretched_radius: f32,      // radius of balloon without stretch (m)
     stress: f32,
     strain: f32,
+    pub volume: f32,
 }
 
 impl Balloon {
@@ -56,6 +57,7 @@ impl Balloon {
             unstretched_radius,
             stress: 0.0,
             strain: 0.0,
+            volume: sphere_volume(unstretched_radius),
         }
     }
 
@@ -63,7 +65,7 @@ impl Balloon {
         // Assert new balloon attributes to reflect that it has burst
         self.stress = 0.0;
         self.strain = 0.0;
-        self.set_volume(0.0);
+        self.lift_gas.set_volume(0.0);
         self.lift_gas.set_mass(0.0);
         self.status = BalloonStatus::Burst;
 
@@ -78,21 +80,17 @@ impl Balloon {
     }
 
     pub fn radius(self) -> f32 {
-        sphere_radius_from_volume(self.volume())
+        sphere_radius_from_volume(self.volume)
     }
 
-    pub fn set_radius(&mut self, new_radius: f32) {
-        self.set_volume(sphere_volume(new_radius))
+    pub fn set_radius(&mut self, new_radius:f32 ) {
+        self.set_volume(sphere_radius_from_volume(new_radius));
     }
 
-    pub fn volume(self) -> f32 {
-        self.lift_gas.volume()
-    }
-
-    fn set_volume(&mut self, new_volume: f32) {
+    pub fn set_volume(&mut self, new_volume: f32) {
         self.lift_gas.set_volume(new_volume);
+        self.volume = new_volume
     }
-
     pub fn pressure(&mut self) -> f32 {
         self.lift_gas.pressure()
     }
@@ -147,17 +145,33 @@ impl Balloon {
                 * self.skin_thickness)
     }
 
-    fn rebound(&mut self, radial_displacement: f32) -> f32 {
-        // https://physics.stackexchange.com/questions/10372/inflating-a-balloon-expansion-resistance
-        self.set_thickness(
-            self.material.unloaded_thickness
-                * libm::powf(self.unstretched_radius / self.radius(), 2.0),
-        );
-        2.0 * self.material.elastic_modulus
-            * radial_displacement
-            * self.skin_thickness
-            * self.unstretched_radius
-            / libm::powf(self.radius(), 3.0)
+    // fn resistance(&mut self, radial_displacement: f32) -> f32 {
+    //     // https://physics.stackexchange.com/questions/10372/inflating-a-balloon-expansion-resistance
+    //     self.set_thickness(
+    //         self.material.unloaded_thickness
+    //             * libm::powf(self.unstretched_radius / self.radius(), 2.0),
+    //     );
+    //     2.0 * self.material.elastic_modulus
+    //         * radial_displacement
+    //         * self.skin_thickness
+    //         * self.unstretched_radius
+    //         / libm::powf(self.radius(), 3.0)
+    // }
+
+    fn pressurize(&mut self, external_pressure: f32, unconstrained_volume: f32) {
+        // temporarily set gas volume to unconstrained in order to get delta p
+        let mut temporary_volume = self.lift_gas.clone();
+        temporary_volume.set_volume(unconstrained_volume);
+        // the result is the pressure exerted by the gas on the balloon
+        let gage_pressure = temporary_volume.pressure() - external_pressure;
+        // now calculate how much the balloon would expand from this pressure
+        let delta_r = self.radial_displacement(gage_pressure);
+        let pressurized_volume = sphere_volume(self.radius() + delta_r);
+        self.set_volume(pressurized_volume);
+        // now use the ideal gas law to calculate the internal pressure after
+        // the balloon has been pressurized
+        self.set_pressure(external_pressure * unconstrained_volume / pressurized_volume);
+        
     }
 
     pub fn update(&mut self, external_pressure: f32) {
@@ -170,10 +184,12 @@ impl Balloon {
         // - the balloon fails when it starts to plasticly deform, in other
         //   words the balloon stretches as long as tangential stress is less
         //   than the material's yield stress
+        let unconstrained_volume = self.lift_gas.unconstrained_volume(external_pressure);
+        let base_volume = sphere_volume(self.unstretched_radius);
         if self.status != BalloonStatus::Burst {
-            let unconstrained_volume = self.lift_gas.volume();
-            let base_volume = sphere_volume(self.unstretched_radius);
             if unconstrained_volume < base_volume {
+                // assume the balloon adapts to the unconstrained volume
+                // of the lift gas without any resistance, compression, etc
                 self.status = BalloonStatus::Underinflated;
             } else {
                 self.status = BalloonStatus::Ok;
@@ -184,22 +200,9 @@ impl Balloon {
                 self.set_pressure(external_pressure);
             },
             BalloonStatus::Ok => {
-                let gage_pressure = self.lift_gas.pressure() - external_pressure;
-                debug!(
-                    "gage pressure before stretch: {:?}",
-                    gage_pressure
-                );
-                let delta_r = self.radial_displacement(gage_pressure);
-                debug!(
-                    "radius before stretch: {:?} delta_r: {:?}",
-                    self.radius(),
-                    delta_r
-                );
-                let internal_pressure = self.rebound(delta_r);
-                self.set_pressure(internal_pressure + external_pressure);
-                debug!("radius after stretch: {:?}", self.radius());
+                self.pressurize(external_pressure, unconstrained_volume);
                 // self.set_stress(gage_pressure);
-                self.set_strain();
+                // self.set_strain();
             },
             BalloonStatus::Burst => {/* do nothing */}
         };

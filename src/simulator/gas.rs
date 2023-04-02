@@ -183,6 +183,11 @@ impl GasVolume {
         // volume (m^3)
         volume(self.temperature, self.pressure, self.mass, self.molar_mass)
     }
+
+    pub fn unconstrained_volume(self, pressure: f32) -> f32 {
+        // volume (m^3)
+        volume(self.temperature, pressure, self.mass, self.molar_mass)
+    }
 }
 
 #[derive(Copy, Clone)]
