@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
-// Payload
-// -------
-// Properties and functions of the balloon's payload and avionics
+// Bus
+// ---
+// Properties and functions of the balloon's structure and avionics busses
 // ----------------------------------------------------------------------------
 
 pub struct Bus {
