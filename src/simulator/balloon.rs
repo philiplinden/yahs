@@ -4,6 +4,8 @@
 // Properties, attributes and functions related to the balloon.
 // ----------------------------------------------------------------------------
 
+#![allow(dead_code)]
+
 extern crate libm;
 
 use log::debug;
@@ -279,7 +281,6 @@ pub const RUBBER: Material = Material {
     specific_heat: 1490.0,
     poissons_ratio: 0.5,
     elasticity: 4_000_000.0,
-    // max_strain: 8.0,
     max_strain: 8.0,
     max_stress: 25_000_000.0,
 };

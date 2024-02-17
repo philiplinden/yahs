@@ -4,7 +4,7 @@ mod constants;
 mod forces;
 mod gas;
 mod heat;
-mod payload;
+mod bus;
 
 use log::{debug, error, info, warn};
 use std::{
@@ -126,7 +126,7 @@ impl AsyncSim {
 
     fn run_sim(
         config: Config,
-        command_channel: Receiver<SimCommands>,
+        _command_channel: Receiver<SimCommands>,
         sim_output: Arc<Mutex<SimOutput>>,
         outpath: PathBuf,
     ) {
