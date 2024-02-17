@@ -13,6 +13,9 @@
 // https://materion.com/-/media/files/alloy/newsletters/technical-tidbits/issue-no-114-thermal-emissivity-and-radiative-heat-transfer.pdf
 // ----------------------------------------------------------------------------
 
+#![allow(dead_code)]
+#![allow(unused_imports)]
+
 use super::balloon::Balloon;
 use super::gas::Atmosphere;
 

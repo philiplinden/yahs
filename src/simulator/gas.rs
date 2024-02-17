@@ -16,6 +16,8 @@
 //  https://www.grc.nasa.gov/WWW/K-12/airplane/atmosmet.html
 // ----------------------------------------------------------------------------
 
+#![allow(dead_code)]
+
 use super::constants::{R, STANDARD_PRESSURE, STANDARD_TEMPERATURE};
 use log::error;
 use serde::Deserialize;

@@ -4,6 +4,8 @@
 // Properties, attributes and functions related to the balloon.
 // ----------------------------------------------------------------------------
 
+#![allow(dead_code)]
+
 extern crate libm;
 
 use log::debug;

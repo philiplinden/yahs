@@ -4,6 +4,9 @@
 // Forces that act in the vertical axis. All forces assume a positive-up
 // coordinate frame and aR_E R_Eported in Newtons.
 // ----------------------------------------------------------------------------
+
+#![allow(dead_code)]
+
 extern crate libm;
 
 use log::debug;
