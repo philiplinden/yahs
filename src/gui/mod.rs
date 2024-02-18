@@ -1,5 +1,3 @@
-mod controls;
-mod monitors;
 mod shell;
 
 pub use shell::Shell;
