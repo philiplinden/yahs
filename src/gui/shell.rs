@@ -134,7 +134,7 @@ impl eframe::App for Shell {
 
         egui::CentralPanel::default().show(ctx, |ui| {
             // The central panel the region left after adding TopPanel's and SidePanel's
-            PlotPanel::default().show(ctx);
+            Monitor::default().show(ctx);
 
             ui.separator();
 
