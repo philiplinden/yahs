@@ -29,7 +29,7 @@ egui_plot = { version = "0.26.2", features = ["serde"], optional = true }
 eframe = { version = "0.26.2", features = ["persistence"], optional = true }
 
 [features]
-default = ["gui"]
+default = []
 gui = ["egui", "egui_plot", "eframe"]
 
 [[bin]]

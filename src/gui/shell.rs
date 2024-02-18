@@ -1,25 +1,92 @@
-/// We derive Deserialize/Serialize so we can persist app state on shutdown.
-#[derive(serde::Deserialize, serde::Serialize)]
-#[serde(default)] // if we add new fields, give them default values when deserializing old state
-pub struct GuiApp {
-    // Example stuff:
-    label: String,
+use std::collections::BTreeSet;
+use super::{
+    Monitor,
+    monitors,
+};
 
-    #[serde(skip)] // This how you opt-out of serialization of a field
-    value: f32,
+#[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
+#[cfg_attr(feature = "serde", serde(default))]
+struct Monitors {
+    #[cfg_attr(feature = "serde", serde(skip))]
+    monitors: Vec<Box<dyn Monitor>>,
+
+    open: BTreeSet<String>,
 }
 
-impl Default for GuiApp {
+impl Default for Monitors {
     fn default() -> Self {
-        Self {
-            // Example stuff:
-            label: "Hello World!".to_owned(),
-            value: 2.7,
+        Self::from_monitors(vec![
+            Box::<monitors::Altitude>::default(),
+            Box::<monitors::AtmoDensity>::default(),
+            Box::<monitors::AtmoPressure>::default(),
+            Box::<monitors::AtmoTemperature>::default(),
+            Box::<monitors::GforceCompass>::default(),
+            Box::<monitors::Balloon>::default(),
+            Box::<monitors::VelocityAcceleration>::default(),
+            Box::<monitors::Forces>::default(),
+        ])
+    }
+}
+
+impl Monitors {
+    pub fn from_monitors(monitors: Vec<Box<dyn Monitor>>) -> Self {
+        let mut open = BTreeSet::new();
+        Self { monitors, open }
+    }
+
+    pub fn checkboxes(&mut self, ui: &mut egui::Ui) {
+        let Self { monitors, open } = self;
+        for monitor in monitors {
+            if monitor.is_enabled(ui.ctx()) {
+                let mut is_open = open.contains(monitor.name());
+                ui.toggle_value(&mut is_open, monitor.name());
+                set_open(open, monitor.name(), is_open);
+            }
+        }
+    }
+
+    pub fn windows(&mut self, ctx: &egui::Context) {
+        let Self { monitors, open } = self;
+        for monitor in monitors {
+            let mut is_open = open.contains(monitor.name());
+            monitor.show(ctx, &mut is_open);
+            set_open(open, monitor.name(), is_open);
         }
     }
 }
 
-impl GuiApp {
+fn set_open(open: &mut BTreeSet<String>, key: &'static str, is_open: bool) {
+    if is_open {
+        if !open.contains(key) {
+            open.insert(key.to_owned());
+        }
+    } else {
+        open.remove(key);
+    }
+}
+
+/// A menu bar in which you can select different monitor windows to show.
+// We derive Deserialize/Serialize so we can persist app state on shutdown.
+#[derive(serde::Deserialize, serde::Serialize)]
+#[serde(default)] // if we add new fields, give them default values when deserializing old state
+#[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
+#[cfg_attr(feature = "serde", serde(default))]
+pub struct Shell {
+    about_is_open: bool,
+    about: About,
+    monitors: Monitors,
+}
+
+impl Default for Shell {
+    fn default() -> Self {
+        Self {
+            about_is_open: true,
+            about: Default::default(),
+            monitors: Default::default(),
+        }
+    }
+}
+impl Shell {
     /// Called once before the first frame.
     pub fn new(cc: &eframe::CreationContext<'_>) -> Self {
         // This is also where you can customize the look and feel of egui using
@@ -35,7 +102,7 @@ impl GuiApp {
     }
 }
 
-impl eframe::App for GuiApp {
+impl eframe::App for Shell {
     /// Called by the frame work to save state before shutdown.
     fn save(&mut self, storage: &mut dyn eframe::Storage) {
         eframe::set_value(storage, eframe::APP_KEY, self);
@@ -67,24 +134,9 @@ impl eframe::App for GuiApp {
 
         egui::CentralPanel::default().show(ctx, |ui| {
             // The central panel the region left after adding TopPanel's and SidePanel's
-            ui.heading("eframe template");
-
-            ui.horizontal(|ui| {
-                ui.label("Write something: ");
-                ui.text_edit_singleline(&mut self.label);
-            });
-
-            ui.add(egui::Slider::new(&mut self.value, 0.0..=10.0).text("value"));
-            if ui.button("Increment").clicked() {
-                self.value += 1.0;
-            }
+            PlotPanel::default().show(ctx);
 
             ui.separator();
-
-            ui.add(egui::github_link_file!(
-                "https://github.com/emilk/eframe_template/blob/master/",
-                "Source code."
-            ));
 
             ui.with_layout(egui::Layout::bottom_up(egui::Align::LEFT), |ui| {
                 powered_by_egui_and_eframe(ui);

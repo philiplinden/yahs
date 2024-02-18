@@ -91,9 +91,9 @@ pub fn start_sim(config: &PathBuf, outpath: &PathBuf) {
 pub fn start_gui() {
     use crate::gui;
     let native_options = eframe::NativeOptions::default();
-    eframe::run_native(
+    let _ = eframe::run_native(
         "yet another hab simulator",
         native_options,
-        Box::new(|cc| Box::new(gui::GuiApp::new(cc))),
+        Box::new(|cc| Box::new(gui::Shell::new(cc))),
     );
 }
