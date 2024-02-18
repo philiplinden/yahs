@@ -102,7 +102,7 @@ jobs:
           name: docs
           path: docs
       - name: Upload Pages artifact
-        uses: actions/upload-pages-artifact@v4
+        uses: actions/upload-pages-artifact@v3
         with:
           path: target/doc/${{ github.repository_id }}
       - name: Deploy to GitHub Pages
