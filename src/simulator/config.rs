@@ -11,7 +11,7 @@ use super::gas::GasSpecies;
 pub struct Config {
     pub environment: EnvConfig,
     pub balloon: BalloonConfig,
-    pub payload: PayloadConfig,
+    pub bus: BusConfig,
 }
 
 #[derive(Clone, Deserialize)]
@@ -38,24 +38,28 @@ pub struct GasConfig {
 }
 
 #[derive(Clone, Deserialize)]
-pub struct PayloadConfig{
-    pub bus: BusConfig,
+pub struct BusConfig {
+    pub body: BodyConfig,
     pub parachute: ParachuteConfig,
     // pub control: ControlConfig,
 }
 
-#[derive(Clone, Deserialize)]
-pub struct BusConfig {
-    pub dry_mass_kg: f32, // mass of all components less ballast material
+#[derive(Copy, Clone, Deserialize)]
+pub struct BodyConfig {
+    pub mass_kg: f32, // mass of all components less ballast material
     pub drag_area_m2: f32, // effective area used for drag calculations during freefall
     pub drag_coeff: f32, // drag coefficient of the payload during freefall
 }
 
-#[derive(Clone, Deserialize)]
+#[derive(Copy, Clone, Deserialize)]
 pub struct ParachuteConfig {
-    pub area_m2: f32, // effective area used for drag calculations
-    pub drag_coeff: f32, // drag coefficient when fully deployed
-    pub open_altitude_m: f32, // altitude when the parachute fully deploys
+    pub total_mass_kg: f32, // mass of the parachute system (main + drogue)
+    pub drogue_area_m2: f32, // drogue parachute effective area used for drag calculations
+    pub drogue_drag_coeff: f32, // drogue parachute drag coefficient
+    pub main_area_m2: f32, // main parachute effective area used for drag calculations
+    pub main_drag_coeff: f32, // main parachute drag coefficient when fully deployed
+    pub deploy_force_n: f32, // force needed for the drogue to deploy the main chute
+    pub deploy_time_s: f32, // how long the main chute stays in the partially open state
 }
 
 // #[derive(Clone, Deserialize)]

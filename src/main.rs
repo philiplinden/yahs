@@ -1,6 +1,8 @@
-extern crate pretty_env_logger;
 mod cli;
 mod simulator;
+
+#[cfg(feature = "gui")]
+mod gui;
 
 fn main() {
     // initialize pretty print logger

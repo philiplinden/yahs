@@ -10,11 +10,9 @@ license-file = "LICENSE"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-log = { version = "0.4", features = ["release_max_level_debug"] }
-pretty_env_logger = "0.4.0"
+pretty_env_logger = "0.5.0"
 libm = "0.2.1"
-toml = "0.7"
-serde = { version = "1.0.157", features = ["derive", "std"] }
+toml = "0.8.10"
 clap = { version = "4.1", default-features = false, features = [
     "derive",
     "std",
@@ -24,6 +22,15 @@ clap = { version = "4.1", default-features = false, features = [
     "suggestions",
 ] }
 csv = "1.2.1"
+serde = { version = "1.0.196", features = ["derive"] }
+log = { version = "0.4.20", features = ["release_max_level_debug"] }
+egui = { version = "0.26.2", features = ["log", "serde"], optional = true }
+egui_plot = { version = "0.26.2", features = ["serde"], optional = true }
+eframe = { version = "0.26.2", features = ["persistence"], optional = true }
+
+[features]
+default = []
+gui = ["egui", "egui_plot", "eframe"]
 
 [[bin]]
 name = "yahs"

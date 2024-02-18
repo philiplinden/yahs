@@ -1,10 +1,10 @@
 mod balloon;
+mod bus;
 mod config;
 mod constants;
 mod forces;
 mod gas;
 mod heat;
-mod bus;
 
 use log::{debug, error, info, warn};
 use std::{
@@ -19,8 +19,8 @@ use std::{
 };
 
 use balloon::{Balloon, Material};
+use bus::{Body, ParachuteSystem};
 use config::{parse_config, Config};
-use forces::{net_force, projected_spherical_area};
 use gas::{Atmosphere, GasVolume};
 
 pub struct SimCommands {
@@ -34,12 +34,6 @@ pub struct SimOutput {
     pub altitude: f32,
     pub ascent_rate: f32,
     pub acceleration: f32,
-    // pub ballast_mass: f32,
-    // pub lift_gas_mass: f32,
-    // pub vent_pwm: f32,
-    // pub dump_pwm: f32,
-    // pub gross_lift: f32,
-    // pub free_lift: f32,
     pub atmo_temp: f32,
     pub atmo_pres: f32,
     pub balloon_pres: f32,
@@ -47,6 +41,8 @@ pub struct SimOutput {
     pub balloon_stress: f32,
     pub balloon_strain: f32,
     pub balloon_thickness: f32,
+    pub drogue_parachute_area: f32,
+    pub main_parachute_area: f32,
 }
 
 pub struct Rate {
@@ -160,6 +156,8 @@ impl AsyncSim {
                 output.balloon_stress = sim_state.balloon.stress();
                 output.balloon_strain = sim_state.balloon.strain();
                 output.balloon_thickness = sim_state.balloon.skin_thickness;
+                output.drogue_parachute_area = sim_state.parachute.drogue.drag_area();
+                output.main_parachute_area = sim_state.parachute.main.drag_area();
                 log_to_file(&output, &mut writer);
             }
 
@@ -190,7 +188,10 @@ impl AsyncSim {
             }
             // Run for a certain amount of sim time or to a certain altitude
             if sim_state.time >= max_sim_time {
-                terminate(0, format!("Reached maximum time step ({:?} s)", sim_state.time));
+                terminate(
+                    0,
+                    format!("Reached maximum time step ({:?} s)", sim_state.time),
+                );
             }
             if sim_state.altitude < 0.0 {
                 terminate(0, format!("Altitude at or below zero."));
@@ -200,7 +201,10 @@ impl AsyncSim {
 }
 fn terminate(code: i32, reason: String) {
     if code > 0 {
-        error!("Simulation terminated abnormally with code {:?}. Reason: {:?}", code, reason);
+        error!(
+            "Simulation terminated abnormally with code {:?}. Reason: {:?}",
+            code, reason
+        );
     } else {
         warn!("Simulation terminated normally. Reason: {:?}", reason);
     }
@@ -221,6 +225,8 @@ fn init_log_file(outpath: PathBuf) -> csv::Writer<File> {
             "balloon_stress_Pa",
             "balloon_strain_pct",
             "balloon_thickness_m",
+            "drogue_parachute_area_m2",
+            "main_parachute_area_m2",
         ])
         .unwrap();
     writer
@@ -240,9 +246,17 @@ fn log_to_file(sim_output: &SimOutput, writer: &mut csv::Writer<File>) {
             sim_output.balloon_stress.to_string(),
             sim_output.balloon_strain.to_string(),
             sim_output.balloon_thickness.to_string(),
+            sim_output.drogue_parachute_area.to_string(),
+            sim_output.main_parachute_area.to_string(),
         ])
         .unwrap();
     writer.flush().unwrap();
+}
+
+pub trait SolidBody {
+    fn drag_area(&self) -> f32;
+    fn drag_coeff(&self) -> f32;
+    fn total_mass(&self) -> f32;
 }
 
 pub struct SimInstant {
@@ -252,6 +266,8 @@ pub struct SimInstant {
     pub acceleration: f32,
     pub atmosphere: Atmosphere,
     pub balloon: Balloon,
+    pub body: Body,
+    pub parachute: ParachuteSystem,
 }
 
 fn initialize(config: &Config) -> SimInstant {
@@ -263,6 +279,9 @@ fn initialize(config: &Config) -> SimInstant {
         config.balloon.lift_gas.mass_kg,
     );
     lift_gas.update_from_ambient(atmo);
+    let body = Body::new(config.bus.body);
+    let parachute = ParachuteSystem::new(config.bus.parachute, 1.0 / config.environment.tick_rate_hz);
+
     SimInstant {
         time: 0.0,
         altitude: config.environment.initial_altitude_m,
@@ -275,6 +294,8 @@ fn initialize(config: &Config) -> SimInstant {
             config.balloon.barely_inflated_diameter_m, // ballon diameter (m)
             lift_gas,
         ),
+        body,
+        parachute,
     }
 }
 
@@ -284,74 +305,30 @@ pub fn step(input: SimInstant, config: &Config) -> SimInstant {
     let time = input.time + delta_t;
     let mut atmosphere = input.atmosphere;
     let mut balloon = input.balloon;
-    // mass properties
-    // let dump_mass_flow_rate = config.payload.control.dump_mass_flow_kg_s;
-    // let ballast_mass =
-    //     (input.ballast_mass - (input.dump_pwm * dump_mass_flow_rate)).max(0.0);
-    // balloon
-    //     .lift_gas
-    //     .set_mass((balloon.lift_gas.mass() - input.vent_pwm * config.vent_mass_flow_rate).max(0.0));
-    // let payload_dry_mass = input.bus.dry_mass;
-    // let total_dry_mass = payload_dry_mass + ballast_mass;
-    let total_dry_mass = config.payload.bus.dry_mass_kg;
-
-    // switch drag conditions if the balloon has popped
-    let projected_area: f32;
-    let drag_coeff: f32;
-
-    let radius_before_stretch = balloon.radius();
+    let body = input.body;
+    let mut parachute = input.parachute;
 
     if balloon.intact {
         // balloon is intact
-        // balloon.lift_gas.set_temperature(atmosphere.temperature());
         balloon.stretch(atmosphere.pressure());
-        // check if the balloon burst after stretching
-        if !balloon.intact {
-            // elevate info to stdout when burst event occurs
-            warn!(
-                "[{:.3} s] | Atmosphere @ {:} m: {:} K, {:} Pa",
-                time,
-                input.altitude,
-                atmosphere.temperature(),
-                atmosphere.temperature()
-            );
-            warn!(
-                "[{:.3} s] | HAB @ {:.2} m, {:.3} m/s, {:.3} m/s^2 | {:.2} m radius, {:.2} MPa stress, {:.2} % strain",
-                time,
-                input.altitude,
-                input.ascent_rate,
-                input.acceleration,
-                radius_before_stretch,
-                balloon.stress() / 1_000_000.0,
-                balloon.strain() * 100.0,
-            );
-        }
-        projected_area = projected_spherical_area(balloon.lift_gas.volume());
-        drag_coeff = balloon.drag_coeff;
     } else {
-        // balloon has popped
-        if input.altitude <= config.payload.parachute.open_altitude_m {
-            // parachute open
-            projected_area = config.payload.parachute.area_m2;
-            drag_coeff = config.payload.parachute.drag_coeff;
-        } else {
-            // free fall, parachute not open
-            projected_area = config.payload.bus.drag_area_m2;
-            drag_coeff = config.payload.bus.drag_coeff;
-        }
-    }
+        parachute.deploy(atmosphere, input.ascent_rate);
+    };
+    let total_dry_mass = body.total_mass() + parachute.total_mass();
+    let weight_force = forces::weight(input.altitude, total_dry_mass);
+    let buoyancy_force = forces::buoyancy(input.altitude, atmosphere, balloon.lift_gas);
 
-    // calculate the net force
-    let net_force = net_force(
-        input.altitude,
-        input.ascent_rate,
-        atmosphere,
-        balloon.lift_gas,
-        projected_area,
-        drag_coeff,
-        total_dry_mass,
+    let total_drag_force = forces::drag(atmosphere, input.ascent_rate, balloon)
+                              + forces::drag(atmosphere, input.ascent_rate, body)
+                              + forces::drag(atmosphere, input.ascent_rate, parachute.main)
+                              + forces::drag(atmosphere, input.ascent_rate, parachute.drogue);
+    debug!(
+        "weight: {:?} buoyancy: {:?} drag: {:?}",
+        weight_force, buoyancy_force, total_drag_force
     );
 
+    // calculate the net force
+    let net_force = weight_force + buoyancy_force + total_drag_force;
     let acceleration = net_force / total_dry_mass;
     let ascent_rate = input.ascent_rate + acceleration * delta_t;
     let altitude = input.altitude + ascent_rate * delta_t;
@@ -373,5 +350,7 @@ pub fn step(input: SimInstant, config: &Config) -> SimInstant {
         acceleration,
         atmosphere,
         balloon,
+        body,
+        parachute,
     }
 }

@@ -13,19 +13,19 @@ use serde::Deserialize;
 use std::f32::consts::PI;
 use std::fmt;
 
-use super::gas;
+use super::{gas, SolidBody};
 
 #[derive(Copy, Clone)]
 pub struct Balloon {
     pub intact: bool,             // whether or not it has burst
-    pub mass: f32,                // balloon mass (kg)
-    pub temperature: f32,         // fail if surface temperature exceeds this (K)
-    pub drag_coeff: f32,          // drag coefficient
     pub lift_gas: gas::GasVolume, // gas inside the balloon
     pub material: Material,       // what the balloon is made of
     pub skin_thickness: f32,      // thickness of the skin of the balloon (m)
+    mass: f32,                // balloon mass (kg)
+    drag_coeff: f32,          // drag coefficient
     unstretched_thickness: f32,   // thickness of the skin of the balloon without stretch (m)
     unstretched_radius: f32,      // radius of balloon without stretch (m)
+    pub temperature: f32,         // fail if surface temperature exceeds this (K)
     stress: f32,
     strain: f32,
 }
@@ -185,6 +185,24 @@ impl Balloon {
     }
 }
 
+impl SolidBody for Balloon {
+    fn drag_area(&self) -> f32 {
+        if self.intact {
+            sphere_radius_from_volume(self.volume())
+        } else {
+            0.0
+        }
+    }
+
+    fn drag_coeff(&self) -> f32 {
+        self.drag_coeff
+    }
+
+    fn total_mass(&self) -> f32 {
+        self.mass
+    }
+}
+
 fn sphere_volume(radius: f32) -> f32 {
     (4.0 / 3.0) * PI * libm::powf(radius, 3.0)
 }
@@ -202,6 +220,11 @@ fn sphere_radius_from_volume(volume: f32) -> f32 {
 
 fn sphere_surface_area(radius: f32) -> f32 {
     4.0 * PI * libm::powf(radius, 2.0)
+}
+
+pub fn projected_spherical_area(volume: f32) -> f32 {
+    // Get the projected area (m^2) of a sphere with a given volume (m^3)
+    libm::powf(sphere_radius_from_volume(volume), 2.0) * PI
 }
 
 // ----------------------------------------------------------------------------

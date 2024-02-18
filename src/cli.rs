@@ -1,3 +1,5 @@
+#![cfg_attr(not(debug_assertions), windows_subsystem = "windows")] // hide console window on Windows in release
+
 use std::path::PathBuf;
 
 use clap::{Parser, Subcommand};
@@ -30,12 +32,7 @@ enum Commands {
         config: PathBuf,
 
         /// Sets a custom output file
-        #[clap(
-            short,
-            long,
-            value_name = "CSV",
-            default_value = "./out.csv"
-        )]
+        #[clap(short, long, value_name = "CSV", default_value = "./out.csv")]
         outpath: PathBuf,
     },
 
@@ -52,17 +49,24 @@ enum Commands {
         /// New value to set
         value: String,
     },
+
+    /// Open a graphical user interface instead of the terminal interface
+    Gui,
 }
 
 pub fn parse_inputs() {
     // parse CLI input args and options
     let cli = Cli::parse();
     match &cli.command {
-        Commands::Start {
-            config,
-            outpath,
-        } => {
+        Commands::Start { config, outpath } => {
             start_sim(config, outpath);
+        }
+        Commands::Gui => {
+            #[cfg(feature = "gui")]
+            start_gui();
+
+            #[cfg(not(feature = "gui"))]
+            error!("GUI feature not enabled. Reinstall with `--features gui`")
         }
         _ => {
             error!("Command not implemented yet!")
@@ -81,4 +85,15 @@ pub fn start_sim(config: &PathBuf, outpath: &PathBuf) {
         sim.get_sim_output();
         rate_sleeper.sleep();
     }
+}
+
+#[cfg(feature = "gui")]
+pub fn start_gui() {
+    use crate::gui;
+    let native_options = eframe::NativeOptions::default();
+    let _ = eframe::run_native(
+        "yet another hab simulator",
+        native_options,
+        Box::new(|cc| Box::new(gui::Shell::new(cc))),
+    );
 }
