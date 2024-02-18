@@ -21,7 +21,7 @@ jobs:
       - name: Setup Rust toolchain
         uses: actions-rust-lang/setup-rust-toolchain@v1
       - name: Restore cargo cache
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: |
             ~/.cargo/registry/index
@@ -45,7 +45,7 @@ jobs:
       - name: Setup Rust toolchain
         uses: actions-rust-lang/setup-rust-toolchain@v1
       - name: Restore cargo cache
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: |
             ~/.cargo/registry/index
@@ -66,7 +66,7 @@ jobs:
       - name: Setup Rust toolchain
         uses: actions-rust-lang/setup-rust-toolchain@v1
       - name: Restore cargo cache
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: |
             ~/.cargo/registry/index
@@ -76,8 +76,8 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-cargo-
       - name: Cargo Doc
-        run: cargo doc --no-deps
-      - uses: actions/upload-artifact@v3
+        run: cargo doc --no-deps --target-dir=docs
+      - uses: actions/upload-artifact@v4
         with:
           name: docs
           path: docs
@@ -102,7 +102,7 @@ jobs:
           name: docs
           path: docs
       - name: Upload Pages artifact
-        uses: actions/upload-pages-artifact@v3
+        uses: actions/upload-pages-artifact@v4
         with:
           path: target/doc/${{ github.repository_id }}
       - name: Deploy to GitHub Pages
