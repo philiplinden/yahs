@@ -218,7 +218,7 @@ impl AsyncSim {
                 sim_state.atmosphere.temperature(),
                 sim_state.atmosphere.temperature()
             );
-            info!(
+            debug!(
                 "[{:.3} s] | HAB @ {:.2} m, {:.3} m/s, {:.3} m/s^2 | {:.2} m radius, {:.2} Pa stress, {:.2} % strain",
                 sim_state.time,
                 sim_state.altitude,

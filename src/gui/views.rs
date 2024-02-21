@@ -9,22 +9,18 @@ use egui_plot::{
 
 #[derive(PartialEq, Eq)]
 enum Trace {
-    Interaction,
-    LinkedAxes,
+    Kinematics,
 }
 
 impl Default for Trace {
     fn default() -> Self {
-        Self::LinkedAxes
+        Self::Kinematics
     }
 }
 
-// ----------------------------------------------------------------------------
-
 #[derive(PartialEq, Default)]
 pub struct FlightView {
-    interaction_demo: InteractionDemo,
-    linked_axes_demo: LinkedAxesDemo,
+    kinematics: Kinematics,
     open_panel: Trace,
 }
 
@@ -37,8 +33,8 @@ impl super::UiPanel for FlightView {
         use super::View as _;
         Window::new(self.name())
             .open(open)
-            .default_size(vec2(400.0, 400.0))
             .vscroll(false)
+            .default_size(vec2(400.0, 400.0))
             .show(ctx, |ui| self.ui(ui));
     }
 }
@@ -62,59 +58,33 @@ impl super::View for FlightView {
         });
         ui.separator();
         ui.horizontal(|ui| {
-            ui.selectable_value(&mut self.open_panel, Trace::Interaction, "Interaction");
-            ui.selectable_value(&mut self.open_panel, Trace::LinkedAxes, "Linked Axes");
+            ui.selectable_value(&mut self.open_panel, Trace::Kinematics, "Kinematics");
         });
         ui.separator();
 
         match self.open_panel {
-            Trace::Interaction => {
-                self.interaction_demo.ui(ui);
+            Trace::Kinematics => {
+                self.kinematics.ui(ui);
             }
-            Trace::LinkedAxes => {
-                self.linked_axes_demo.ui(ui);
-            }
+            _ => {}
         }
     }
 }
-
-// ----------------------------------------------------------------------------
 
 #[derive(PartialEq)]
-struct LinkedAxesDemo {
-    link_x: bool,
-    link_y: bool,
-    link_cursor_x: bool,
-    link_cursor_y: bool,
+struct Kinematics {
+    position: f32,
+    velocity: f32,
+    acceleration: f32,
 }
 
-impl Default for LinkedAxesDemo {
+impl Default for Kinematics {
     fn default() -> Self {
-        Self {
-            link_x: true,
-            link_y: true,
-            link_cursor_x: true,
-            link_cursor_y: true,
-        }
+        Self { position: 0.0, velocity: 0.0, acceleration: 0.0 }
     }
 }
 
-impl LinkedAxesDemo {
-    fn line_with_slope(slope: f64) -> Line {
-        Line::new(PlotPoints::from_explicit_callback(
-            move |x| slope * x,
-            ..,
-            100,
-        ))
-    }
-
-    fn sin() -> Line {
-        Line::new(PlotPoints::from_explicit_callback(
-            move |x| x.sin(),
-            ..,
-            100,
-        ))
-    }
+impl Kinematics {
 
     fn cos() -> Line {
         Line::new(PlotPoints::from_explicit_callback(
@@ -125,52 +95,14 @@ impl LinkedAxesDemo {
     }
 
     fn configure_plot(plot_ui: &mut egui_plot::PlotUi) {
-        plot_ui.line(Self::line_with_slope(0.5));
-        plot_ui.line(Self::line_with_slope(1.0));
-        plot_ui.line(Self::line_with_slope(2.0));
-        plot_ui.line(Self::sin());
         plot_ui.line(Self::cos());
     }
-
     fn ui(&mut self, ui: &mut Ui) -> Response {
-        ui.horizontal(|ui| {
-            ui.label("Linked axes:");
-            ui.checkbox(&mut self.link_x, "X");
-            ui.checkbox(&mut self.link_y, "Y");
-        });
-        ui.horizontal(|ui| {
-            ui.label("Linked cursors:");
-            ui.checkbox(&mut self.link_cursor_x, "X");
-            ui.checkbox(&mut self.link_cursor_y, "Y");
-        });
-
-        let link_group_id = ui.id().with("linked_demo");
-        ui.horizontal(|ui| {
-            Plot::new("left-top")
-                .data_aspect(1.0)
-                .width(250.0)
-                .height(250.0)
-                .link_axis(link_group_id, self.link_x, self.link_y)
-                .link_cursor(link_group_id, self.link_cursor_x, self.link_cursor_y)
-                .show(ui, Self::configure_plot);
-            Plot::new("right-top")
-                .data_aspect(2.0)
-                .width(150.0)
-                .height(250.0)
-                .y_axis_width(3)
-                .y_axis_label("y")
-                .y_axis_position(egui_plot::HPlacement::Right)
-                .link_axis(link_group_id, self.link_x, self.link_y)
-                .link_cursor(link_group_id, self.link_cursor_x, self.link_cursor_y)
-                .show(ui, Self::configure_plot);
-        });
         Plot::new("left-bottom")
             .data_aspect(0.5)
             .width(250.0)
             .height(150.0)
-            .x_axis_label("x")
-            .link_axis(link_group_id, self.link_x, self.link_y)
-            .link_cursor(link_group_id, self.link_cursor_x, self.link_cursor_y)
+            .x_axis_label("flight time (s)")
             .show(ui, Self::configure_plot)
             .response
     }
@@ -178,97 +110,6 @@ impl LinkedAxesDemo {
 
 // ----------------------------------------------------------------------------
 
-#[derive(Default, PartialEq)]
-struct InteractionDemo {}
-
-impl InteractionDemo {
-    #[allow(clippy::unused_self)]
-    fn ui(&mut self, ui: &mut Ui) -> Response {
-        let id = ui.make_persistent_id("interaction_demo");
-
-        // This demonstrates how to read info about the plot _before_ showing it:
-        let plot_memory = egui_plot::PlotMemory::load(ui.ctx(), id);
-        if let Some(plot_memory) = plot_memory {
-            let bounds = plot_memory.bounds();
-            ui.label(format!(
-                "plot bounds: min: {:.02?}, max: {:.02?}",
-                bounds.min(),
-                bounds.max()
-            ));
-        }
-
-        let plot = Plot::new("interaction_demo").id(id).height(300.0);
-
-        let PlotResponse {
-            response,
-            inner: (screen_pos, pointer_coordinate, pointer_coordinate_drag_delta, bounds, hovered),
-            hovered_plot_item,
-            ..
-        } = plot.show(ui, |plot_ui| {
-            plot_ui.line(
-                Line::new(PlotPoints::from_explicit_callback(
-                    move |x| x.sin(),
-                    ..,
-                    100,
-                ))
-                .color(Color32::RED)
-                .id(egui::Id::new("sin")),
-            );
-            plot_ui.line(
-                Line::new(PlotPoints::from_explicit_callback(
-                    move |x| x.cos(),
-                    ..,
-                    100,
-                ))
-                .color(Color32::BLUE)
-                .id(egui::Id::new("cos")),
-            );
-
-            (
-                plot_ui.screen_from_plot(PlotPoint::new(0.0, 0.0)),
-                plot_ui.pointer_coordinate(),
-                plot_ui.pointer_coordinate_drag_delta(),
-                plot_ui.plot_bounds(),
-                plot_ui.response().hovered(),
-            )
-        });
-
-        ui.label(format!(
-            "plot bounds: min: {:.02?}, max: {:.02?}",
-            bounds.min(),
-            bounds.max()
-        ));
-        ui.label(format!(
-            "origin in screen coordinates: x: {:.02}, y: {:.02}",
-            screen_pos.x, screen_pos.y
-        ));
-        ui.label(format!("plot hovered: {hovered}"));
-        let coordinate_text = if let Some(coordinate) = pointer_coordinate {
-            format!("x: {:.02}, y: {:.02}", coordinate.x, coordinate.y)
-        } else {
-            "None".to_owned()
-        };
-        ui.label(format!("pointer coordinate: {coordinate_text}"));
-        let coordinate_text = format!(
-            "x: {:.02}, y: {:.02}",
-            pointer_coordinate_drag_delta.x, pointer_coordinate_drag_delta.y
-        );
-        ui.label(format!("pointer coordinate drag delta: {coordinate_text}"));
-
-        let hovered_item = if hovered_plot_item == Some(egui::Id::new("sin")) {
-            "red sin"
-        } else if hovered_plot_item == Some(egui::Id::new("cos")) {
-            "blue cos"
-        } else {
-            "none"
-        };
-        ui.label(format!("hovered plot item: {hovered_item}"));
-
-        response
-    }
-}
-
-// ----------------------------------------------------------------------------
 #[derive(PartialEq, Eq)]
 enum Chart {
     GaussBars,
