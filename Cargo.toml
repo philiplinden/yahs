@@ -31,6 +31,7 @@ egui_plot = { version = "0.26.2", features = ["serde"], optional = true }
 eframe = { version = "0.26.2", features = ["persistence"], optional = true }
 emath = { version = "0.26.2", optional = true }
 egui_extras = { version = "0.26.2", features = ["chrono", "datepicker", "file"], optional = true}
+ultraviolet = { version = "0.9.2", features = ["serde"] }
 
 [[bin]]
 name = "yahs"

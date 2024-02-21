@@ -1,14 +1,12 @@
-use std::{
-    collections::BTreeSet,
-    path::PathBuf,
-};
+use std::{collections::BTreeSet, path::PathBuf};
 
 use egui::{Context, Modifiers, ScrollArea, Ui};
 
-use crate::simulator::{
-    AsyncSim, config::{Config, parse_config},
-};
 use super::UiPanel;
+use crate::simulator::{
+    config::{parse_config, Config},
+    schedule::AsyncSim,
+};
 
 /// A menu bar in which you can select different info windows to show.
 #[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]

@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // Bus
 // ---
-// Properties and functions of the balloon's structure and avionics busses
+// Properties and functions of the balloon's structure and avionics buses
 // ----------------------------------------------------------------------------
 
 use super::{
