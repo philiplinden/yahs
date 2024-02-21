@@ -2,7 +2,7 @@
 #[derive(Default)]
 #[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
 pub struct Shell {
-    demo_windows: crate::gui::demo::DemoWindows,
+    screens: crate::gui::screens::MissionControl,
 }
 
 impl Shell {
@@ -33,7 +33,7 @@ impl eframe::App for Shell {
         // For inspiration and more examples, go to https://emilk.github.io/egui
         egui::CentralPanel::default().show(ctx, |_ui| {
             // The central panel the region left after adding TopPanel's and SidePanel's
-            self.demo_windows.ui(ctx);
+            self.screens.ui(ctx);
         });
         egui::TopBottomPanel::bottom("powered_by_eframe").show(ctx, |ui| {
             ui.with_layout(egui::Layout::bottom_up(egui::Align::LEFT), |ui| {

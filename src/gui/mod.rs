@@ -1,5 +1,6 @@
 mod shell;
-mod demo;
+mod plot_demo;
+mod screens;
 
 pub use shell::Shell;
 
