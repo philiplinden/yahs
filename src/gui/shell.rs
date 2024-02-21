@@ -1,16 +1,8 @@
-use egui_file::FileDialog;
-use std::{
-    ffi::OsStr,
-    path::{Path, PathBuf},
-};
-/// A menu bar in which you can select different monitor windows to show.
-// We derive Deserialize/Serialize so we can persist app state on shutdown.
-// #[derive(Default, serde::Deserialize, serde::Serialize)]
-// #[serde(default)] // if we add new fields, give them default values when deserializing old state
+
 #[derive(Default)]
+#[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
 pub struct Shell {
-    opened_file: Option<PathBuf>,
-    open_file_dialog: Option<FileDialog>,
+    demo_windows: crate::gui::demo::DemoWindows,
 }
 
 impl Shell {
@@ -39,34 +31,11 @@ impl eframe::App for Shell {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
         // Put your widgets into a `SidePanel`, `TopBottomPanel`, `CentralPanel`, `Window` or `Area`.
         // For inspiration and more examples, go to https://emilk.github.io/egui
-
-        egui::TopBottomPanel::top("top_panel").show(ctx, |ui| {
-            if (ui.button("Import")).clicked() {
-                // Show only files with the extension "txt".
-                let filter = Box::new({
-                    let ext = Some(OsStr::new("toml"));
-                    move |path: &Path| -> bool { path.extension() == ext }
-                });
-                let mut dialog =
-                    FileDialog::open_file(self.opened_file.clone()).show_files_filter(filter);
-                dialog.open();
-                self.open_file_dialog = Some(dialog);
-            }
-
-            if let Some(dialog) = &mut self.open_file_dialog {
-                if dialog.show(ctx).selected() {
-                    if let Some(file) = dialog.path() {
-                        self.opened_file = Some(file.to_path_buf());
-                    }
-                }
-            }
-        });
-
-        egui::CentralPanel::default().show(ctx, |ui| {
+        egui::CentralPanel::default().show(ctx, |_ui| {
             // The central panel the region left after adding TopPanel's and SidePanel's
-
-            ui.separator();
-
+            self.demo_windows.ui(ctx);
+        });
+        egui::TopBottomPanel::bottom("powered_by_eframe").show(ctx, |ui| {
             ui.with_layout(egui::Layout::bottom_up(egui::Align::LEFT), |ui| {
                 powered_by_egui_and_eframe(ui);
                 egui::warn_if_debug_build(ui);

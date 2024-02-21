@@ -1,4 +1,5 @@
 mod shell;
+mod demo;
 
 pub use shell::Shell;
 
