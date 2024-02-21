@@ -1,6 +1,6 @@
 mod balloon;
 mod bus;
-mod config;
+pub mod config;
 mod constants;
 mod forces;
 mod gas;

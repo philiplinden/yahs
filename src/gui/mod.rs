@@ -1,6 +1,5 @@
 mod shell;
 mod views;
-mod screens;
 
 pub use shell::Shell;
 

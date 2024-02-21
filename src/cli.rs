@@ -90,7 +90,7 @@ pub fn start_gui() {
     use crate::gui;
     let native_options = eframe::NativeOptions::default();
     let _ = eframe::run_native(
-        "Yet Another HAB Simulator",
+        "Mission Control",
         native_options,
         Box::new(|cc| Box::new(gui::Shell::new(cc))),
     );
