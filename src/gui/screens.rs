@@ -1,6 +1,6 @@
 use std::collections::BTreeSet;
 
-use egui::{Context, Modifiers, NumExt as _, ScrollArea, Ui};
+use egui::{Context, Modifiers, ScrollArea, Ui};
 
 use super::UiPanel;
 
@@ -18,7 +18,8 @@ struct Screens {
 impl Default for Screens {
     fn default() -> Self {
         Self::from_demos(vec![
-            Box::<super::plot_demo::PlotDemo>::default(),
+            Box::<super::views::FlightView>::default(),
+            Box::<super::views::StatsView>::default(),
         ])
     }
 }
@@ -26,7 +27,7 @@ impl Default for Screens {
 impl Screens {
     pub fn from_demos(screens: Vec<Box<dyn UiPanel>>) -> Self {
         let mut open = BTreeSet::new();
-        open.insert(super::plot_demo::PlotDemo::default().name().to_owned());
+        open.insert(super::views::FlightView::default().name().to_owned());
 
         Self { screens, open }
     }
