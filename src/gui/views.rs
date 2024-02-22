@@ -1,28 +1,13 @@
 use egui::*;
 
 use egui_plot::{
-    Bar, BarChart, BoxElem, BoxPlot, BoxSpread, Legend, Line, Plot, PlotPoint, PlotPoints,
-    PlotResponse,
+    Bar, BarChart, BoxElem, BoxPlot, BoxSpread, Legend, Line, Plot,
 };
 
 // ----------------------------------------------------------------------------
 
-#[derive(PartialEq, Eq)]
-enum Trace {
-    Kinematics,
-}
-
-impl Default for Trace {
-    fn default() -> Self {
-        Self::Kinematics
-    }
-}
-
 #[derive(PartialEq, Default)]
-pub struct FlightView {
-    kinematics: Kinematics,
-    open_panel: Trace,
-}
+pub struct FlightView;
 
 impl super::UiPanel for FlightView {
     fn name(&self) -> &'static str {
@@ -30,7 +15,6 @@ impl super::UiPanel for FlightView {
     }
 
     fn show(&mut self, ctx: &Context, open: &mut bool) {
-        use super::View as _;
         Window::new(self.name())
             .open(open)
             .vscroll(false)
@@ -57,37 +41,16 @@ impl super::View for FlightView {
             });
         });
         ui.separator();
-        ui.horizontal(|ui| {
-            ui.selectable_value(&mut self.open_panel, Trace::Kinematics, "Kinematics");
-        });
-        ui.separator();
-
-        match self.open_panel {
-            Trace::Kinematics => {
-                self.kinematics.ui(ui);
-            }
-            _ => {}
-        }
+        Plot::new("left-bottom")
+        .data_aspect(0.5)
+        .x_axis_label("flight time (s)")
+        .show(ui, Self::configure_plot);
     }
 }
 
-#[derive(PartialEq)]
-struct Kinematics {
-    position: f32,
-    velocity: f32,
-    acceleration: f32,
-}
-
-impl Default for Kinematics {
-    fn default() -> Self {
-        Self { position: 0.0, velocity: 0.0, acceleration: 0.0 }
-    }
-}
-
-impl Kinematics {
-
+impl FlightView {
     fn cos() -> Line {
-        Line::new(PlotPoints::from_explicit_callback(
+        Line::new(egui_plot::PlotPoints::from_explicit_callback(
             move |x| x.cos(),
             ..,
             100,
@@ -97,11 +60,10 @@ impl Kinematics {
     fn configure_plot(plot_ui: &mut egui_plot::PlotUi) {
         plot_ui.line(Self::cos());
     }
+
     fn ui(&mut self, ui: &mut Ui) -> Response {
         Plot::new("left-bottom")
             .data_aspect(0.5)
-            .width(250.0)
-            .height(150.0)
             .x_axis_label("flight time (s)")
             .show(ui, Self::configure_plot)
             .response
@@ -167,12 +129,11 @@ impl super::View for StatsView {
             ui.selectable_value(&mut self.chart, Chart::BoxPlot, "Box Plot");
         });
         ui.separator();
-        let chart_response = match self.chart {
+        let _ = match self.chart {
             Chart::GaussBars => self.bar_gauss(ui),
             Chart::StackedBars => self.bar_stacked(ui),
             Chart::BoxPlot => self.box_plot(ui),
         };
-        chart_response;
     }
 }
 
@@ -299,12 +260,4 @@ impl StatsView {
             })
             .response
     }
-}
-
-fn is_approx_zero(val: f64) -> bool {
-    val.abs() < 1e-6
-}
-
-fn is_approx_integer(val: f64) -> bool {
-    val.fract().abs() < 1e-6
 }
