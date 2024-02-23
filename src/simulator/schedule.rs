@@ -229,17 +229,43 @@ impl AsyncSim {
                 | sim_state.ascent_rate.is_nan()
                 | sim_state.acceleration.is_nan()
             {
-                Self::terminate(1, format!("Something went wrong, a physical value is NaN!"));
+                let status = format!("Something went wrong, a physical value is NaN!");
+                #[cfg(feature = "gui")]
+                {
+                    error!("{}", status);
+                    break
+                }
+                #[cfg(not(feature = "gui"))]
+                {
+                    Self::terminate(1, status);
+                }
             }
             // Run for a certain amount of sim time or to a certain altitude
             if sim_state.time >= max_sim_time {
-                Self::terminate(
-                    0,
-                    format!("Reached maximum time step ({:?} s)", sim_state.time),
-                );
+                let status = format!("Reached maximum time step ({:?} s)", sim_state.time);
+                #[cfg(feature = "gui")]
+                {
+                    info!("{}", status);
+                    break
+                }
+                #[cfg(not(feature = "gui"))]
+                {
+                    Self::terminate(
+                        0, status,
+                    );
+                }
             }
             if sim_state.altitude < 0.0 {
-                Self::terminate(0, format!("Altitude at or below zero."));
+                let status = format!("Altitude at or below zero.");
+                #[cfg(feature = "gui")]
+                {
+                    info!("{}", status);
+                    break
+                }
+                #[cfg(not(feature = "gui"))]
+                {
+                    Self::terminate(0, status);
+                }
             }
         }
     }
