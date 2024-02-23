@@ -31,7 +31,7 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-cargo-
       - name: Cargo Check
-        run: cargo check
+        run: RUSTFLAGS="$RUSTFLAGS -A dead_code" cargo check
       - name: Cargo Build
         run: cargo build --release --all-features
   test:

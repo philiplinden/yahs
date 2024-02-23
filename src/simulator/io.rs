@@ -21,7 +21,7 @@ fn init_log_file(outpath: PathBuf) -> csv::Writer<fs::File> {
     writer
 }
 
-fn log_to_file(sim_output: &SimOutput, writer: &mut csv::Writer<fs::File>) {
+pub fn log_to_file(sim_output: &SimOutput, writer: &mut csv::Writer<fs::File>) {
     writer
         .write_record(&[
             sim_output.time_s.to_string(),

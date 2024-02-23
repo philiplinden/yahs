@@ -1,9 +1,9 @@
-use log::{debug, error, info, warn};
+use log::{debug, info, error};
 use std::{
     path::PathBuf,
     process::exit,
     sync::{
-        mpsc::{self, Receiver, Sender},
+        mpsc::Sender,
         Arc, Mutex,
     },
     thread::JoinHandle,
@@ -13,7 +13,7 @@ use std::{
 use crate::simulator::{
     balloon::{Balloon, Material},
     bus::{Body, ParachuteSystem},
-    config::{parse_config, Config},
+    config::{self, Config},
     forces,
     gas::{Atmosphere, GasVolume},
     io::{SimCommands, SimOutput},
@@ -154,7 +154,7 @@ pub struct AsyncSim {
 impl AsyncSim {
     pub fn new(config_path: &PathBuf, outpath: PathBuf) -> Self {
         Self {
-            config: parse_config(config_path),
+            config: config::parse_from_file(config_path),
             sim_output: Arc::new(Mutex::new(SimOutput::default())),
             outpath,
             command_sender: None,
@@ -175,21 +175,17 @@ impl AsyncSim {
         let output = self.sim_output.clone();
         let outpath = self.outpath.clone();
 
-        let (s, command_receiver) = mpsc::channel();
-        self.command_sender = Some(s);
-
         debug!("Creating simulation handler...");
         self.run_handle = Some(std::thread::spawn(move || {
             debug!("Simulation handler created. Initializing run...");
-            AsyncSim::run_sim(config, command_receiver, output, outpath)
+            AsyncSim::run_sim(config, output, outpath)
         }));
     }
 
-    fn run_sim(
+    pub fn run_sim(
         config: Config,
-        _command_channel: Receiver<SimCommands>,
-        sim_output: Arc<Mutex<SimOutput>>,
-        outpath: PathBuf,
+        _sim_output: Arc<Mutex<SimOutput>>,
+        _outpath: PathBuf,
     ) {
         let mut sim_state = initialize(&config);
         // configure simulation
@@ -201,7 +197,7 @@ impl AsyncSim {
         // set up data logger
         // let mut writer = init_log_file(outpath);
 
-        debug!("Simulation run initialized. Starting loop...");
+        info!("Simulation run initialized. Starting loop...");
         loop {
             if real_time {
                 rate_sleeper.sleep();
@@ -254,7 +250,7 @@ impl AsyncSim {
                 code, reason
             );
         } else {
-            warn!("Simulation terminated normally. Reason: {:?}", reason);
+            info!("Simulation terminated normally. Reason: {:?}", reason);
         }
         exit(code);
     }

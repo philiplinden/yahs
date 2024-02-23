@@ -1,8 +1,59 @@
 use egui::*;
-
 use egui_plot::{
     Bar, BarChart, BoxElem, BoxPlot, BoxSpread, Legend, Line, Plot,
 };
+
+use crate::gui::View;
+use crate::simulator::config::{self, Config};
+
+// ----------------------------------------------------------------------------
+
+#[derive(PartialEq)]
+pub struct ConfigView {
+    config: Config,
+    picked_path: Option<String>,
+}
+
+impl Default for ConfigView {
+    fn default() -> Self {
+        Self {
+            config: config::parse_from_file("config/default.toml"),
+            picked_path: None,
+        }
+    }
+}
+impl super::UiPanel for ConfigView {
+    fn name(&self) -> &'static str {
+        "🗠 Config"
+    }
+
+    fn show(&mut self, ctx: &Context, open: &mut bool) {
+        Window::new(self.name())
+            .open(open)
+            .vscroll(false)
+            .default_size(vec2(400.0, 400.0))
+            .show(ctx, |ui| self.ui(ui));
+    }
+}
+
+impl super::View for ConfigView {
+    fn ui(&mut self, ui: &mut Ui) {
+        ui.horizontal(|ui| {
+
+            if ui.button("Import").clicked() {
+                if let Some(path) = rfd::FileDialog::new().pick_file() {
+                    self.picked_path = Some(path.display().to_string());
+                }
+            }
+            if let Some(picked_path) = &self.picked_path {
+                self.config = config::parse_from_file(picked_path);
+                ui.horizontal(|ui| {
+                    ui.monospace(picked_path);
+                });
+            }
+        });
+    }
+}
 
 // ----------------------------------------------------------------------------
 
@@ -42,9 +93,9 @@ impl super::View for FlightView {
         });
         ui.separator();
         Plot::new("left-bottom")
-        .data_aspect(0.5)
-        .x_axis_label("flight time (s)")
-        .show(ui, Self::configure_plot);
+            .data_aspect(0.5)
+            .x_axis_label("flight time (s)")
+            .show(ui, Self::configure_plot);
     }
 }
 
@@ -59,14 +110,6 @@ impl FlightView {
 
     fn configure_plot(plot_ui: &mut egui_plot::PlotUi) {
         plot_ui.line(Self::cos());
-    }
-
-    fn ui(&mut self, ui: &mut Ui) -> Response {
-        Plot::new("left-bottom")
-            .data_aspect(0.5)
-            .x_axis_label("flight time (s)")
-            .show(ui, Self::configure_plot)
-            .response
     }
 }
 
@@ -261,3 +304,5 @@ impl StatsView {
             .response
     }
 }
+
+// ----------------------------------------------------------------------------
