@@ -1,32 +1,64 @@
 use egui::*;
-
 use egui_plot::{
-    Bar, BarChart, BoxElem, BoxPlot, BoxSpread, Legend, Line, Plot, PlotPoint, PlotPoints,
-    PlotResponse,
+    Bar, BarChart, BoxElem, BoxPlot, BoxSpread, Legend, Line, Plot,
 };
+
+use crate::gui::View;
+use crate::simulator::config::{self, Config};
 
 // ----------------------------------------------------------------------------
 
-#[derive(PartialEq, Eq)]
-enum Trace {
-    Interaction,
-    LinkedAxes,
+#[derive(PartialEq)]
+pub struct ConfigView {
+    config: Config,
+    picked_path: Option<String>,
 }
 
-impl Default for Trace {
+impl Default for ConfigView {
     fn default() -> Self {
-        Self::LinkedAxes
+        Self {
+            config: config::parse_from_file("config/default.toml"),
+            picked_path: None,
+        }
+    }
+}
+impl super::UiPanel for ConfigView {
+    fn name(&self) -> &'static str {
+        "🗠 Config"
+    }
+
+    fn show(&mut self, ctx: &Context, open: &mut bool) {
+        Window::new(self.name())
+            .open(open)
+            .vscroll(false)
+            .default_size(vec2(400.0, 400.0))
+            .show(ctx, |ui| self.ui(ui));
+    }
+}
+
+impl super::View for ConfigView {
+    fn ui(&mut self, ui: &mut Ui) {
+        ui.horizontal(|ui| {
+
+            if ui.button("Import").clicked() {
+                if let Some(path) = rfd::FileDialog::new().pick_file() {
+                    self.picked_path = Some(path.display().to_string());
+                }
+            }
+            if let Some(picked_path) = &self.picked_path {
+                self.config = config::parse_from_file(picked_path);
+                ui.horizontal(|ui| {
+                    ui.monospace(picked_path);
+                });
+            }
+        });
     }
 }
 
 // ----------------------------------------------------------------------------
 
 #[derive(PartialEq, Default)]
-pub struct FlightView {
-    interaction_demo: InteractionDemo,
-    linked_axes_demo: LinkedAxesDemo,
-    open_panel: Trace,
-}
+pub struct FlightView;
 
 impl super::UiPanel for FlightView {
     fn name(&self) -> &'static str {
@@ -34,11 +66,10 @@ impl super::UiPanel for FlightView {
     }
 
     fn show(&mut self, ctx: &Context, open: &mut bool) {
-        use super::View as _;
         Window::new(self.name())
             .open(open)
-            .default_size(vec2(400.0, 400.0))
             .vscroll(false)
+            .default_size(vec2(400.0, 400.0))
             .show(ctx, |ui| self.ui(ui));
     }
 }
@@ -61,63 +92,16 @@ impl super::View for FlightView {
             });
         });
         ui.separator();
-        ui.horizontal(|ui| {
-            ui.selectable_value(&mut self.open_panel, Trace::Interaction, "Interaction");
-            ui.selectable_value(&mut self.open_panel, Trace::LinkedAxes, "Linked Axes");
-        });
-        ui.separator();
-
-        match self.open_panel {
-            Trace::Interaction => {
-                self.interaction_demo.ui(ui);
-            }
-            Trace::LinkedAxes => {
-                self.linked_axes_demo.ui(ui);
-            }
-        }
+        Plot::new("left-bottom")
+            .data_aspect(0.5)
+            .x_axis_label("flight time (s)")
+            .show(ui, Self::configure_plot);
     }
 }
 
-// ----------------------------------------------------------------------------
-
-#[derive(PartialEq)]
-struct LinkedAxesDemo {
-    link_x: bool,
-    link_y: bool,
-    link_cursor_x: bool,
-    link_cursor_y: bool,
-}
-
-impl Default for LinkedAxesDemo {
-    fn default() -> Self {
-        Self {
-            link_x: true,
-            link_y: true,
-            link_cursor_x: true,
-            link_cursor_y: true,
-        }
-    }
-}
-
-impl LinkedAxesDemo {
-    fn line_with_slope(slope: f64) -> Line {
-        Line::new(PlotPoints::from_explicit_callback(
-            move |x| slope * x,
-            ..,
-            100,
-        ))
-    }
-
-    fn sin() -> Line {
-        Line::new(PlotPoints::from_explicit_callback(
-            move |x| x.sin(),
-            ..,
-            100,
-        ))
-    }
-
+impl FlightView {
     fn cos() -> Line {
-        Line::new(PlotPoints::from_explicit_callback(
+        Line::new(egui_plot::PlotPoints::from_explicit_callback(
             move |x| x.cos(),
             ..,
             100,
@@ -125,150 +109,12 @@ impl LinkedAxesDemo {
     }
 
     fn configure_plot(plot_ui: &mut egui_plot::PlotUi) {
-        plot_ui.line(Self::line_with_slope(0.5));
-        plot_ui.line(Self::line_with_slope(1.0));
-        plot_ui.line(Self::line_with_slope(2.0));
-        plot_ui.line(Self::sin());
         plot_ui.line(Self::cos());
     }
-
-    fn ui(&mut self, ui: &mut Ui) -> Response {
-        ui.horizontal(|ui| {
-            ui.label("Linked axes:");
-            ui.checkbox(&mut self.link_x, "X");
-            ui.checkbox(&mut self.link_y, "Y");
-        });
-        ui.horizontal(|ui| {
-            ui.label("Linked cursors:");
-            ui.checkbox(&mut self.link_cursor_x, "X");
-            ui.checkbox(&mut self.link_cursor_y, "Y");
-        });
-
-        let link_group_id = ui.id().with("linked_demo");
-        ui.horizontal(|ui| {
-            Plot::new("left-top")
-                .data_aspect(1.0)
-                .width(250.0)
-                .height(250.0)
-                .link_axis(link_group_id, self.link_x, self.link_y)
-                .link_cursor(link_group_id, self.link_cursor_x, self.link_cursor_y)
-                .show(ui, Self::configure_plot);
-            Plot::new("right-top")
-                .data_aspect(2.0)
-                .width(150.0)
-                .height(250.0)
-                .y_axis_width(3)
-                .y_axis_label("y")
-                .y_axis_position(egui_plot::HPlacement::Right)
-                .link_axis(link_group_id, self.link_x, self.link_y)
-                .link_cursor(link_group_id, self.link_cursor_x, self.link_cursor_y)
-                .show(ui, Self::configure_plot);
-        });
-        Plot::new("left-bottom")
-            .data_aspect(0.5)
-            .width(250.0)
-            .height(150.0)
-            .x_axis_label("x")
-            .link_axis(link_group_id, self.link_x, self.link_y)
-            .link_cursor(link_group_id, self.link_cursor_x, self.link_cursor_y)
-            .show(ui, Self::configure_plot)
-            .response
-    }
 }
 
 // ----------------------------------------------------------------------------
 
-#[derive(Default, PartialEq)]
-struct InteractionDemo {}
-
-impl InteractionDemo {
-    #[allow(clippy::unused_self)]
-    fn ui(&mut self, ui: &mut Ui) -> Response {
-        let id = ui.make_persistent_id("interaction_demo");
-
-        // This demonstrates how to read info about the plot _before_ showing it:
-        let plot_memory = egui_plot::PlotMemory::load(ui.ctx(), id);
-        if let Some(plot_memory) = plot_memory {
-            let bounds = plot_memory.bounds();
-            ui.label(format!(
-                "plot bounds: min: {:.02?}, max: {:.02?}",
-                bounds.min(),
-                bounds.max()
-            ));
-        }
-
-        let plot = Plot::new("interaction_demo").id(id).height(300.0);
-
-        let PlotResponse {
-            response,
-            inner: (screen_pos, pointer_coordinate, pointer_coordinate_drag_delta, bounds, hovered),
-            hovered_plot_item,
-            ..
-        } = plot.show(ui, |plot_ui| {
-            plot_ui.line(
-                Line::new(PlotPoints::from_explicit_callback(
-                    move |x| x.sin(),
-                    ..,
-                    100,
-                ))
-                .color(Color32::RED)
-                .id(egui::Id::new("sin")),
-            );
-            plot_ui.line(
-                Line::new(PlotPoints::from_explicit_callback(
-                    move |x| x.cos(),
-                    ..,
-                    100,
-                ))
-                .color(Color32::BLUE)
-                .id(egui::Id::new("cos")),
-            );
-
-            (
-                plot_ui.screen_from_plot(PlotPoint::new(0.0, 0.0)),
-                plot_ui.pointer_coordinate(),
-                plot_ui.pointer_coordinate_drag_delta(),
-                plot_ui.plot_bounds(),
-                plot_ui.response().hovered(),
-            )
-        });
-
-        ui.label(format!(
-            "plot bounds: min: {:.02?}, max: {:.02?}",
-            bounds.min(),
-            bounds.max()
-        ));
-        ui.label(format!(
-            "origin in screen coordinates: x: {:.02}, y: {:.02}",
-            screen_pos.x, screen_pos.y
-        ));
-        ui.label(format!("plot hovered: {hovered}"));
-        let coordinate_text = if let Some(coordinate) = pointer_coordinate {
-            format!("x: {:.02}, y: {:.02}", coordinate.x, coordinate.y)
-        } else {
-            "None".to_owned()
-        };
-        ui.label(format!("pointer coordinate: {coordinate_text}"));
-        let coordinate_text = format!(
-            "x: {:.02}, y: {:.02}",
-            pointer_coordinate_drag_delta.x, pointer_coordinate_drag_delta.y
-        );
-        ui.label(format!("pointer coordinate drag delta: {coordinate_text}"));
-
-        let hovered_item = if hovered_plot_item == Some(egui::Id::new("sin")) {
-            "red sin"
-        } else if hovered_plot_item == Some(egui::Id::new("cos")) {
-            "blue cos"
-        } else {
-            "none"
-        };
-        ui.label(format!("hovered plot item: {hovered_item}"));
-
-        response
-    }
-}
-
-// ----------------------------------------------------------------------------
 #[derive(PartialEq, Eq)]
 enum Chart {
     GaussBars,
@@ -326,12 +172,11 @@ impl super::View for StatsView {
             ui.selectable_value(&mut self.chart, Chart::BoxPlot, "Box Plot");
         });
         ui.separator();
-        let chart_response = match self.chart {
+        let _ = match self.chart {
             Chart::GaussBars => self.bar_gauss(ui),
             Chart::StackedBars => self.bar_stacked(ui),
             Chart::BoxPlot => self.box_plot(ui),
         };
-        chart_response;
     }
 }
 
@@ -460,10 +305,4 @@ impl StatsView {
     }
 }
 
-fn is_approx_zero(val: f64) -> bool {
-    val.abs() < 1e-6
-}
-
-fn is_approx_integer(val: f64) -> bool {
-    val.fract().abs() < 1e-6
-}
+// ----------------------------------------------------------------------------

@@ -3,7 +3,7 @@ use std::path::PathBuf;
 use clap::{Parser, Subcommand};
 use log::error;
 
-use crate::simulator::{AsyncSim, Rate};
+use crate::simulator::schedule::{AsyncSim, Rate};
 
 #[derive(Parser)]
 #[clap(author, version, about)]

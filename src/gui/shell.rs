@@ -1,14 +1,17 @@
 use std::{
     collections::BTreeSet,
     path::PathBuf,
+    sync::{Arc, Mutex},
+    thread::JoinHandle,
 };
-
 use egui::{Context, Modifiers, ScrollArea, Ui};
 
-use crate::simulator::{
-    AsyncSim, config::{Config, parse_config},
-};
 use super::UiPanel;
+use crate::simulator::{
+    io::SimOutput,
+    config::{self, Config},
+    schedule::AsyncSim,
+};
 
 /// A menu bar in which you can select different info windows to show.
 #[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
@@ -16,19 +19,19 @@ use super::UiPanel;
 pub struct Shell {
     screens: Screens,
     config: Config,
-    sim: AsyncSim,
+    output: Option<SimOutput>,
+    run_handle: Option<JoinHandle<()>>,
 }
 
 impl Default for Shell {
     fn default() -> Self {
         let default_config_path = PathBuf::from("config/default.toml");
-        let default_outpath = PathBuf::from("out.csv");
-        let config = parse_config(&default_config_path);
-        let sim = AsyncSim::new(&default_config_path, default_outpath);
+        let config = config::parse_from_file(&default_config_path);
         Self {
             screens: Screens::default(),
             config,
-            sim,
+            output: None, 
+            run_handle: None,
         }
     }
 }
@@ -64,8 +67,12 @@ impl Shell {
                 );
 
                 ui.separator();
-
+                egui::widgets::global_dark_light_mode_buttons(ui);
+                ui.separator();
                 self.screen_list_ui(ui);
+                ui.separator();
+                self.sim_control_buttons(ui);
+                ui.separator();
             });
 
         egui::TopBottomPanel::top("menu_bar").show(ctx, |ui| {
@@ -86,16 +93,21 @@ impl Shell {
         ScrollArea::vertical().show(ui, |ui| {
             ui.with_layout(egui::Layout::top_down_justified(egui::Align::LEFT), |ui| {
                 self.screens.checkboxes(ui);
-                ui.separator();
-
-                if ui.button("Organize windows").clicked() {
-                    ui.ctx().memory_mut(|mem| mem.reset_areas());
-                }
-                if ui.button("Simulate").clicked() {
-                    self.sim.start();
-                }
             });
         });
+    }
+
+    fn sim_control_buttons(&mut self, ui: &mut egui::Ui) {
+        if ui.button("Simulate").clicked() {
+
+            if self.run_handle.is_some() {
+                panic!("Can't start again, sim already ran. Need to stop.")
+            }
+            let config = self.config.clone();
+            let outpath = PathBuf::from("out.csv");
+            let init_state = Arc::new(Mutex::new(SimOutput::default()));
+            AsyncSim::run_sim(config, init_state, outpath)
+        }
     }
 }
 
@@ -148,7 +160,7 @@ fn file_menu_button(ui: &mut Ui) {
         ui.ctx().memory_mut(|mem| *mem = Default::default());
     }
 
-    ui.menu_button("File", |ui| {
+    ui.menu_button("View", |ui| {
         ui.set_min_width(220.0);
         ui.style_mut().wrap = Some(false);
 
@@ -203,6 +215,7 @@ struct Screens {
 impl Default for Screens {
     fn default() -> Self {
         Self::from_demos(vec![
+            Box::<super::views::ConfigView>::default(),
             Box::<super::views::FlightView>::default(),
             Box::<super::views::StatsView>::default(),
         ])
@@ -212,7 +225,7 @@ impl Default for Screens {
 impl Screens {
     pub fn from_demos(screens: Vec<Box<dyn UiPanel>>) -> Self {
         let mut open = BTreeSet::new();
-        open.insert(super::views::FlightView::default().name().to_owned());
+        open.insert(super::views::ConfigView::default().name().to_owned());
 
         Self { screens, open }
     }
