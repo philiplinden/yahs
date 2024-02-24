@@ -13,7 +13,7 @@ use std::{
 use crate::simulator::{
     balloon::{Balloon, Material},
     bus::{Body, ParachuteSystem},
-    config::{self, Config},
+    config::Config,
     forces,
     gas::{Atmosphere, GasVolume},
     io::{SimCommands, SimOutput},
@@ -152,9 +152,9 @@ pub struct AsyncSim {
 }
 
 impl AsyncSim {
-    pub fn new(config_path: &PathBuf, outpath: PathBuf) -> Self {
+    pub fn new(config: Config, outpath: PathBuf) -> Self {
         Self {
-            config: config::parse_from_file(config_path),
+            config,
             sim_output: Arc::new(Mutex::new(SimOutput::default())),
             outpath,
             command_sender: None,

@@ -3,7 +3,10 @@ use std::path::PathBuf;
 use clap::{Parser, Subcommand};
 use log::error;
 
-use crate::simulator::schedule::{AsyncSim, Rate};
+use crate::simulator::{
+    config,
+    schedule::{AsyncSim, Rate}
+};
 
 #[derive(Parser)]
 #[clap(author, version, about)]
@@ -74,7 +77,8 @@ pub fn parse_inputs() {
 
 pub fn start_sim(config: &PathBuf, outpath: &PathBuf) {
     // initialize the simulation
-    let mut sim = AsyncSim::new(config, outpath.clone());
+    let parsed_config = config::parse_from_file(config);
+    let mut sim = AsyncSim::new(parsed_config, outpath.clone());
     let mut rate_sleeper = Rate::new(1.0);
 
     // start the sim

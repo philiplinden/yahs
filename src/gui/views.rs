@@ -2,11 +2,13 @@ use egui::*;
 use egui_plot::{
     Bar, BarChart, BoxElem, BoxPlot, BoxSpread, Legend, Line, Plot,
 };
-
+use log::error;
 use crate::gui::View;
 use crate::simulator::config::{self, Config};
 
 // ----------------------------------------------------------------------------
+
+const DEFAULT_CONFIG_PATH: &str = "config/default.toml";
 
 #[derive(PartialEq)]
 pub struct ConfigView {
@@ -18,13 +20,13 @@ impl Default for ConfigView {
     fn default() -> Self {
         Self {
             config: config::parse_from_file("config/default.toml"),
-            picked_path: None,
+            picked_path: Some(String::from(DEFAULT_CONFIG_PATH)),
         }
     }
 }
 impl super::UiPanel for ConfigView {
     fn name(&self) -> &'static str {
-        "🗠 Config"
+        "☰ Config"
     }
 
     fn show(&mut self, ctx: &Context, open: &mut bool) {
@@ -39,22 +41,39 @@ impl super::UiPanel for ConfigView {
 impl super::View for ConfigView {
     fn ui(&mut self, ui: &mut Ui) {
         ui.horizontal(|ui| {
-
-            if ui.button("Import").clicked() {
+            if ui.button("Load").clicked() {
+                self.load_config();
+            }
+            if ui.button("Choose File").clicked() {
                 if let Some(path) = rfd::FileDialog::new().pick_file() {
                     self.picked_path = Some(path.display().to_string());
                 }
             }
-            if let Some(picked_path) = &self.picked_path {
-                self.config = config::parse_from_file(picked_path);
-                ui.horizontal(|ui| {
-                    ui.monospace(picked_path);
-                });
-            }
+            self.display_path(ui);
         });
     }
 }
 
+impl ConfigView {
+    fn path_string(&mut self) -> String {
+        self.picked_path.clone().unwrap_or(String::from("(none)"))
+    }
+
+    fn load_config(&mut self) {
+        if let Some(picked_path) = &self.picked_path {
+            self.config = config::parse_from_file(picked_path);
+        } else {
+            error!("Choose a valid path first. Got: {:?}", self.path_string());
+        }
+    }
+
+    fn display_path(&mut self, ui: &mut Ui) {
+        ui.horizontal(|ui| {
+            ui.label("File:");
+            ui.monospace(self.path_string());
+        });
+    }
+}
 // ----------------------------------------------------------------------------
 
 #[derive(PartialEq, Default)]

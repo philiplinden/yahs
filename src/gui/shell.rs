@@ -9,7 +9,7 @@ use egui::{Context, Modifiers, ScrollArea, Ui};
 use super::UiPanel;
 use crate::simulator::{
     io::SimOutput,
-    config::{self, Config},
+    config::Config,
     schedule::AsyncSim,
 };
 
@@ -18,18 +18,16 @@ use crate::simulator::{
 #[cfg_attr(feature = "serde", serde(default))]
 pub struct Shell {
     screens: Screens,
-    config: Config,
+    config: Option<Config>,
     output: Option<SimOutput>,
     run_handle: Option<JoinHandle<()>>,
 }
 
 impl Default for Shell {
     fn default() -> Self {
-        let default_config_path = PathBuf::from("config/default.toml");
-        let config = config::parse_from_file(&default_config_path);
         Self {
             screens: Screens::default(),
-            config,
+            config: None,
             output: None, 
             run_handle: None,
         }
@@ -103,10 +101,11 @@ impl Shell {
             if self.run_handle.is_some() {
                 panic!("Can't start again, sim already ran. Need to stop.")
             }
-            let config = self.config.clone();
             let outpath = PathBuf::from("out.csv");
             let init_state = Arc::new(Mutex::new(SimOutput::default()));
-            AsyncSim::run_sim(config, init_state, outpath)
+            if let Some(config) = self.config.clone() {
+                AsyncSim::run_sim(config, init_state, outpath)
+            }
         }
     }
 }

@@ -23,12 +23,12 @@ use log::error;
 use serde::Deserialize;
 use std::fmt;
 
-#[derive(Copy, Clone, Deserialize, PartialEq)]
+#[derive(Copy, Clone, Default, Deserialize, PartialEq)]
 pub enum GasSpecies {
     // Species of gas with a known molar mass (kg/mol)
     Air,
     He,
-    Helium,
+    #[default] Helium,
     H2,
     Hydrogen,
     N2,

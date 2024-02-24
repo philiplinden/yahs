@@ -258,11 +258,11 @@ impl Material {
     }
 }
 
-#[derive(Copy, Clone, PartialEq, Deserialize)]
+#[derive(Copy, Clone, Default, PartialEq, Deserialize)]
 pub enum MaterialType {
     // Species of gas with a known molar mass (kg/mol)
     Nothing,
-    Rubber,
+    #[default] Rubber,
     LDPE,
     LowDensityPolyethylene,
 }
