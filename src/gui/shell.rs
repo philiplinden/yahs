@@ -1,26 +1,22 @@
-use std::{
-    collections::BTreeSet,
-    path::PathBuf,
-    sync::{Arc, Mutex},
-    thread::JoinHandle,
-};
-use egui::{Context, Modifiers, ScrollArea, Ui};
+use bevy::prelude::*;
+use bevy_egui::{egui, EguiContext, EguiPlugin};
 
 use super::UiPanel;
-use crate::simulator::{
-    io::SimOutput,
-    config::Config,
-    schedule::AsyncSim,
-};
 
-/// A menu bar in which you can select different info windows to show.
-#[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
-#[cfg_attr(feature = "serde", serde(default))]
+pub struct ShellPlugin;
+
+impl Plugin for ShellPlugin {
+    fn build(&self, app: &mut App) {
+        app.add_plugins(EguiPlugin)
+            .init_resource::<Shell>()
+            .add_systems(Update, ui_system);
+    }
+}
+
+#[derive(Resource)]
 pub struct Shell {
     screens: Screens,
-    config: Option<Config>,
-    output: Option<SimOutput>,
-    run_handle: Option<JoinHandle<()>>,
+    config: Option<EnvConfig>,
 }
 
 impl Default for Shell {
@@ -28,10 +24,55 @@ impl Default for Shell {
         Self {
             screens: Screens::default(),
             config: None,
-            output: None, 
+            output: None,
             run_handle: None,
         }
     }
+}
+
+fn ui_system(mut egui_context: ResMut<EguiContext>, mut shell: ResMut<Shell>) {
+    egui::SidePanel::left("mission_control_panel")
+        .resizable(false)
+        .default_width(150.0)
+        .show(egui_context.ctx_mut(), |ui| {
+            ui.vertical_centered(|ui| {
+                ui.heading("yahs");
+            });
+
+            ui.separator();
+
+            use egui::special_emojis::GITHUB;
+            ui.hyperlink_to(
+                format!("{GITHUB} yahs on GitHub"),
+                "https://github.com/brickworks/yahs",
+            );
+            ui.hyperlink_to(
+                format!("{GITHUB} @philiplinden"),
+                "https://github.com/philiplinden",
+            );
+
+            ui.separator();
+            egui::widgets::global_dark_light_mode_buttons(ui);
+            ui.separator();
+            shell.screen_list_ui(ui);
+            ui.separator();
+            shell.sim_control_buttons(ui);
+            ui.separator();
+        });
+
+    egui::TopBottomPanel::top("menu_bar").show(egui_context.ctx_mut(), |ui| {
+        egui::menu::bar(ui, |ui| {
+            file_menu_button(ui);
+        });
+    });
+
+    shell.show_windows(egui_context.ctx_mut());
+
+    egui::TopBottomPanel::bottom("powered_by_bevy_egui").show(egui_context.ctx_mut(), |ui| {
+        ui.with_layout(egui::Layout::bottom_up(egui::Align::LEFT), |ui| {
+            powered_by_egui_and_bevy(ui);
+        });
+    });
 }
 
 impl Shell {
@@ -97,46 +138,79 @@ impl Shell {
 
     fn sim_control_buttons(&mut self, ui: &mut egui::Ui) {
         if ui.button("Simulate").clicked() {
-
             if self.run_handle.is_some() {
                 panic!("Can't start again, sim already ran. Need to stop.")
             }
             let outpath = PathBuf::from("out.csv");
             let init_state = Arc::new(Mutex::new(SimOutput::default()));
             if let Some(config) = self.config.clone() {
-                AsyncSim::run_sim(config, init_state, outpath)
+                let output = init_state.clone();
+                self.run_handle = Some(std::thread::spawn(move || {
+                    AsyncSim::run_sim(config, output, outpath);
+                }));
             }
         }
     }
 }
 
-impl eframe::App for Shell {
-    /// Called each time the UI needs repainting, which may be many times per second.
-    fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
-        // Put your widgets into a `SidePanel`, `TopBottomPanel`, `CentralPanel`, `Window` or `Area`.
-        // For inspiration and more examples, go to https://emilk.github.io/egui
-        egui::CentralPanel::default().show(ctx, |_ui| {
-            // The central panel the region left after adding TopPanel's and SidePanel's
-            self.ui(ctx);
-        });
-        egui::TopBottomPanel::bottom("powered_by_eframe").show(ctx, |ui| {
-            ui.with_layout(egui::Layout::bottom_up(egui::Align::LEFT), |ui| {
-                powered_by_egui_and_eframe(ui);
-                egui::warn_if_debug_build(ui);
-            });
-        });
+// ----------------------------------------------------------------------------
+
+#[derive(Default)]
+struct Screens {
+    screens: Vec<Box<dyn UiPanel>>,
+    open: BTreeSet<String>,
+}
+
+impl Screens {
+    pub fn from_demos(screens: Vec<Box<dyn UiPanel>>) -> Self {
+        let mut open = BTreeSet::new();
+        open.insert(super::views::ConfigView::default().name().to_owned());
+
+        Self { screens, open }
+    }
+
+    pub fn checkboxes(&mut self, ui: &mut Ui) {
+        let Self { screens, open } = self;
+        for screen in screens {
+            if screen.is_enabled(ui.ctx()) {
+                let mut is_open = open.contains(screen.name());
+                ui.toggle_value(&mut is_open, screen.name());
+                set_open(open, screen.name(), is_open);
+            }
+        }
+    }
+
+    pub fn windows(&mut self, ctx: &Context) {
+        let Self { screens, open } = self;
+        for screen in screens {
+            let mut is_open = open.contains(screen.name());
+            screen.show(ctx, &mut is_open);
+            set_open(open, screen.name(), is_open);
+        }
     }
 }
 
-fn powered_by_egui_and_eframe(ui: &mut egui::Ui) {
+#[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
+#[cfg_attr(feature = "serde", serde(default))]
+fn set_open(open: &mut BTreeSet<String>, key: &'static str, is_open: bool) {
+    if is_open {
+        if !open.contains(key) {
+            open.insert(key.to_owned());
+        }
+    } else {
+        open.remove(key);
+    }
+}
+
+fn powered_by_egui_and_bevy(ui: &mut egui::Ui) {
     ui.horizontal(|ui| {
         ui.spacing_mut().item_spacing.x = 0.0;
         ui.label("Powered by ");
         ui.hyperlink_to("egui", "https://github.com/emilk/egui");
         ui.label(" and ");
         ui.hyperlink_to(
-            "eframe",
-            "https://github.com/emilk/egui/tree/master/crates/eframe",
+            "bevy",
+            "https://github.com/bevyengine/bevy",
         );
         ui.label(".");
     });

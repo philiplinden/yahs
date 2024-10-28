@@ -4,7 +4,7 @@ use egui_plot::{
 };
 use log::error;
 use crate::gui::View;
-use crate::simulator::config::{self, Config};
+use crate::original::config::{self, Config};
 
 // ----------------------------------------------------------------------------
 
