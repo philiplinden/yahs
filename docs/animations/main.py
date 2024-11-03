@@ -19,6 +19,11 @@ from manim import (
     Scene,
     Square,
     Text,
+    ShrinkToCenter,
+    GrowFromPoint,
+    GrowFromCenter,
+    VGroup,
+    ValueTracker,
 )
 
 
@@ -95,17 +100,18 @@ class BalloonAssembly:
 
     def collapse_to_dot(self):
         return (
-            FadeOut(self.balloon, scale=0.1),
+            ShrinkToCenter(self.balloon),
             FadeOut(self.payload_box, scale=0.1, target_position=self.origin),
             FadeOut(self.tether, scale=0.1, target_position=self.origin),
             FadeIn(self.dot),
         )
 
     def expand_from_dot(self):
+        self.balloon = Balloon() # for some reason the balloon needs to be recreated
         return (
-            FadeIn(self.balloon, scale=0.1),
-            FadeIn(self.payload_box, scale=0.1, target_position=self.origin),
-            FadeIn(self.tether, scale=0.1, target_position=self.origin),
+            GrowFromCenter(self.balloon),
+            GrowFromPoint(self.payload_box, self.origin),
+            GrowFromPoint(self.tether, self.origin),
             FadeOut(self.dot),
         )
 
@@ -125,34 +131,31 @@ class ControlVolume(Scene):
         self.play(*balloon_assembly.fade_in_labels())
         self.wait(1)
 
-        self.play(
-            *balloon_assembly.fade_out_labels(),
-            FadeIn(axes),
-            FadeIn(axis_labels),
-        )
+        self.play(*balloon_assembly.fade_out_labels())
 
-        square = Square(
+        control_volume_box = Square(
             side_length=5,
             color=BLUE,
             stroke_width=3,
             stroke_opacity=1,
             fill_opacity=0,
         )
-        square.move_to(np.array([0, -1, 0]))  # Move the square down by 1.5
+        control_volume_box.move_to(np.array([0, -1, 0]))  # Move the square down by 1.5
         control_volume_label = Text("Control Volume", color=BLUE).next_to(
-            square, UP
+            control_volume_box, UP
         )
-        self.wait(1)
+        control_volume_label.add_updater(lambda x: x.next_to(control_volume_box, UP))
 
-        self.play(FadeIn(square, control_volume_label))
+        self.play(FadeIn(axes), FadeIn(axis_labels), FadeIn(control_volume_box), FadeIn(control_volume_label))
         self.wait(3)
 
         self.play(*balloon_assembly.collapse_to_dot())
-        self.play(FadeOut(square, control_volume_label))
-        self.wait(2)
+        self.play(control_volume_box.animate.shift(UP * 1))
+        self.play(control_volume_box.animate.scale(0.1))
+        self.wait(1)
 
         # perfect loop
-        self.play(FadeOut(axes), FadeOut(axis_labels))
+        self.play(FadeOut(axes), FadeOut(axis_labels), FadeOut(control_volume_box), FadeOut(control_volume_label))
         self.play(*balloon_assembly.expand_from_dot())
 
 
@@ -165,7 +168,7 @@ class ForceBalance(Scene):
         # Add the balloon assembly to the scene
         self.add(*balloon_assembly.get_objects())
         self.play(*balloon_assembly.fade_in_labels())
-        self.wait(2)
+        self.wait(1)
 
         self.play(
             *balloon_assembly.fade_out_labels(),
@@ -189,18 +192,20 @@ class ForceBalance(Scene):
         gravity_label.add_updater(lambda x: x.next_to(gravity_arrow, DOWN))
         self.play(GrowArrow(gravity_arrow), FadeIn(gravity_label))
 
-        dot_movement = dot.animate.move_to(dot.get_center() + UP * 1.6 * np.sin(2 * np.pi * 0.5 * self.renderer.time)).set_rate_func(
-            lambda t: t % 1
-        )
         drag_arrow = Arrow(
             dot.get_center(), dot.get_center() + DOWN * 1.6 * np.sin(2 * np.pi * 0.5 * self.renderer.time), color=BLUE
         )
         drag_label = Text("Drag", color=BLUE).next_to(drag_arrow, RIGHT)
         drag_label.add_updater(lambda x: x.next_to(drag_arrow, RIGHT))
-        self.play(dot_movement, GrowArrow(drag_arrow), FadeIn(drag_label))
 
-        self.play(dot_movement)
+        group = VGroup(dot, buoyancy_arrow, buoyancy_label, gravity_arrow, gravity_label, drag_arrow, drag_label)
+        
+        t = ValueTracker(0)
+        def wiggle(x):
+            return 2 * np.sin(3 * x) + np.sin(5 * x)
 
+        group.add_updater(lambda x: x.move_to((t.get_value(), wiggle(t.get_value()) * UP))
+        self.play(t.animate.set_value(1))
         self.wait(2)
 
         # perfect loop
