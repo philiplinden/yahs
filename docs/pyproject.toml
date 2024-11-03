@@ -1,0 +1,10 @@
+[project]
+name = "docs"
+version = "0.1.0"
+description = "Documentation for the balloon simulator"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "manim>=0.18.1",
+    "numpy>=1.26.4",
+]
