@@ -40,3 +40,5 @@ images_svg/
 *.jpeg
 *.mov
 *.webm
+
+uv.lock
