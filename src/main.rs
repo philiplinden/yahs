@@ -1,4 +1,4 @@
-mod gui;
+// mod gui;
 mod config;
 mod simulator;
 
@@ -15,8 +15,7 @@ fn main() {
                 }),
                 ..default()
             }),
-            gui::InterfacePlugins,
-            config::ConfigPlugin,
+            // gui::InterfacePlugins,
         ))
         .run();
 }

@@ -1,0 +1,60 @@
+(
+    gases: [
+        // Species of gas with a known molar mass (kg/mol)
+        (
+            name: "Air",
+            abbreviation: "Air",
+            molar_mass: 0.02897,
+        ),
+        (
+            name: "Helium",
+            abbreviation: "He",
+            molar_mass: 0.0040026,
+        ),
+        (
+            name: "Hydrogen",
+            abbreviation: "H2",
+            molar_mass: 0.00201594,
+        ),
+        (
+            name: "Nitrogen",
+            abbreviation: "N2",
+            molar_mass: 0.0280134,
+        ),
+        (
+            name: "Oxygen",
+            abbreviation: "O2",
+            molar_mass: 0.0319988,
+        ),
+        (
+            name: "Argon",
+            abbreviation: "Ar",
+            molar_mass: 0.039948,
+        ),
+        (
+            name: "Carbon Dioxide",
+            abbreviation: "CO2",
+            molar_mass: 0.04400995,
+        ),
+        (
+            name: "Neon",
+            abbreviation: "Ne",
+            molar_mass: 0.020183,
+        ),
+        (
+            name: "Krypton",
+            abbreviation: "Kr",
+            molar_mass: 0.08380,
+        ),
+        (
+            name: "Xenon",
+            abbreviation: "Xe",
+            molar_mass: 0.13130,
+        ),
+        (
+            name: "Methane",
+            abbreviation: "CH4",
+            molar_mass: 0.01604303,
+        ),
+    ]
+)

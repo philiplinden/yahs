@@ -1,38 +1,4 @@
-use bevy::prelude::*;
-use serde::Deserialize;
-use log::{info, error};
-
-use crate::simulation::balloon::MaterialType;
-use crate::simulation::gas::GasSpecies;
-use std::{fs, path::Path};
-
-pub struct ConfigPlugin;
-
-impl Plugin for ConfigPlugin {
-    fn build(&self, app: &mut App) {
-        // Initialize default configurations
-        app.init_resource::<EnvConfig>()
-           .init_resource::<BalloonConfig>()
-           .init_resource::<GasConfig>()
-           .init_resource::<BusConfig>()
-           .init_resource::<BodyConfig>()
-           .init_resource::<ParachuteConfig>();
-
-        // Add a system to load configuration from file
-        // app.add_systems(Startup, load_config);
-    }
-}
-
-#[derive(Clone, Default, Deserialize, PartialEq, Resource)]
-pub struct EnvConfig {
-    pub real_time: bool,
-    pub tick_rate_hz: f32,
-    pub max_elapsed_time_s: f32,
-    pub initial_altitude_m: f32,
-    pub initial_velocity_m_s: f32,
-}
-
-#[derive(Clone, Default, Deserialize, PartialEq, Resource)]
+#[derive(Component)]
 pub struct BalloonConfig {
     /// Balloon material type
     pub material: MaterialType,
@@ -44,7 +10,7 @@ pub struct BalloonConfig {
     pub lift_gas: GasConfig,
 }
 
-#[derive(Clone, Default, Deserialize, PartialEq, Resource)]
+#[derive(Component)]
 pub struct GasConfig {
     /// Species of the gas
     pub species: GasSpecies,
@@ -52,7 +18,7 @@ pub struct GasConfig {
     pub mass_kg: f32,
 }
 
-#[derive(Clone, Default, Deserialize, PartialEq, Resource)]
+#[derive(Component)]
 pub struct BusConfig {
     /// Configuration for the body of the bus
     pub body: BodyConfig,
@@ -60,7 +26,7 @@ pub struct BusConfig {
     pub parachute: ParachuteConfig,
 }
 
-#[derive(Copy, Clone, Default, Deserialize, PartialEq, Resource)]
+#[derive(Component)]
 pub struct BodyConfig {
     /// Mass of all components less ballast material, in kilograms
     pub mass_kg: f32,
@@ -70,7 +36,7 @@ pub struct BodyConfig {
     pub drag_coeff: f32,
 }
 
-#[derive(Copy, Clone, Default, Deserialize, PartialEq, Resource)]
+#[derive(Component)]
 pub struct ParachuteConfig {
     /// Mass of the parachute system (main + drogue), in kilograms
     pub total_mass_kg: f32,

@@ -20,86 +20,50 @@
 
 use super::constants::{R, STANDARD_PRESSURE, STANDARD_TEMPERATURE};
 use log::error;
+use ron::de::from_str;
 use serde::Deserialize;
 use std::fmt;
+use std::fs;
 
-#[derive(Copy, Clone, Default, Deserialize, PartialEq)]
-pub enum GasSpecies {
-    // Species of gas with a known molar mass (kg/mol)
-    Air,
-    He,
-    #[default] Helium,
-    H2,
-    Hydrogen,
-    N2,
-    Nitrogen,
-    O2,
-    Oxygen,
-    Ar,
-    Argon,
-    CO2,
-    CarbonDioxide,
-    Ne,
-    Neon,
-    Kr,
-    Krypton,
-    Xe,
-    Xenon,
-    CH4,
-    Methane,
+#[derive(Debug, Deserialize, Clone)]
+pub struct GasSpecies {
+    pub name: String,
+    pub abbreviation: String,
+    pub molar_mass: f32, // [kg/mol] molar mass a.k.a. molecular weight
 }
 
-impl fmt::Display for GasSpecies {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match *self {
-            GasSpecies::Air => write!(f, "Air"),
-            GasSpecies::He => write!(f, "Helium"),
-            GasSpecies::Helium => write!(f, "Helium"),
-            GasSpecies::H2 => write!(f, "Hydrogen"),
-            GasSpecies::Hydrogen => write!(f, "Hydrogen"),
-            GasSpecies::N2 => write!(f, "Nitrogen"),
-            GasSpecies::Nitrogen => write!(f, "Nitrogen"),
-            GasSpecies::O2 => write!(f, "Oxygen"),
-            GasSpecies::Oxygen => write!(f, "Oxygen"),
-            GasSpecies::Ar => write!(f, "Argon"),
-            GasSpecies::Argon => write!(f, "Argon"),
-            GasSpecies::CO2 => write!(f, "Carbon Dioxide"),
-            GasSpecies::CarbonDioxide => write!(f, "Carbon Dioxide"),
-            GasSpecies::Ne => write!(f, "Neon"),
-            GasSpecies::Neon => write!(f, "Neon"),
-            GasSpecies::Kr => write!(f, "Krypton"),
-            GasSpecies::Krypton => write!(f, "Krypton"),
-            GasSpecies::Xe => write!(f, "Xenon"),
-            GasSpecies::Xenon => write!(f, "Xenon"),
-            GasSpecies::CH4 => write!(f, "Methane"),
-            GasSpecies::Methane => write!(f, "Methane"),
+impl GasSpecies {
+    pub fn new(name: String, abbreviation: String, molar_mass: f32) -> Self {
+        GasSpecies {
+            name,
+            abbreviation,
+            molar_mass,
         }
     }
 }
 
-#[derive(Copy, Clone)]
-pub struct GasVolume {
+#[derive(Debug, Clone, Copy)]
+pub struct GasVolume<'a> {
     // A finite amount of a particular gas
-    species: GasSpecies, // type of gas
-    mass: f32,           // [kg] amount of gas in the volume
-    temperature: f32,    // [K] temperature
-    pressure: f32,       // [Pa] pressure
-    molar_mass: f32,     // [kg/mol] molar mass a.k.a. molecular weight
-    volume: f32,         // [m^3] volume
+    species: &'a GasSpecies, // Reference to the type of gas
+    mass: f32,        // [kg] amount of gas in the volume
+    temperature: f32, // [K] temperature
+    pressure: f32,    // [Pa] pressure
+    volume: f32,      // [m³] volume
 }
 
-impl fmt::Display for GasVolume {
+impl<'a> fmt::Display for GasVolume<'a> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(
             f,
-            "{:}: {:} kg | {:} K | {:} Pa | {:} m^3",
-            self.species, self.mass, self.temperature, self.pressure, self.volume,
+            "{:}: {:} kg | {:} K | {:} Pa | {:} m³",
+            self.species.name, self.mass, self.temperature, self.pressure, self.volume,
         )
     }
 }
 
-impl GasVolume {
-    pub fn new(species: GasSpecies, mass: f32) -> Self {
+impl<'a> GasVolume<'a> {
+    pub fn new(species: &'a GasSpecies, mass: f32) -> Self {
         // Create a new gas volume as a finite amount of mass (kg) of a
         // particular species of gas. Gas is initialized at standard
         // temperature and pressure.
@@ -108,12 +72,11 @@ impl GasVolume {
             mass,
             temperature: STANDARD_TEMPERATURE,
             pressure: STANDARD_PRESSURE,
-            molar_mass: molar_mass(species),
             volume: volume(
                 STANDARD_TEMPERATURE,
                 STANDARD_PRESSURE,
                 mass,
-                molar_mass(species),
+                species.molar_mass, // Accessing molar mass through the reference
             ),
         }
     }
@@ -134,10 +97,11 @@ impl GasVolume {
     }
 
     pub fn set_volume(&mut self, new_volume: f32) {
-        // set the volume (m^3) of the GasVolume and update the pressure
+        // set the volume (m³) of the GasVolume and update the pressure
         // according to the ideal gas law.
         self.volume = new_volume;
-        let new_pressure = ((self.mass / self.molar_mass) * R * self.temperature) / self.volume;
+        let new_pressure = ((self.mass / self.species.molar_mass) * R * self.temperature)
+            / self.volume;
         self.set_pressure(new_pressure);
     }
 
@@ -151,9 +115,9 @@ impl GasVolume {
     }
 
     pub fn set_mass_from_volume(&mut self) {
-        // set the mass (kg) based on the current volume (m^3),
-        // density (kg/m^3), and molar mass (kg/mol)
-        self.mass = self.volume * (self.molar_mass / R) * (self.pressure / self.temperature);
+        // set the mass (kg) based on the current volume (m³),
+        // density (kg/m³), and molar mass (kg/mol)
+        self.mass = self.volume * (self.species.molar_mass / R) * (self.pressure / self.temperature);
     }
 
     pub fn temperature(self) -> f32 {
@@ -171,13 +135,13 @@ impl GasVolume {
         self.mass
     }
     pub fn density(self) -> f32 {
-        // density (kg/m^3)
-        density(self.temperature, self.pressure, self.molar_mass)
+        // density (kg/m³)
+        density(self.temperature, self.pressure, self.species.molar_mass)
     }
 
     pub fn volume(&self) -> f32 {
-        // volume (m^3)
-        volume(self.temperature, self.pressure, self.mass, self.molar_mass)
+        // volume (m³)
+        volume(self.temperature, self.pressure, self.mass, self.species.molar_mass)
     }
 }
 
@@ -187,7 +151,7 @@ pub struct Atmosphere {
     altitude: f32,    // [m] altitude (which determines the other attributes)
     temperature: f32, // [K] temperature
     pressure: f32,    // [Pa] pressure
-    density: f32,     // [kg/m^3] density
+    density: f32,     // [kg/m³] density
     molar_mass: f32,  // [kg/mol] molar mass a.k.a. molecular weight
 }
 
@@ -195,7 +159,7 @@ impl fmt::Display for Atmosphere {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(
             f,
-            "{:} K | {:} Pa | {:} kg/m^3",
+            "{:} K | {:} Pa | {:} kg/m³",
             self.temperature, self.pressure, self.density,
         )
     }
@@ -210,9 +174,9 @@ impl Atmosphere {
             density: density(
                 coesa_temperature(altitude),
                 coesa_pressure(altitude),
-                molar_mass(GasSpecies::Air),
+                28.9647,
             ),
-            molar_mass: molar_mass(GasSpecies::Air),
+            molar_mass: 28.9647,
         }
     }
     pub fn set_altitude(&mut self, new_altitude: f32) {
@@ -234,39 +198,33 @@ impl Atmosphere {
     }
 
     pub fn density(self) -> f32 {
-        // Density (kg/m^3)
+        // Density (kg/m³)
         self.density
     }
 }
 
+impl Default for Atmosphere {
+    fn default() -> Self {
+        Atmosphere {
+            altitude: 0.0, // Sea level
+            temperature: STANDARD_TEMPERATURE, // Standard sea level temperature
+            pressure: STANDARD_PRESSURE, // Standard sea level pressure
+            density: density(STANDARD_TEMPERATURE, STANDARD_PRESSURE, 28.9647), // Calculate density at sea level
+            molar_mass: 28.9647, // Molar mass of air
+        }
+    }
+}
+
 fn volume(temperature: f32, pressure: f32, mass: f32, molar_mass: f32) -> f32 {
-    // Volume (m^3) of an ideal gas from its temperature (K), pressure (Pa),
+    // Volume (m³) of an ideal gas from its temperature (K), pressure (Pa),
     // mass (kg) and molar mass (kg/mol).
-    (mass / molar_mass) * R * temperature / pressure // [m^3]
+    (mass / molar_mass) * R * temperature / pressure // [m³]
 }
 
 fn density(temperature: f32, pressure: f32, molar_mass: f32) -> f32 {
-    // Density (kg/m^3) of an ideal gas frorm its temperature (K), pressure (Pa),
+    // Density (kg/m³) of an ideal gas frorm its temperature (K), pressure (Pa),
     // and molar mass (kg/mol)
-    (molar_mass * pressure) / (R * temperature) // [kg/m^3]
-}
-
-fn molar_mass(species: GasSpecies) -> f32 {
-    // Get the molecular weight (kg/mol) of a dry gas at sea level.
-    // Source: US Standard Atmosphere, 1976
-    match species {
-        GasSpecies::Air => 0.02897,
-        GasSpecies::He | GasSpecies::Helium => 0.0040026,
-        GasSpecies::H2 | GasSpecies::Hydrogen => 0.00201594,
-        GasSpecies::N2 | GasSpecies::Nitrogen => 0.0280134,
-        GasSpecies::O2 | GasSpecies::Oxygen => 0.0319988,
-        GasSpecies::Ar | GasSpecies::Argon => 0.039948,
-        GasSpecies::CO2 | GasSpecies::CarbonDioxide => 0.04400995,
-        GasSpecies::Ne | GasSpecies::Neon => 0.020183,
-        GasSpecies::Kr | GasSpecies::Krypton => 0.08380,
-        GasSpecies::Xe | GasSpecies::Xenon => 0.13130,
-        GasSpecies::CH4 | GasSpecies::Methane => 0.01604303,
-    }
+    (molar_mass * pressure) / (R * temperature) // [kg/m³]
 }
 
 fn coesa_temperature(altitude: f32) -> f32 {
@@ -293,11 +251,11 @@ fn coesa_pressure(altitude: f32) -> f32 {
     // Only valid for altitudes below 85,000 meters.
     // Based on the US Standard Atmosphere, 1976. (aka COESA)
     if (-57.0..11000.0).contains(&altitude) {
-        (101.29 * libm::powf(coesa_temperature(altitude) / 288.08, 5.256)) * 1000.0
+        (101.29 * f32::powf(coesa_temperature(altitude) / 288.08, 5.256)) * 1000.0
     } else if (11000.0..25000.0).contains(&altitude) {
-        (22.65 * libm::expf(1.73 - 0.000157 * altitude)) * 1000.0
+        (22.65 * f32::exp(1.73 - 0.000157 * altitude)) * 1000.0
     } else if (25000.0..85000.0).contains(&altitude) {
-        (2.488 * libm::powf(coesa_temperature(altitude) / 216.6, -11.388)) * 1000.0
+        (2.488 * f32::powf(coesa_temperature(altitude) / 216.6, -11.388)) * 1000.0
     } else {
         error!(
             "Altitude {:}m is outside of the accepted range! Must be 0-85000m",
@@ -310,4 +268,15 @@ fn coesa_pressure(altitude: f32) -> f32 {
 fn celsius2kelvin(deg_celsius: f32) -> f32 {
     // Convert degrees C to Kelvin
     deg_celsius + 273.15
+}
+
+#[derive(Debug, Deserialize)]
+struct GasConfig {
+    gases: Vec<GasSpecies>,
+}
+
+fn load_gas_config(file_path: &str) -> Vec<GasSpecies> {
+    let content = fs::read_to_string(file_path).expect("Unable to read file");
+    let config: GasConfig = from_str(&content).expect("Unable to parse RON");
+    config.gases
 }

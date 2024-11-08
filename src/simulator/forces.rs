@@ -5,10 +5,6 @@
 // coordinate frame and aR_E R_Eported in Newtons.
 // ----------------------------------------------------------------------------
 
-#![allow(dead_code)]
-
-extern crate libm;
-
 use super::constants::{EARTH_RADIUS_M, STANDARD_G};
 use super::{gas, SolidBody};
 
@@ -36,8 +32,8 @@ pub fn buoyancy(altitude: f32, atmo: gas::Atmosphere, lift_gas: gas::GasVolume) 
 
 pub fn drag<T: SolidBody>(atmo: gas::Atmosphere, velocity: f32, body: T) -> f32 {
     // Force (N) due to drag against the balloon
-    let direction = -libm::copysignf(1.0, velocity);
-    direction * body.drag_coeff() / 2.0 * atmo.density() * libm::powf(velocity, 2.0) * body.drag_area()
+    let direction = -f32::copysign(1.0, velocity);
+    direction * body.drag_coeff() / 2.0 * atmo.density() * f32::powf(velocity, 2.0) * body.drag_area()
 }
 
 pub fn gross_lift(atmo: gas::Atmosphere, lift_gas: gas::GasVolume) -> f32 {

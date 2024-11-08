@@ -9,14 +9,16 @@ use log::debug;
 use serde::Deserialize;
 use std::f32::consts::PI;
 use std::fmt;
+use std::fs;
+use ron::de::from_str;
 
 use super::{gas, SolidBody};
 
-#[derive(Copy, Clone)]
-pub struct Balloon {
+#[derive(Clone)]
+pub struct Balloon<'a> {
     pub intact: bool,             // whether or not it has burst
-    pub lift_gas: gas::GasVolume, // gas inside the balloon
-    pub material: Material,       // what the balloon is made of
+    pub lift_gas: gas::GasVolume<'a>, // gas inside the balloon
+    pub material: BalloonMaterial,       // what the balloon is made of
     pub skin_thickness: f32,      // thickness of the skin of the balloon (m)
     mass: f32,                // balloon mass (kg)
     drag_coeff: f32,          // drag coefficient
@@ -27,12 +29,12 @@ pub struct Balloon {
     strain: f32,
 }
 
-impl Balloon {
+impl<'a> Balloon<'a> {
     pub fn new(
-        material: Material,            // material of balloon skin
+        material: BalloonMaterial,            // material of balloon skin
         skin_thickness: f32,           // balloon skin thickness (m) at zero pressure
         barely_inflated_diameter: f32, // internal diameter (m) at zero pressure
-        lift_gas: gas::GasVolume,      // species of gas inside balloon
+        lift_gas: gas::GasVolume<'a>,  // species of gas inside balloon
     ) -> Self {
         let unstretched_radius = barely_inflated_diameter / 2.0;
         let mass = shell_volume(unstretched_radius, skin_thickness) * material.density;
@@ -51,15 +53,15 @@ impl Balloon {
         }
     }
 
-    pub fn surface_area(self) -> f32 {
+    pub fn surface_area(&self) -> f32 {
         sphere_surface_area(sphere_radius_from_volume(self.lift_gas.volume()))
     }
 
-    pub fn radius(self) -> f32 {
+    pub fn radius(&self) -> f32 {
         sphere_radius_from_volume(self.volume())
     }
 
-    pub fn volume(self) -> f32 {
+    pub fn volume(&self) -> f32 {
         self.lift_gas.volume()
     }
 
@@ -67,7 +69,7 @@ impl Balloon {
         self.lift_gas.set_volume(new_volume)
     }
 
-    pub fn pressure(&mut self) -> f32 {
+    pub fn pressure(&self) -> f32 {
         self.lift_gas.pressure()
     }
 
@@ -79,11 +81,11 @@ impl Balloon {
         self.skin_thickness = new_thickness
     }
 
-    fn gage_pressure(self, external_pressure: f32) -> f32 {
+    pub fn gage_pressure(&self, external_pressure: f32) -> f32 {
         self.lift_gas.pressure() - external_pressure
     }
 
-    pub fn stress(self) -> f32 {
+    pub fn stress(&self) -> f32 {
         self.stress
     }
 
@@ -100,7 +102,7 @@ impl Balloon {
         }
     }
 
-    pub fn strain(self) -> f32 {
+    pub fn strain(&self) -> f32 {
         self.strain
     }
 
@@ -118,23 +120,23 @@ impl Balloon {
         }
     }
 
-    fn radial_displacement(self, external_pressure: f32) -> f32 {
+    pub fn radial_displacement(&self, external_pressure: f32) -> f32 {
         // https://pkel015.connect.amazon.auckland.ac.nz/SolidMechanicsBooks/Part_I/BookSM_Part_I/07_ElasticityApplications/07_Elasticity_Applications_03_Presure_Vessels.pdf
         ((1.0 - self.material.poissons_ratio) / self.material.elasticity)
-            * ((self.gage_pressure(external_pressure) * libm::powf(self.radius(), 2.0)) / 2.0
+            * ((self.gage_pressure(external_pressure) * f32::powf(self.radius(), 2.0)) / 2.0
                 * self.skin_thickness)
     }
 
     fn rebound(&mut self, radial_displacement: f32) -> f32 {
         // https://physics.stackexchange.com/questions/10372/inflating-a-balloon-expansion-resistance
         self.set_thickness(
-            self.unstretched_thickness * libm::powf(self.unstretched_radius / self.radius(), 2.0),
+            self.unstretched_thickness * f32::powf(self.unstretched_radius / self.radius(), 2.0),
         );
         2.0 * self.material.elasticity
             * radial_displacement
             * self.unstretched_thickness
             * self.unstretched_radius
-            / libm::powf(self.radius(), 3.0)
+            / f32::powf(self.radius(), 3.0)
     }
 
     pub fn stretch(&mut self, external_pressure: f32) {
@@ -182,7 +184,7 @@ impl Balloon {
     }
 }
 
-impl SolidBody for Balloon {
+impl<'a> SolidBody for Balloon<'a> {
     fn drag_area(&self) -> f32 {
         if self.intact {
             sphere_radius_from_volume(self.volume())
@@ -201,7 +203,7 @@ impl SolidBody for Balloon {
 }
 
 fn sphere_volume(radius: f32) -> f32 {
-    (4.0 / 3.0) * PI * libm::powf(radius, 3.0)
+    (4.0 / 3.0) * PI * f32::powf(radius, 3.0)
 }
 
 fn shell_volume(internal_radius: f32, thickness: f32) -> f32 {
@@ -212,16 +214,16 @@ fn shell_volume(internal_radius: f32, thickness: f32) -> f32 {
 }
 
 fn sphere_radius_from_volume(volume: f32) -> f32 {
-    libm::powf(volume, 1.0 / 3.0) / (4.0 / 3.0) * PI
+    f32::powf(volume, 1.0 / 3.0) / (4.0 / 3.0) * PI
 }
 
 fn sphere_surface_area(radius: f32) -> f32 {
-    4.0 * PI * libm::powf(radius, 2.0)
+    4.0 * PI * f32::powf(radius, 2.0)
 }
 
 pub fn projected_spherical_area(volume: f32) -> f32 {
-    // Get the projected area (m^2) of a sphere with a given volume (m^3)
-    libm::powf(sphere_radius_from_volume(volume), 2.0) * PI
+    // Get the projected area (m^2) of a sphere with a given volume (m³)
+    f32::powf(sphere_radius_from_volume(volume), 2.0) * PI
 }
 
 // ----------------------------------------------------------------------------
@@ -231,10 +233,47 @@ pub fn projected_spherical_area(volume: f32) -> f32 {
 // Source: https://www.matweb.com/
 // ----------------------------------------------------------------------------
 
-#[derive(Copy, Clone, PartialEq)]
-pub struct Material {
+#[derive(Debug, Deserialize, Clone)]
+pub struct MaterialConfig {
+    materials: Vec<BalloonMaterial>,
+}
+
+impl BalloonMaterial {
+    pub fn load_materials() -> Vec<BalloonMaterial> {
+        let content = fs::read_to_string("path/to/materials.ron").expect("Unable to read file");
+        let config: MaterialConfig = from_str(&content).expect("Unable to parse RON");
+        config.materials
+    }
+
+    pub fn new(material_name: &str) -> Self {
+        let materials = BalloonMaterial::load_materials();
+        materials.into_iter().find(|m| m.name == material_name).unwrap_or_default()
+    }
+}
+
+impl Default for BalloonMaterial {
+    fn default() -> Self {
+        BalloonMaterial {
+            name: "Latex".to_string(),
+            max_temperature: 373.0, // Example value in Kelvin
+            density: 920.0,         // Example density in kg/m³
+            emissivity: 0.9,        // Example emissivity
+            absorptivity: 0.9,      // Example absorptivity
+            thermal_conductivity: 0.13, // Example thermal conductivity in W/mK
+            specific_heat: 2000.0,  // Example specific heat in J/kgK
+            poissons_ratio: 0.5,    // Example Poisson's ratio
+            elasticity: 0.01e9,     // Example Young's Modulus in Pa
+            max_strain: 0.8,        // Example max strain (unitless)
+            max_stress: 0.5e6,      // Example max stress in Pa
+        }
+    }
+}
+
+#[derive(Debug, Deserialize, Clone, PartialEq)]
+pub struct BalloonMaterial {
+    pub name: String,
     pub max_temperature: f32, // temperature (K) where the given material fails
-    pub density: f32,         // density (kg/m^3)
+    pub density: f32,         // density (kg/m³)
     pub emissivity: f32,      // how much thermal radiation is emitted
     pub absorptivity: f32,    // how much thermal radiation is absorbed
     pub thermal_conductivity: f32, // thermal conductivity (W/mK) of the material at room temperature
@@ -245,77 +284,8 @@ pub struct Material {
     pub max_stress: f32,           // tangential stress at failure (Pa)
 }
 
-impl Material {
-    pub fn new(material_type: MaterialType) -> Self {
-        match material_type {
-            MaterialType::Rubber => RUBBER,
-            MaterialType::LDPE | MaterialType::LowDensityPolyethylene => LOW_DENSITY_POLYETHYLENE,
-            _ => NOTHING,
-        }
-    }
-}
-
-#[derive(Copy, Clone, Default, PartialEq, Deserialize)]
-pub enum MaterialType {
-    // Species of gas with a known molar mass (kg/mol)
-    Nothing,
-    #[default] Rubber,
-    LDPE,
-    LowDensityPolyethylene,
-}
-
-impl fmt::Display for MaterialType {
+impl fmt::Display for BalloonMaterial {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match *self {
-            MaterialType::Nothing => write!(f, "nothing"),
-            MaterialType::Rubber => write!(f, "rubber"),
-            MaterialType::LDPE | MaterialType::LowDensityPolyethylene => {
-                write!(f, "low-density polyethylene (LDPE)")
-            }
-        }
+        write!(f, "{}", self.name)
     }
 }
-
-pub const NOTHING: Material = Material {
-    // nothing
-    max_temperature: f32::INFINITY,
-    density: 0.0,
-    emissivity: 1.0,
-    absorptivity: 0.0,
-    thermal_conductivity: f32::INFINITY,
-    specific_heat: 0.0,
-    poissons_ratio: 0.5,
-    elasticity: f32::INFINITY,
-    max_strain: f32::INFINITY,
-    max_stress: f32::INFINITY,
-};
-
-pub const RUBBER: Material = Material {
-    // Nitrile Butadiene Rubber
-    // https://designerdata.nl/materials/plastics/rubbers/nitrile-butadiene-rubber
-    max_temperature: 385.0,
-    density: 1000.0,
-    emissivity: 0.86,
-    absorptivity: 0.86,
-    thermal_conductivity: 0.25,
-    specific_heat: 1490.0,
-    poissons_ratio: 0.5,
-    elasticity: 4_000_000.0,
-    max_strain: 8.0,
-    max_stress: 25_000_000.0,
-};
-
-pub const LOW_DENSITY_POLYETHYLENE: Material = Material {
-    // Low Density Polyethylene (LDPE)
-    // https://designerdata.nl/materials/plastics/thermo-plastics/low-density-polyethylene
-    max_temperature: 348.0,
-    density: 919.0,
-    emissivity: 0.94,
-    absorptivity: 0.94,
-    thermal_conductivity: 0.3175,
-    specific_heat: 2600.0,
-    poissons_ratio: 0.5,
-    elasticity: 300_000_000.0,
-    max_strain: 6.25,
-    max_stress: 10_000_000.0,
-};

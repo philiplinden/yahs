@@ -5,7 +5,6 @@
 // ----------------------------------------------------------------------------
 
 use super::{
-    config::{BodyConfig, ParachuteConfig},
     forces,
     gas::Atmosphere,
     SolidBody,
