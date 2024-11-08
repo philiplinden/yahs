@@ -137,3 +137,21 @@ impl ParachuteSystem {
         self.main.deploy(drogue_drag);
     }
 }
+
+
+pub struct ParachuteConfig {
+    /// Mass of the parachute system (main + drogue), in kilograms
+    pub total_mass_kg: f32,
+    /// Drogue parachute effective area used for drag calculations, in square meters
+    pub drogue_area_m2: f32,
+    /// Drogue parachute drag coefficient
+    pub drogue_drag_coeff: f32,
+    /// Main parachute effective area used for drag calculations, in square meters
+    pub main_area_m2: f32,
+    /// Main parachute drag coefficient when fully deployed
+    pub main_drag_coeff: f32,
+    /// Force needed for the drogue to deploy the main chute, in Newtons
+    pub deploy_force_n: f32,
+    /// Duration the main chute stays in the partially open state, in seconds
+    pub deploy_time_s: f32,
+}

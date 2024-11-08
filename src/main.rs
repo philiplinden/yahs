@@ -1,5 +1,4 @@
 // mod gui;
-mod config;
 mod simulator;
 
 use bevy::prelude::*;

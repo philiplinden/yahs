@@ -4,34 +4,46 @@
 // Properties, attributes and functions related to the balloon.
 // ----------------------------------------------------------------------------
 
-
 use log::debug;
+use ron::de::from_str;
 use serde::Deserialize;
 use std::f32::consts::PI;
 use std::fmt;
 use std::fs;
-use ron::de::from_str;
 
 use super::{gas, SolidBody};
+use bevy::prelude::*;
 
 #[derive(Clone)]
 pub struct Balloon<'a> {
-    pub intact: bool,             // whether or not it has burst
+    pub intact: bool,                 // whether or not it has burst
     pub lift_gas: gas::GasVolume<'a>, // gas inside the balloon
-    pub material: BalloonMaterial,       // what the balloon is made of
-    pub skin_thickness: f32,      // thickness of the skin of the balloon (m)
-    mass: f32,                // balloon mass (kg)
-    drag_coeff: f32,          // drag coefficient
-    unstretched_thickness: f32,   // thickness of the skin of the balloon without stretch (m)
-    unstretched_radius: f32,      // radius of balloon without stretch (m)
-    pub temperature: f32,         // fail if surface temperature exceeds this (K)
+    pub material: BalloonMaterial,    // what the balloon is made of
+    pub skin_thickness: f32,          // thickness of the skin of the balloon (m)
+    mass: f32,                        // balloon mass (kg)
+    drag_coeff: f32,                  // drag coefficient
+    unstretched_thickness: f32,       // thickness of the skin of the balloon without stretch (m)
+    unstretched_radius: f32,          // radius of balloon without stretch (m)
+    pub temperature: f32,             // fail if surface temperature exceeds this (K)
     stress: f32,
     strain: f32,
 }
 
+#[derive(Component)]
+pub struct BalloonConfig<'a> {
+    /// Balloon material type
+    pub material: BalloonMaterial,
+    /// Thickness of balloon membrane in meters
+    pub thickness_m: f32,
+    /// Diameter of "unstressed" balloon membrane when filled, assuming balloon is a sphere, in meters
+    pub barely_inflated_diameter_m: f32,
+    /// Configuration for the lift gas
+    pub lift_gas: gas::GasVolume<'a>,
+}
+
 impl<'a> Balloon<'a> {
     pub fn new(
-        material: BalloonMaterial,            // material of balloon skin
+        material: BalloonMaterial,     // material of balloon skin
         skin_thickness: f32,           // balloon skin thickness (m) at zero pressure
         barely_inflated_diameter: f32, // internal diameter (m) at zero pressure
         lift_gas: gas::GasVolume<'a>,  // species of gas inside balloon
@@ -93,7 +105,8 @@ impl<'a> Balloon<'a> {
         // hoop stress (Pa) of thin-walled hollow sphere from internal pressure
         // https://en.wikipedia.org/wiki/Pressure_vessel#Stress_in_thin-walled_pressure_vessels
         // https://pkel015.connect.amazon.auckland.ac.nz/SolidMechanicsBooks/Part_I/BookSM_Part_I/07_ElasticityApplications/07_Elasticity_Applications_03_Presure_Vessels.pdf
-        self.stress = self.gage_pressure(external_pressure) * self.radius() / (2.0 * self.skin_thickness);
+        self.stress =
+            self.gage_pressure(external_pressure) * self.radius() / (2.0 * self.skin_thickness);
         if self.stress > self.material.max_stress {
             self.burst(format!(
                 "Hoop stress ({:?} Pa) exceeded maximum stress ({:?} Pa)",
@@ -172,7 +185,6 @@ impl<'a> Balloon<'a> {
                 self.gage_pressure(external_pressure)
             );
         }
-
     }
 
     fn burst(&mut self, reason: String) {
@@ -247,7 +259,10 @@ impl BalloonMaterial {
 
     pub fn new(material_name: &str) -> Self {
         let materials = BalloonMaterial::load_materials();
-        materials.into_iter().find(|m| m.name == material_name).unwrap_or_default()
+        materials
+            .into_iter()
+            .find(|m| m.name == material_name)
+            .unwrap_or_default()
     }
 }
 
@@ -255,16 +270,16 @@ impl Default for BalloonMaterial {
     fn default() -> Self {
         BalloonMaterial {
             name: "Latex".to_string(),
-            max_temperature: 373.0, // Example value in Kelvin
-            density: 920.0,         // Example density in kg/m³
-            emissivity: 0.9,        // Example emissivity
-            absorptivity: 0.9,      // Example absorptivity
+            max_temperature: 373.0,     // Example value in Kelvin
+            density: 920.0,             // Example density in kg/m³
+            emissivity: 0.9,            // Example emissivity
+            absorptivity: 0.9,          // Example absorptivity
             thermal_conductivity: 0.13, // Example thermal conductivity in W/mK
-            specific_heat: 2000.0,  // Example specific heat in J/kgK
-            poissons_ratio: 0.5,    // Example Poisson's ratio
-            elasticity: 0.01e9,     // Example Young's Modulus in Pa
-            max_strain: 0.8,        // Example max strain (unitless)
-            max_stress: 0.5e6,      // Example max stress in Pa
+            specific_heat: 2000.0,      // Example specific heat in J/kgK
+            poissons_ratio: 0.5,        // Example Poisson's ratio
+            elasticity: 0.01e9,         // Example Young's Modulus in Pa
+            max_strain: 0.8,            // Example max strain (unitless)
+            max_stress: 0.5e6,          // Example max stress in Pa
         }
     }
 }
