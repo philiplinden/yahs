@@ -1,79 +1,40 @@
 use bevy::prelude::*;
-use std::fmt;
 
 use crate::simulator::{
-    constants::*,
+    constants::ATMOSPHERE_MOLAR_MASS,
     gas::density,
     units::celsius2kelvin,
 };
 
-#[derive(Copy, Clone)]
-pub struct Atmosphere {
-    // US Standard Atmosphere, 1976
-    altitude: f32,    // [m] altitude (which determines the other attributes)
-    temperature: f32, // [K] temperature
-    pressure: f32,    // [Pa] pressure
-    density: f32,     // [kg/m³] density
-    molar_mass: f32,  // [kg/mol] molar mass a.k.a. molecular weight
-}
-
-impl fmt::Display for Atmosphere {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(
-            f,
-            "{:} K | {:} Pa | {:} kg/m³",
-            self.temperature, self.pressure, self.density,
-        )
+pub struct AtmospherePlugin;
+impl Plugin for AtmospherePlugin {
+    fn build(&self, app: &mut App) {
+        app.insert_resource(Atmosphere);
     }
 }
+
+/// US Standard Atmosphere, 1976
+#[derive(Resource)]
+pub struct Atmosphere;
 
 impl Atmosphere {
-    pub fn new(altitude: f32) -> Self {
-        Atmosphere {
-            altitude,
-            temperature: coesa_temperature(altitude),
-            pressure: coesa_pressure(altitude),
-            density: density(
-                coesa_temperature(altitude),
-                coesa_pressure(altitude),
-                28.9647,
-            ),
-            molar_mass: 28.9647,
-        }
-    }
-    pub fn set_altitude(&mut self, new_altitude: f32) {
-        self.altitude = new_altitude;
-        // update all params
-        self.temperature = coesa_temperature(new_altitude);
-        self.pressure = coesa_pressure(new_altitude);
-        self.density = density(self.temperature, self.pressure, self.molar_mass);
-    }
-
-    pub fn temperature(self) -> f32 {
+    pub fn temperature(&self, altitude: f32) -> f32 {
         // Temperature (K)
-        self.temperature
+        coesa_temperature(altitude)
     }
-
-    pub fn pressure(self) -> f32 {
+ 
+    pub fn pressure(&self, altitude: f32) -> f32 {
         // Pressure (Pa)
-        self.pressure
+        coesa_pressure(altitude)
     }
 
-    pub fn density(self) -> f32 {
-        // Density (kg/m³)
-        self.density
-    }
-}
-
-impl Default for Atmosphere {
-    fn default() -> Self {
-        Atmosphere {
-            altitude: 0.0, // Sea level
-            temperature: STANDARD_TEMPERATURE, // Standard sea level temperature
-            pressure: STANDARD_PRESSURE, // Standard sea level pressure
-            density: density(STANDARD_TEMPERATURE, STANDARD_PRESSURE, 28.9647), // Calculate density at sea level
-            molar_mass: 28.9647, // Molar mass of air
-        }
+    pub fn density(&self, altitude: f32) -> f32 {
+        // Ensure the function signature matches the expected parameters
+        density(
+            coesa_temperature(altitude),
+            coesa_pressure(altitude),
+            ATMOSPHERE_MOLAR_MASS,
+        )
     }
 }
 

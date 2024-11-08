@@ -19,11 +19,9 @@
 #![allow(dead_code)]
 
 use super::constants::{R, STANDARD_PRESSURE, STANDARD_TEMPERATURE};
-use log::error;
-use ron::de::from_str;
+use bevy::log::error;
 use serde::Deserialize;
 use std::fmt;
-use std::fs;
 
 pub fn volume(temperature: f32, pressure: f32, mass: f32, molar_mass: f32) -> f32 {
     // Volume (m³) of an ideal gas from its temperature (K), pressure (Pa),
@@ -151,15 +149,4 @@ impl<'a> GasVolume<'a> {
         // volume (m³)
         volume(self.temperature, self.pressure, self.mass, self.species.molar_mass)
     }
-}
-
-#[derive(Debug, Deserialize)]
-struct GasConfig {
-    gases: Vec<GasSpecies>,
-}
-
-fn load_gas_config(file_path: &str) -> Vec<GasSpecies> {
-    let content = fs::read_to_string(file_path).expect("Unable to read file");
-    let config: GasConfig = from_str(&content).expect("Unable to parse RON");
-    config.gases
 }

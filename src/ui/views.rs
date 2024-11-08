@@ -2,7 +2,7 @@ use egui::*;
 use egui_plot::{
     Bar, BarChart, BoxElem, BoxPlot, BoxSpread, Legend, Line, Plot,
 };
-use log::error;
+use bevy::log::error;
 use crate::gui::View;
 use crate::original::config::{self, Config};
 

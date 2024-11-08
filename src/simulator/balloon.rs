@@ -4,12 +4,9 @@
 // Properties, attributes and functions related to the balloon.
 // ----------------------------------------------------------------------------
 
-use log::debug;
-use ron::de::from_str;
+use bevy::log::debug;
 use serde::Deserialize;
-use std::f32::consts::PI;
-use std::fmt;
-use std::fs;
+use std::{f32::consts::PI, fmt};
 
 use super::{gas, SolidBody};
 use bevy::prelude::*;
@@ -200,7 +197,7 @@ impl<'a> Balloon<'a> {
         self.intact = false;
         self.set_volume(0.0);
         self.lift_gas.set_mass(0.0);
-        log::warn!("The balloon has burst! Reason: {:?}", reason)
+        bevy::log::warn!("The balloon has burst! Reason: {:?}", reason)
     }
 }
 
@@ -253,45 +250,6 @@ pub fn projected_spherical_area(volume: f32) -> f32 {
 // Source: https://www.matweb.com/
 // ----------------------------------------------------------------------------
 
-#[derive(Debug, Deserialize, Clone)]
-pub struct MaterialConfig {
-    materials: Vec<BalloonMaterial>,
-}
-
-impl BalloonMaterial {
-    pub fn load_materials() -> Vec<BalloonMaterial> {
-        let content = fs::read_to_string("path/to/materials.ron").expect("Unable to read file");
-        let config: MaterialConfig = from_str(&content).expect("Unable to parse RON");
-        config.materials
-    }
-
-    pub fn new(material_name: &str) -> Self {
-        let materials = BalloonMaterial::load_materials();
-        materials
-            .into_iter()
-            .find(|m| m.name == material_name)
-            .unwrap_or_default()
-    }
-}
-
-impl Default for BalloonMaterial {
-    fn default() -> Self {
-        BalloonMaterial {
-            name: "Latex".to_string(),
-            max_temperature: 373.0,     // Example value in Kelvin
-            density: 920.0,             // Example density in kg/m³
-            emissivity: 0.9,            // Example emissivity
-            absorptivity: 0.9,          // Example absorptivity
-            thermal_conductivity: 0.13, // Example thermal conductivity in W/mK
-            specific_heat: 2000.0,      // Example specific heat in J/kgK
-            poissons_ratio: 0.5,        // Example Poisson's ratio
-            elasticity: 0.01e9,         // Example Young's Modulus in Pa
-            max_strain: 0.8,            // Example max strain (unitless)
-            max_stress: 0.5e6,          // Example max stress in Pa
-        }
-    }
-}
-
 #[derive(Debug, Deserialize, Clone, PartialEq)]
 pub struct BalloonMaterial {
     pub name: String,
@@ -310,5 +268,23 @@ pub struct BalloonMaterial {
 impl fmt::Display for BalloonMaterial {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "{}", self.name)
+    }
+}
+
+impl Default for BalloonMaterial {
+    fn default() -> Self {
+        BalloonMaterial {
+            name: "Latex".to_string(),
+            max_temperature: 373.0,     // Example value in Kelvin
+            density: 920.0,             // Example density in kg/m³
+            emissivity: 0.9,            // Example emissivity
+            absorptivity: 0.9,          // Example absorptivity
+            thermal_conductivity: 0.13, // Example thermal conductivity in W/mK
+            specific_heat: 2000.0,      // Example specific heat in J/kgK
+            poissons_ratio: 0.5,        // Example Poisson's ratio
+            elasticity: 0.01e9,         // Example Young's Modulus in Pa
+            max_strain: 0.8,            // Example max strain (unitless)
+            max_stress: 0.5e6,          // Example max stress in Pa
+        }
     }
 }

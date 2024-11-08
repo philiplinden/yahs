@@ -12,3 +12,4 @@ pub const R: f32 = BOLTZMANN_CONSTANT * AVOGADRO_CONSTANT; // [J/K-mol] Ideal ga
 pub const STANDARD_G: f32 = 9.80665; // [m/s^2] standard gravitational acceleration
 pub const EARTH_RADIUS_M: f32 = 6371007.2; // [m] mean radius of Earth
 
+pub const ATMOSPHERE_MOLAR_MASS: f32 = 0.02897; // [kg/mol] molar mass of air

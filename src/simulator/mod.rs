@@ -21,6 +21,7 @@ pub struct SimulatorPlugins;
 impl PluginGroup for SimulatorPlugins {
     fn build(self) -> PluginGroupBuilder {
         PluginGroupBuilder::start::<Self>()
+            .add(atmosphere::AtmospherePlugin)
             .add(balloon::BalloonPlugin)
     }
 }
@@ -45,6 +46,4 @@ impl PluginGroup for SimulatorPlugins {
 //     let acceleration = net_force / total_dry_mass;
 //     let ascent_rate = ascent_rate + acceleration * delta_t;
 //     let altitude = altitude + ascent_rate * delta_t;
-
-//     atmosphere.set_altitude(altitude);
 // }

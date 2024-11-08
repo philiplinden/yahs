@@ -1,11 +1,19 @@
-// mod gui;
+mod ui;
 mod simulator;
-
+mod assets;
 use bevy::prelude::*;
+
+#[derive(Debug, Clone, Copy, Default, Eq, PartialEq, Hash, States)]
+enum AppState {
+    #[default]
+    Loading,
+    Running,
+}
 
 fn main() {
     setup_pretty_logs();
     App::new()
+        .init_state::<AppState>()
         .add_plugins((
             DefaultPlugins.set(WindowPlugin {
                 primary_window: Some(Window {
@@ -14,8 +22,9 @@ fn main() {
                 }),
                 ..default()
             }),
-            // ui::InterfacePlugins,
+            ui::InterfacePlugins,
             simulator::SimulatorPlugins,
+            assets::AssetLoaderPlugin,
         ))
         .run();
 }
