@@ -1,5 +1,0 @@
-# This file is used internally by FFMPEG.
-file 'file:E:/repos/brickworks/yahs/docs/animations/media/videos/main/720p30/partial_movie_files/ForceBalance/2112665693_2743949074_928456459.mp4'
-file 'file:E:/repos/brickworks/yahs/docs/animations/media/videos/main/720p30/partial_movie_files/ForceBalance/793589714_3890345977_3748378852.mp4'
-file 'file:E:/repos/brickworks/yahs/docs/animations/media/videos/main/720p30/partial_movie_files/ForceBalance/793589714_2275118548_1459091163.mp4'
-file 'file:E:/repos/brickworks/yahs/docs/animations/media/videos/main/720p30/partial_movie_files/ForceBalance/793589714_255102487_3712156357.mp4'
