@@ -35,3 +35,33 @@ I had in the previous Rust simulation. Namely, I need to:
 The Bevy schedule system will completely replace the threaded event loop that I
 had in the previous simulation, including things like `SimCommands`,
 `SimOutput`, `SimInstant`, and the `AsyncSim` struct.
+
+### Changelog - 2024-11-07
+
+- **Main Application (`src/main.rs`):**
+  - Integrated `simulator::SimulatorPlugins` to replace the previous UI plugins
+    setup.
+
+- **Atmosphere Module (`src/simulator/atmosphere.rs`):**
+  - Introduced a new `Atmosphere` struct to model atmospheric conditions using
+    the US Standard Atmosphere, 1976.
+  - Added functions for calculating temperature and pressure based on altitude.
+
+- **Balloon Module (`src/simulator/balloon.rs`):**
+  - Added `BalloonPlugin` struct implementing the `Plugin` trait for Bevy
+    integration.
+
+- **Forces Module (`src/simulator/forces.rs`):**
+  - Updated to use the new `atmosphere::Atmosphere` for buoyancy and drag
+    calculations.
+
+- **Gas Module (`src/simulator/gas.rs`):**
+  - Moved `Atmosphere` struct to its own module.
+  - Added utility functions for calculating gas volume and density.
+
+- **Simulator Module (`src/simulator/mod.rs`):**
+  - Added new modules: `atmosphere` and `units`.
+  - Converted `SimulatorPlugin` to `SimulatorPlugins` as a `PluginGroup`.
+
+- **Units Module (`src/simulator/units.rs`):**
+  - Added a utility function to convert Celsius to Kelvin.
