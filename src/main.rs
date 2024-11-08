@@ -14,7 +14,8 @@ fn main() {
                 }),
                 ..default()
             }),
-            // gui::InterfacePlugins,
+            // ui::InterfacePlugins,
+            simulator::SimulatorPlugins,
         ))
         .run();
 }

@@ -14,6 +14,14 @@ use std::fs;
 use super::{gas, SolidBody};
 use bevy::prelude::*;
 
+pub struct BalloonPlugin;
+
+impl Plugin for BalloonPlugin {
+    fn build(&self, app: &mut App) {
+        // app.add_systems(Update, step);
+    }
+}
+
 #[derive(Clone)]
 pub struct Balloon<'a> {
     pub intact: bool,                 // whether or not it has burst
