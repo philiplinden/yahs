@@ -15,15 +15,16 @@ pub enum AppState {
     Running,
 }
 
-impl Plugin for AppPlugin {
-    fn build(&self, app: &mut App) {
-        setup_pretty_logs();
+pub struct AppCorePlugin;
 
-        // Order new `AppStep` variants by adding them here:
+impl Plugin for AppCorePlugin {
+    fn build(&self, app: &mut App) {
+        // Add new `AppSet` variants by adding them here:
         app.configure_sets(
             Update,
             (AppSet::TickTimers, AppSet::RecordInput, AppSet::Update).chain(),
         );
+        // app.init_state::<AppState>();
 
         // Spawn the main camera.
         app.add_systems(Startup, spawn_camera);
@@ -54,24 +55,16 @@ impl Plugin for AppPlugin {
 
         // Add other plugins.
         app.add_plugins((
-            ui::InterfacePlugins,
-            assets::AssetTrackingPlugin,
-            assets::ConfigLoaderPlugin,
-            simulator::SimulatorPlugins,
+            // ui::InterfacePlugins,
+            // assets::AssetTrackingPlugin,
+            // assets::ConfigLoaderPlugin,
+            // simulator::SimulatorPlugins,
         ));
 
         // Enable dev tools for dev builds.
         #[cfg(feature = "dev")]
         app.add_plugins(dev_tools::plugin);
     }
-}
-
-fn setup_pretty_logs() {
-    // look for the RUST_LOG env var or default to "info"
-    let rust_log = std::env::var("RUST_LOG").unwrap_or_else(|_| "info".to_owned());
-    std::env::set_var("RUST_LOG", rust_log);
-    // initialize pretty print logger
-    pretty_env_logger::init();
 }
 
 /// High-level groupings of systems for the app in the `Update` schedule. When
@@ -91,12 +84,5 @@ fn spawn_camera(mut commands: Commands) {
     commands.spawn((
         Name::new("Camera"),
         Camera3dBundle::default(),
-        // Render all UI to this camera. Not strictly necessary since we only
-        // use one camera, but if we don't use this component, our UI will
-        // disappear as soon as we add another camera. This includes indirect
-        // ways of adding cameras like using [ui node
-        // outlines](https://bevyengine.org/news/bevy-0-14/#ui-node-outline-gizmos)
-        // for debugging. So it's good to have this here for future-proofing.
-        IsDefaultUiCamera,
     ));
 }

@@ -36,9 +36,7 @@ fn file_menu_button(ui: &mut Ui) {
     let reset_shortcut =
         egui::KeyboardShortcut::new(Modifiers::CTRL | Modifiers::SHIFT, egui::Key::R);
 
-    // NOTE: we must check the shortcuts OUTSIDE of the actual "File" menu,
-    // or else they would only be checked if the "File" menu was actually open!
-
+    // Check shortcuts outside the actual "File" menu
     if ui.input_mut(|i| i.consume_shortcut(&organize_shortcut)) {
         ui.ctx().memory_mut(|mem| mem.reset_areas());
     }
@@ -50,7 +48,7 @@ fn file_menu_button(ui: &mut Ui) {
     ui.menu_button("View", |ui| {
         ui.set_min_width(220.0);
 
-        // On the web the browser controls the zoom
+        // On the web, the browser controls the zoom
         #[cfg(not(target_arch = "wasm32"))]
         {
             egui::gui_zoom::zoom_menu_buttons(ui);
@@ -86,23 +84,3 @@ fn file_menu_button(ui: &mut Ui) {
         }
     });
 }
-
-    // pub fn checkboxes(&mut self, ui: &mut Ui) {
-    //     let Self { screens, open } = self;
-    //     for screen in screens {
-    //         if screen.is_enabled(ui.ctx()) {
-    //             let mut is_open = open.contains(screen.name());
-    //             ui.toggle_value(&mut is_open, screen.name());
-    //             set_open(open, screen.name(), is_open);
-    //         }
-    //     }
-    // }
-
-    // pub fn windows(&mut self, ctx: &Context) {
-    //     let Self { screens, open } = self;
-    //     for screen in screens {
-    //         let mut is_open = open.contains(screen.name());
-    //         screen.show(ctx, &mut is_open);
-    //         set_open(open, screen.name(), is_open);
-    //     }
-    // }

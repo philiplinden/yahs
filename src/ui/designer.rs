@@ -1,6 +1,6 @@
 use bevy::prelude::*;
 use bevy_egui::{egui, EguiContexts};
-use crate::config::PropertiesConfig;
+use crate::assets::PropertiesConfig;
 use crate::AppState;
 
 pub struct BalloonDesignerPlugin;

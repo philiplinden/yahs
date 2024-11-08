@@ -26,8 +26,10 @@ small things.
 - Added dev tools provided by the Bevy Quickstart Template.
 - Added `dev` feature flag and Bevy build optimiztions to `Cargo.toml`.
 - Added `lib.rs` and moved some things around to clean up the root directory.
+- Replaced all logging with bevy's built-in logging plugin.
 
 ## 2024-11-07
+
 I am switching to Bevy for the simulation. Bevy is a "bevy engine" which is A
 framework for building games and simulations. It allows for high performance,
 multi-threaded, dynamic simulations.

@@ -1,13 +1,14 @@
 use bevy::prelude::*;
-use std::collections::VecDeque;
 use bevy_common_assets::ron::RonAssetPlugin;
 use serde::Deserialize;
+use std::collections::VecDeque;
 
 use crate::simulator::{balloon::BalloonMaterial, gas::GasSpecies};
 use crate::AppState;
 
 /// Configuration for the properties of gases and materials.
 #[derive(Resource, Asset, Debug, Deserialize, Reflect)]
+#[reflect(Resource)]
 pub struct PropertiesConfig {
     pub gases: Vec<GasSpecies>,
     pub materials: Vec<BalloonMaterial>,
@@ -28,22 +29,31 @@ pub struct ConfigLoaderPlugin;
 
 impl Plugin for ConfigLoaderPlugin {
     fn build(&self, app: &mut App) {
-        app.add_plugins((RonAssetPlugin::<PropertiesConfig>::new(&["ron"]),))
+        app.add_plugins(RonAssetPlugin::<PropertiesConfig>::new(&["ron"]))
             .insert_resource(PropertiesConfig::default())
-            .add_systems(Startup, setup_config_loader)
-            .add_systems(OnEnter(AppState::Loading), load_configs);
+            .add_systems(
+                Startup,
+                load_configs,
+            )
+            .add_systems(
+                Update,
+                check_configs_loaded.run_if(in_state(AppState::Loading)),
+            );
     }
 }
 
-/// Sets up the configuration loader for the properties configuration file.
-fn setup_config_loader(asset_server: Res<AssetServer>, mut commands: Commands) {
+/// Loads the configuration and transitions to the Running state.
+///
+/// This function now includes the logic previously in `setup_config_loader`.
+fn load_configs(asset_server: Res<AssetServer>, mut commands: Commands) {
     info!("Setting up configuration loader");
-    commands.insert_resource(PropertiesConfigHandle(asset_server.load("configs/properties.ron")));
+    let handle = asset_server.load("configs/properties.ron");
+    commands.insert_resource(PropertiesConfigHandle(handle.clone()));
     info!("Configuration loader setup complete");
 }
 
-/// Loads the configuration and transitions to the running state.
-fn load_configs(
+/// Checks if the configuration is loaded and transitions to Running state.
+fn check_configs_loaded(
     properties_handle: Res<PropertiesConfigHandle>,
     properties: Res<Assets<PropertiesConfig>>,
     mut commands: Commands,
@@ -62,22 +72,19 @@ fn load_configs(
     }
 }
 
-
-
 /// A high-level way to load collections of asset handles as resources.
 pub struct AssetTrackingPlugin;
 
 impl Plugin for AssetTrackingPlugin {
     fn build(&self, app: &mut App) {
-        app.init_resource::<ResourceHandles>();
-        app.add_systems(PreUpdate, load_resource_assets);
+        app.init_resource::<ResourceHandles>()
+            .add_systems(PreUpdate, load_resource_assets);
     }
 }
 
 pub trait LoadResource {
-    /// This will load the [`Resource`] as an [`Asset`]. When all of its asset dependencies
-    /// have been loaded, it will be inserted as a resource. This ensures that the resource only
-    /// exists when the assets are ready.
+    /// Loads the [`Resource`] as an [`Asset`]. When all asset dependencies are loaded,
+    /// it inserts the resource into the world.
     fn load_resource<T: Resource + Asset + Clone + FromWorld>(&mut self) -> &mut Self;
 }
 
@@ -101,13 +108,11 @@ impl LoadResource for App {
     }
 }
 
-/// A function that inserts a loaded resource.
 type InsertLoadedResource = fn(&mut World, &UntypedHandle);
 
 #[derive(Resource, Default)]
 struct ResourceHandles {
-    // Use a queue for waiting assets so they can be cycled through and moved to
-    // `finished` one at a time.
+    // Queue for waiting assets to be loaded
     waiting: VecDeque<(UntypedHandle, InsertLoadedResource)>,
     finished: Vec<UntypedHandle>,
 }
