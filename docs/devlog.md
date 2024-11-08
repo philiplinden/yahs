@@ -1,5 +1,32 @@
 # development log
 
+## 2024-11-08
+
+Focusing on getting the app running as a simple splash screen followed by a
+loading screen followed by the running application. Loading the configuration
+file and setting up the simulation from there.
+
+I am having trouble getting the Bevy asset server to load the configuration
+file. It seems to be advancing to the running state before the configuration
+file is loaded. I added a splash screen to practice with state transitions.
+
+I also added dev tools provided by the Bevy Quickstart Template
+([link](https://github.com/TheBevyFlock/bevy_new_2d/blob/main/src/dev_tools.rs))
+to help with debugging. This is toggled with the `F3` key by default, and only
+added when the `dev` feature is enabled (it is not enabled by default when
+building with cargo and omitted from the release build). I borrowed some other
+patterns from the Bevy Quickstart Template for the asset tracking and a few
+small things.
+
+### Changelog - 2024-11-08
+
+- Added splash screen to the application.
+- Changed the generic asset loader to a configuration loader for now.
+- Added asset tracking plugin.
+- Added dev tools provided by the Bevy Quickstart Template.
+- Added `dev` feature flag and Bevy build optimiztions to `Cargo.toml`.
+- Added `lib.rs` and moved some things around to clean up the root directory.
+
 ## 2024-11-07
 I am switching to Bevy for the simulation. Bevy is a "bevy engine" which is A
 framework for building games and simulations. It allows for high performance,

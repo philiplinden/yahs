@@ -19,7 +19,7 @@
 #![allow(dead_code)]
 
 use super::constants::{R, STANDARD_PRESSURE, STANDARD_TEMPERATURE};
-use bevy::log::error;
+use bevy::{prelude::*, log::error};
 use serde::Deserialize;
 use std::fmt;
 
@@ -36,7 +36,7 @@ pub fn density(temperature: f32, pressure: f32, molar_mass: f32) -> f32 {
 }
 
 
-#[derive(Debug, Deserialize, Clone)]
+#[derive(Debug, Deserialize, Clone, Reflect)]
 pub struct GasSpecies {
     pub name: String,
     pub abbreviation: String,

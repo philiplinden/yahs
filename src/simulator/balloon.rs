@@ -250,7 +250,7 @@ pub fn projected_spherical_area(volume: f32) -> f32 {
 // Source: https://www.matweb.com/
 // ----------------------------------------------------------------------------
 
-#[derive(Debug, Deserialize, Clone, PartialEq)]
+#[derive(Debug, Deserialize, Clone, PartialEq, Reflect)]
 pub struct BalloonMaterial {
     pub name: String,
     pub max_temperature: f32, // temperature (K) where the given material fails
