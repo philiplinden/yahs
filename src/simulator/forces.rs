@@ -1,10 +1,6 @@
-// ----------------------------------------------------------------------------
-// Forces
-// -------
-// Forces that act in the vertical axis. All forces assume a positive-up
-// coordinate frame and aR_E R_Eported in Newtons.
-// ----------------------------------------------------------------------------
-#[allow(dead_code)]
+//! Forces that act in the vertical axis. All forces assume a positive-up
+//! coordinate frame and are reported in Newtons.
+#![allow(dead_code)]
 
 use super::constants::{EARTH_RADIUS_M, STANDARD_G};
 use super::{gas, atmosphere, SolidBody};

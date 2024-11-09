@@ -1,4 +1,4 @@
-mod assets;
+// mod assets;
 mod simulator;
 mod ui;
 
@@ -7,28 +7,13 @@ mod dev_tools;
 
 use bevy::{asset::AssetMetaCheck, prelude::*};
 
-#[derive(Debug, Clone, Copy, Default, Eq, PartialEq, Hash, States)]
-pub enum AppState {
-    #[default]
-    Splash,
-    Loading,
-    Running,
-}
-
 pub struct AppCorePlugin;
 
 impl Plugin for AppCorePlugin {
     fn build(&self, app: &mut App) {
-        // Add new `AppSet` variants by adding them here:
-        app.configure_sets(
-            Update,
-            (AppSet::TickTimers, AppSet::RecordInput, AppSet::Update).chain(),
-        );
-        // app.init_state::<AppState>();
-
         // Spawn the main camera.
         app.add_systems(Startup, spawn_camera);
-
+        
         // Add Bevy plugins.
         app.add_plugins(
             DefaultPlugins
@@ -55,7 +40,7 @@ impl Plugin for AppCorePlugin {
 
         // Add other plugins.
         app.add_plugins((
-            // ui::InterfacePlugins,
+            ui::InterfacePlugins,
             // assets::AssetTrackingPlugin,
             // assets::ConfigLoaderPlugin,
             // simulator::SimulatorPlugins,
@@ -67,22 +52,9 @@ impl Plugin for AppCorePlugin {
     }
 }
 
-/// High-level groupings of systems for the app in the `Update` schedule. When
-/// adding a new variant, make sure to order it in the `configure_sets` call
-/// above.
-#[derive(SystemSet, Debug, Clone, Copy, Eq, PartialEq, Hash, PartialOrd, Ord)]
-enum AppSet {
-    /// Tick timers.
-    TickTimers,
-    /// Record player input.
-    RecordInput,
-    /// Do everything else (consider splitting this into further variants).
-    Update,
-}
-
 fn spawn_camera(mut commands: Commands) {
     commands.spawn((
         Name::new("Camera"),
-        Camera3dBundle::default(),
+        Camera3d::default(),
     ));
 }

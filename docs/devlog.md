@@ -18,6 +18,10 @@ building with cargo and omitted from the release build). I borrowed some other
 patterns from the Bevy Quickstart Template for the asset tracking and a few
 small things.
 
+I'm having trouble integrating simple things like loading in values from the
+config files. I can't tell what's getting in my way. Time to move things out of
+configs and into hard-coded statics.
+
 ### Changelog - 2024-11-08
 
 - Added splash screen to the application.

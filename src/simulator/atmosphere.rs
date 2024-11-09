@@ -1,3 +1,6 @@
+//! Atmosphere model based on the US Standard Atmosphere, 1976.
+#![allow(dead_code)]
+
 use bevy::prelude::*;
 
 use crate::simulator::{

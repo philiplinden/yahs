@@ -1,5 +1,5 @@
 //! Development tools for the game. This plugin is only enabled in dev builds.
-
+#[allow(unused_imports)]
 use bevy::{
     dev_tools::{
         states::log_transitions,
@@ -9,12 +9,7 @@ use bevy::{
     prelude::*,
 };
 
-use crate::AppState;
-
 pub(super) fn plugin(app: &mut App) {
-    // Log `AppState` state transitions.
-    app.add_systems(Update, log_transitions::<AppState>);
-
     // Toggle the debug overlay for UI.
     app.add_plugins(DebugUiPlugin);
     app.add_systems(
@@ -23,7 +18,7 @@ pub(super) fn plugin(app: &mut App) {
     );
 }
 
-const TOGGLE_KEY: KeyCode = KeyCode::Backquote;
+const TOGGLE_KEY: KeyCode = KeyCode::F3;
 
 fn toggle_debug_ui(mut options: ResMut<UiDebugOptions>) {
     options.toggle();

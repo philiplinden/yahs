@@ -1,10 +1,10 @@
-use bevy::app::PluginGroupBuilder;
-use bevy::prelude::*;
+use bevy::{
+    app::PluginGroupBuilder,
+    prelude::*,
+};
 use bevy_egui::EguiPlugin;
-
-mod designer;
 mod shell;
-mod splash;
+// mod designer;
 
 /// A plugin group that includes all interface-related plugins
 pub struct InterfacePlugins;
@@ -12,9 +12,16 @@ pub struct InterfacePlugins;
 impl PluginGroup for InterfacePlugins {
     fn build(self) -> PluginGroupBuilder {
         PluginGroupBuilder::start::<Self>()
-            .add(EguiPlugin)
-            .add(shell::ShellPlugin)
-            .add(designer::BalloonDesignerPlugin)
-            .add(splash::SplashPlugin)
+            .add(CoreUiPlugin)
+            // TODO: Add other ui plugins here
+    }
+}
+
+/// Base UI plugin. This sets up Bevy Egui and the "shell" or frame for the UI.
+pub struct CoreUiPlugin;
+
+impl Plugin for CoreUiPlugin {
+    fn build(&self, app: &mut App) {
+        app.add_plugins((EguiPlugin, shell::ShellPlugin));
     }
 }

@@ -1,8 +1,5 @@
-// ----------------------------------------------------------------------------
-// Balloon
-// -------
-// Properties, attributes and functions related to the balloon.
-// ----------------------------------------------------------------------------
+//! Properties, attributes and functions related to the balloon.
+#![allow(dead_code)]
 
 use bevy::log::debug;
 use serde::Deserialize;
@@ -14,7 +11,7 @@ use bevy::prelude::*;
 pub struct BalloonPlugin;
 
 impl Plugin for BalloonPlugin {
-    fn build(&self, app: &mut App) {
+    fn build(&self, _app: &mut App) {
         // app.add_systems(Update, step);
     }
 }
