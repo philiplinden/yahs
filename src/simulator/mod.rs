@@ -1,7 +1,7 @@
 pub mod balloon;
 // pub mod bus;
 pub mod constants;
-pub mod forces;
+pub mod dynamics;
 pub mod gas;
 pub mod atmosphere;
 pub mod units;
@@ -10,11 +10,6 @@ pub mod units;
 use bevy::prelude::*;
 use bevy::app::PluginGroupBuilder;
 
-pub trait SolidBody {
-    fn drag_area(&self) -> f32;
-    fn drag_coeff(&self) -> f32;
-}
-
 pub struct SimulatorPlugins;
 
 impl PluginGroup for SimulatorPlugins {
@@ -22,6 +17,7 @@ impl PluginGroup for SimulatorPlugins {
         PluginGroupBuilder::start::<Self>()
             .add(atmosphere::AtmospherePlugin)
             .add(balloon::BalloonPlugin)
+            .add(dynamics::DynamicsPlugin)
     }
 }
 
