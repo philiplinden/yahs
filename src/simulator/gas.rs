@@ -36,7 +36,7 @@ pub fn density(temperature: f32, pressure: f32, molar_mass: f32) -> f32 {
 }
 
 
-#[derive(Debug, Deserialize, Clone, Reflect)]
+#[derive(Component, Debug, Deserialize, Clone, Reflect)]
 pub struct GasSpecies {
     pub name: String,
     pub abbreviation: String,
@@ -53,28 +53,27 @@ impl GasSpecies {
     }
 }
 
-#[derive(Debug, Clone, Copy)]
-pub struct GasVolume<'a> {
-    // A finite amount of a particular gas
-    species: &'a GasSpecies, // Reference to the type of gas
+/// A finite amount of a particular gas
+#[derive(Component, Debug)]
+pub struct GasVolume {
+    species: GasSpecies, // Reference to the type of gas
     mass: f32,        // [kg] amount of gas in the volume
     temperature: f32, // [K] temperature
     pressure: f32,    // [Pa] pressure
-    volume: f32,      // [m³] volume
 }
 
-impl<'a> fmt::Display for GasVolume<'a> {
+impl fmt::Display for GasVolume {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(
             f,
             "{:}: {:} kg | {:} K | {:} Pa | {:} m³",
-            self.species.name, self.mass, self.temperature, self.pressure, self.volume,
+            self.species.name, self.mass, self.temperature, self.pressure, self.volume(),
         )
     }
 }
 
-impl<'a> GasVolume<'a> {
-    pub fn new(species: &'a GasSpecies, mass: f32) -> Self {
+impl GasVolume {
+    pub fn new(species: GasSpecies, mass: f32) -> Self {
         // Create a new gas volume as a finite amount of mass (kg) of a
         // particular species of gas. Gas is initialized at standard
         // temperature and pressure.
@@ -83,32 +82,7 @@ impl<'a> GasVolume<'a> {
             mass,
             temperature: STANDARD_TEMPERATURE,
             pressure: STANDARD_PRESSURE,
-            volume: volume(
-                STANDARD_TEMPERATURE,
-                STANDARD_PRESSURE,
-                mass,
-                species.molar_mass, // Accessing molar mass through the reference
-            ),
         }
-    }
-
-    pub fn set_temperature(&mut self, new_temperature: f32) {
-        // set the temperature (K) of the GasVolume
-        self.temperature = new_temperature;
-    }
-
-    pub fn set_pressure(&mut self, new_pressure: f32) {
-        // set the pressure (Pa) of the GasVolume
-        self.pressure = new_pressure;
-    }
-
-    pub fn set_volume(&mut self, new_volume: f32) {
-        // set the volume (m³) of the GasVolume and update the pressure
-        // according to the ideal gas law.
-        self.volume = new_volume;
-        let new_pressure = ((self.mass / self.species.molar_mass) * R * self.temperature)
-            / self.volume;
-        self.set_pressure(new_pressure);
     }
 
     pub fn set_mass(&mut self, new_mass: f32) {
@@ -123,30 +97,26 @@ impl<'a> GasVolume<'a> {
     pub fn set_mass_from_volume(&mut self) {
         // set the mass (kg) based on the current volume (m³),
         // density (kg/m³), and molar mass (kg/mol)
-        self.mass = self.volume * (self.species.molar_mass / R) * (self.pressure / self.temperature);
+        self.mass = self.volume() * (self.species.molar_mass / R) * (self.pressure / self.temperature);
     }
 
+    /// Ideal gas temperature (K)
     pub fn temperature(self) -> f32 {
-        // temperature (K)
         self.temperature
     }
 
+    /// Pressure (Pa)
     pub fn pressure(self) -> f32 {
-        // pressure (Pa)
-        self.pressure
+        ((self.mass / self.species.molar_mass) * R * self.temperature) / self.volume()
     }
 
-    pub fn mass(self) -> f32 {
-        // mass (kg)
-        self.mass
-    }
-    pub fn density(self) -> f32 {
-        // density (kg/m³)
+    /// Ideal gas density (kg/m³)
+    pub fn density(&self) -> f32 {
         density(self.temperature, self.pressure, self.species.molar_mass)
     }
 
+    /// Ideal gas volume (m³)
     pub fn volume(&self) -> f32 {
-        // volume (m³)
         volume(self.temperature, self.pressure, self.mass, self.species.molar_mass)
     }
 }

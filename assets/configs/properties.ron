@@ -57,6 +57,8 @@
             molar_mass: 0.01604303,
         ),
     ],
+    // Properties, attributes and functions related to the material properties.
+    // Source: https://www.matweb.com/
     materials: [
         (
             name: "Nothing",

@@ -1,11 +1,10 @@
 //! Properties, attributes and functions related to the balloon.
 #![allow(dead_code)]
 
-use bevy::log::debug;
 use serde::Deserialize;
 use std::{f32::consts::PI, fmt};
 
-use super::{gas, SolidBody};
+use crate::simulator::{gas::GasVolume, SolidBody};
 use bevy::prelude::*;
 
 pub struct BalloonPlugin;
@@ -16,205 +15,173 @@ impl Plugin for BalloonPlugin {
     }
 }
 
-#[derive(Clone)]
-pub struct Balloon<'a> {
-    pub intact: bool,                 // whether or not it has burst
-    pub lift_gas: gas::GasVolume<'a>, // gas inside the balloon
-    pub material: BalloonMaterial,    // what the balloon is made of
-    pub skin_thickness: f32,          // thickness of the skin of the balloon (m)
-    mass: f32,                        // balloon mass (kg)
-    drag_coeff: f32,                  // drag coefficient
-    unstretched_thickness: f32,       // thickness of the skin of the balloon without stretch (m)
-    unstretched_radius: f32,          // radius of balloon without stretch (m)
-    pub temperature: f32,             // fail if surface temperature exceeds this (K)
-    stress: f32,
-    strain: f32,
+#[derive(Component)]
+pub struct BalloonBundle {
+    pub balloon: Balloon,
+    pub gas: GasVolume,
+    pub transform: TransformBundle,
 }
 
 #[derive(Component)]
-pub struct BalloonConfig<'a> {
+pub struct Balloon {
+    /// whether or not it has burst
+    pub intact: bool,
     /// Balloon material type
-    pub material: BalloonMaterial,
+    pub skin_material: BalloonMaterial,
     /// Thickness of balloon membrane in meters
-    pub thickness_m: f32,
-    /// Diameter of "unstressed" balloon membrane when filled, assuming balloon is a sphere, in meters
-    pub barely_inflated_diameter_m: f32,
-    /// Configuration for the lift gas
-    pub lift_gas: gas::GasVolume<'a>,
+    pub unstretched_thickness: f32,
+    /// radius of balloon without stretch (m)
+    pub unstretched_radius: f32,
+    /// shape of the balloon
+    pub mesh: Mesh,
 }
 
-impl<'a> Balloon<'a> {
-    pub fn new(
-        material: BalloonMaterial,     // material of balloon skin
-        skin_thickness: f32,           // balloon skin thickness (m) at zero pressure
-        barely_inflated_diameter: f32, // internal diameter (m) at zero pressure
-        lift_gas: gas::GasVolume<'a>,  // species of gas inside balloon
-    ) -> Self {
-        let unstretched_radius = barely_inflated_diameter / 2.0;
-        let mass = shell_volume(unstretched_radius, skin_thickness) * material.density;
-        Balloon {
-            intact: true,
-            mass,
-            temperature: 293.0,
-            drag_coeff: 0.3,
-            lift_gas,
-            material,
-            skin_thickness,
-            unstretched_thickness: skin_thickness,
-            unstretched_radius,
-            stress: 0.0,
-            strain: 1.0,
-        }
-    }
+// impl Balloon {
 
-    pub fn surface_area(&self) -> f32 {
-        sphere_surface_area(sphere_radius_from_volume(self.lift_gas.volume()))
-    }
+//     pub fn surface_area(&self) -> f32 {
+//         sphere_surface_area(sphere_radius_from_volume(self.lift_gas.volume()))
+//     }
 
-    pub fn radius(&self) -> f32 {
-        sphere_radius_from_volume(self.volume())
-    }
+//     pub fn radius(&self) -> f32 {
+//         sphere_radius_from_volume(self.volume())
+//     }
 
-    pub fn volume(&self) -> f32 {
-        self.lift_gas.volume()
-    }
+//     pub fn volume(&self) -> f32 {
+//         self.lift_gas.volume()
+//     }
 
-    fn set_volume(&mut self, new_volume: f32) {
-        self.lift_gas.set_volume(new_volume)
-    }
+//     fn set_volume(&mut self, new_volume: f32) {
+//         self.lift_gas.set_volume(new_volume)
+//     }
 
-    pub fn pressure(&self) -> f32 {
-        self.lift_gas.pressure()
-    }
+//     pub fn pressure(&self) -> f32 {
+//         self.lift_gas.pressure()
+//     }
 
-    fn set_pressure(&mut self, new_pressure: f32) {
-        self.lift_gas.set_pressure(new_pressure)
-    }
+//     fn set_pressure(&mut self, new_pressure: f32) {
+//         self.lift_gas.set_pressure(new_pressure)
+//     }
 
-    fn set_thickness(&mut self, new_thickness: f32) {
-        self.skin_thickness = new_thickness
-    }
+//     fn set_thickness(&mut self, new_thickness: f32) {
+//         self.skin_thickness = new_thickness
+//     }
 
-    pub fn gage_pressure(&self, external_pressure: f32) -> f32 {
-        self.lift_gas.pressure() - external_pressure
-    }
+//     pub fn gage_pressure(&self, external_pressure: f32) -> f32 {
+//         self.lift_gas.pressure() - external_pressure
+//     }
 
-    pub fn stress(&self) -> f32 {
-        self.stress
-    }
+//     pub fn stress(&self) -> f32 {
+//         self.stress
+//     }
 
-    fn set_stress(&mut self, external_pressure: f32) {
-        // hoop stress (Pa) of thin-walled hollow sphere from internal pressure
-        // https://en.wikipedia.org/wiki/Pressure_vessel#Stress_in_thin-walled_pressure_vessels
-        // https://pkel015.connect.amazon.auckland.ac.nz/SolidMechanicsBooks/Part_I/BookSM_Part_I/07_ElasticityApplications/07_Elasticity_Applications_03_Presure_Vessels.pdf
-        self.stress =
-            self.gage_pressure(external_pressure) * self.radius() / (2.0 * self.skin_thickness);
-        if self.stress > self.material.max_stress {
-            self.burst(format!(
-                "Hoop stress ({:?} Pa) exceeded maximum stress ({:?} Pa)",
-                self.stress, self.material.max_stress
-            ));
-        }
-    }
+//     fn set_stress(&mut self, external_pressure: f32) {
+//         // hoop stress (Pa) of thin-walled hollow sphere from internal pressure
+//         // https://en.wikipedia.org/wiki/Pressure_vessel#Stress_in_thin-walled_pressure_vessels
+//         // https://pkel015.connect.amazon.auckland.ac.nz/SolidMechanicsBooks/Part_I/BookSM_Part_I/07_ElasticityApplications/07_Elasticity_Applications_03_Presure_Vessels.pdf
+//         self.stress =
+//             self.gage_pressure(external_pressure) * self.radius() / (2.0 * self.skin_thickness);
+//         if self.stress > self.material.max_stress {
+//             self.burst(format!(
+//                 "Hoop stress ({:?} Pa) exceeded maximum stress ({:?} Pa)",
+//                 self.stress, self.material.max_stress
+//             ));
+//         }
+//     }
 
-    pub fn strain(&self) -> f32 {
-        self.strain
-    }
+//     pub fn strain(&self) -> f32 {
+//         self.strain
+//     }
 
-    fn set_strain(&mut self) {
-        // strain (%) of thin-walled hollow sphere from internal pressure
-        // https://en.wikipedia.org/wiki/Pressure_vessel#Stress_in_thin-walled_pressure_vessels
-        // https://pkel015.connect.amazon.auckland.ac.nz/SolidMechanicsBooks/Part_I/BookSM_Part_I/07_ElasticityApplications/07_Elasticity_Applications_03_Presure_Vessels.pdf
-        self.strain = self.radius() / self.unstretched_radius;
-        if self.strain > self.material.max_strain {
-            self.burst(format!(
-                "Tangential strain ({:?} %) exceeded maximum strain ({:?} %)",
-                self.strain * 100.0,
-                self.material.max_strain * 100.0
-            ));
-        }
-    }
+//     fn set_strain(&mut self) {
+//         // strain (%) of thin-walled hollow sphere from internal pressure
+//         // https://en.wikipedia.org/wiki/Pressure_vessel#Stress_in_thin-walled_pressure_vessels
+//         // https://pkel015.connect.amazon.auckland.ac.nz/SolidMechanicsBooks/Part_I/BookSM_Part_I/07_ElasticityApplications/07_Elasticity_Applications_03_Presure_Vessels.pdf
+//         self.strain = self.radius() / self.unstretched_radius;
+//         if self.strain > self.material.max_strain {
+//             self.burst(format!(
+//                 "Tangential strain ({:?} %) exceeded maximum strain ({:?} %)",
+//                 self.strain * 100.0,
+//                 self.material.max_strain * 100.0
+//             ));
+//         }
+//     }
 
-    pub fn radial_displacement(&self, external_pressure: f32) -> f32 {
-        // https://pkel015.connect.amazon.auckland.ac.nz/SolidMechanicsBooks/Part_I/BookSM_Part_I/07_ElasticityApplications/07_Elasticity_Applications_03_Presure_Vessels.pdf
-        ((1.0 - self.material.poissons_ratio) / self.material.elasticity)
-            * ((self.gage_pressure(external_pressure) * f32::powf(self.radius(), 2.0)) / 2.0
-                * self.skin_thickness)
-    }
+//     pub fn radial_displacement(&self, external_pressure: f32) -> f32 {
+//         // https://pkel015.connect.amazon.auckland.ac.nz/SolidMechanicsBooks/Part_I/BookSM_Part_I/07_ElasticityApplications/07_Elasticity_Applications_03_Presure_Vessels.pdf
+//         ((1.0 - self.material.poissons_ratio) / self.material.elasticity)
+//             * ((self.gage_pressure(external_pressure) * f32::powf(self.radius(), 2.0)) / 2.0
+//                 * self.skin_thickness)
+//     }
 
-    fn rebound(&mut self, radial_displacement: f32) -> f32 {
-        // https://physics.stackexchange.com/questions/10372/inflating-a-balloon-expansion-resistance
-        self.set_thickness(
-            self.unstretched_thickness * f32::powf(self.unstretched_radius / self.radius(), 2.0),
-        );
-        2.0 * self.material.elasticity
-            * radial_displacement
-            * self.unstretched_thickness
-            * self.unstretched_radius
-            / f32::powf(self.radius(), 3.0)
-    }
+//     fn rebound(&mut self, radial_displacement: f32) -> f32 {
+//         // https://physics.stackexchange.com/questions/10372/inflating-a-balloon-expansion-resistance
+//         self.set_thickness(
+//             self.unstretched_thickness * f32::powf(self.unstretched_radius / self.radius(), 2.0),
+//         );
+//         2.0 * self.material.elasticity
+//             * radial_displacement
+//             * self.unstretched_thickness
+//             * self.unstretched_radius
+//             / f32::powf(self.radius(), 3.0)
+//     }
 
-    pub fn stretch(&mut self, external_pressure: f32) {
-        // stretch the balloon and/or compress the gas inside.
-        // - the gas wants to be at the same pressure as ambient
-        // - the balloon will stretch in response to the pressure difference
-        // - the balloon will likely not stretch enough to reach equilibrium
-        // - the difference between the ideal gas volume and the deformed
-        //   balloon volume is the new pressure difference
-        // - the balloon fails when it starts to plasticly deform, in other
-        //   words the balloon stretches as long as tangential stress is less
-        //   than the material's yield stress
-        debug!(
-            "current gage pressure: {:?}",
-            self.gage_pressure(external_pressure)
-        );
+//     pub fn stretch(&mut self, external_pressure: f32) {
+//         // stretch the balloon and/or compress the gas inside.
+//         // - the gas wants to be at the same pressure as ambient
+//         // - the balloon will stretch in response to the pressure difference
+//         // - the balloon will likely not stretch enough to reach equilibrium
+//         // - the difference between the ideal gas volume and the deformed
+//         //   balloon volume is the new pressure difference
+//         // - the balloon fails when it starts to plasticly deform, in other
+//         //   words the balloon stretches as long as tangential stress is less
+//         //   than the material's yield stress
+//         debug!(
+//             "current gage pressure: {:?}",
+//             self.gage_pressure(external_pressure)
+//         );
 
-        self.set_stress(external_pressure);
-        self.set_strain();
+//         self.set_stress(external_pressure);
+//         self.set_strain();
 
-        if self.intact {
-            let delta_r = self.radial_displacement(external_pressure);
-            debug!(
-                "radius before stretch: {:?} delta_r: {:?}",
-                self.radius(),
-                delta_r
-            );
-            let internal_pressure = self.rebound(delta_r);
-            self.set_pressure(internal_pressure + external_pressure);
-            debug!("radius after stretch: {:?}", self.radius());
-            debug!(
-                "gage pressure after stretch: {:?}",
-                self.gage_pressure(external_pressure)
-            );
-        }
-    }
+//         if self.intact {
+//             let delta_r = self.radial_displacement(external_pressure);
+//             debug!(
+//                 "radius before stretch: {:?} delta_r: {:?}",
+//                 self.radius(),
+//                 delta_r
+//             );
+//             let internal_pressure = self.rebound(delta_r);
+//             self.set_pressure(internal_pressure + external_pressure);
+//             debug!("radius after stretch: {:?}", self.radius());
+//             debug!(
+//                 "gage pressure after stretch: {:?}",
+//                 self.gage_pressure(external_pressure)
+//             );
+//         }
+//     }
 
-    fn burst(&mut self, reason: String) {
-        // Assert new balloon attributes to reflect that it has burst
-        self.intact = false;
-        self.set_volume(0.0);
-        self.lift_gas.set_mass(0.0);
-        bevy::log::warn!("The balloon has burst! Reason: {:?}", reason)
-    }
-}
+//     fn burst(&mut self, reason: String) {
+//         // Assert new balloon attributes to reflect that it has burst
+//         self.intact = false;
+//         self.set_volume(0.0);
+//         self.lift_gas.set_mass(0.0);
+//         warn!("The balloon has burst! Reason: {:?}", reason)
+//     }
+// }
 
-impl<'a> SolidBody for Balloon<'a> {
-    fn drag_area(&self) -> f32 {
-        if self.intact {
-            sphere_radius_from_volume(self.volume())
-        } else {
-            0.0
-        }
-    }
+// impl<'a> SolidBody for Balloon<'a> {
+//     fn drag_area(&self) -> f32 {
+//         if self.intact {
+//             sphere_radius_from_volume(self.volume())
+//         } else {
+//             0.0
+//         }
+//     }
 
-    fn drag_coeff(&self) -> f32 {
-        self.drag_coeff
-    }
-
-    fn total_mass(&self) -> f32 {
-        self.mass
-    }
-}
+//     fn drag_coeff(&self) -> f32 {
+//         self.drag_coeff
+//     }
+// }
 
 fn sphere_volume(radius: f32) -> f32 {
     (4.0 / 3.0) * PI * f32::powf(radius, 3.0)
@@ -239,13 +206,6 @@ pub fn projected_spherical_area(volume: f32) -> f32 {
     // Get the projected area (m^2) of a sphere with a given volume (m³)
     f32::powf(sphere_radius_from_volume(volume), 2.0) * PI
 }
-
-// ----------------------------------------------------------------------------
-// Materials
-// ---------
-// Properties, attributes and functions related to the material properties.
-// Source: https://www.matweb.com/
-// ----------------------------------------------------------------------------
 
 #[derive(Debug, Deserialize, Clone, PartialEq, Reflect)]
 pub struct BalloonMaterial {

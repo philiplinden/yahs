@@ -22,6 +22,12 @@ I'm having trouble integrating simple things like loading in values from the
 config files. I can't tell what's getting in my way. Time to move things out of
 configs and into hard-coded statics.
 
+Another note about migrating to Bevy is that the engine assumes we are doing
+graphics outside of a terminal. We could implement a terminal UI or continue to
+support a CLI, but that's 2xs or 3x the work to maintain multiples. Since I plan
+to leverage the 3D physics (with things like raycasting) we will drop CLI
+support for now.
+
 ### Changelog - 2024-11-08
 
 - Added splash screen to the application.

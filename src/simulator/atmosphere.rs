@@ -21,30 +21,32 @@ impl Plugin for AtmospherePlugin {
 pub struct Atmosphere;
 
 impl Atmosphere {
-    pub fn temperature(&self, altitude: f32) -> f32 {
-        // Temperature (K)
-        coesa_temperature(altitude)
-    }
- 
-    pub fn pressure(&self, altitude: f32) -> f32 {
-        // Pressure (Pa)
-        coesa_pressure(altitude)
+    /// Temperature (K) of the atmosphere at a position.
+    pub fn temperature(&self, position: Vec3) -> f32 {
+        // TODO: Look up temperature based on latitude, longitude, and altitude.
+        coesa_temperature(position.y)
     }
 
-    pub fn density(&self, altitude: f32) -> f32 {
-        // Ensure the function signature matches the expected parameters
+    /// Pressure (Pa) of the atmosphere at a position.
+    pub fn pressure(&self, position: Vec3) -> f32 {
+        // TODO: Look up pressure based on latitude, longitude, and altitude.
+        coesa_pressure(position.y)
+    }
+
+    /// Density (kg/m³) of the atmosphere at a position.
+    pub fn density(&self, position: Vec3) -> f32 {
         density(
-            coesa_temperature(altitude),
-            coesa_pressure(altitude),
+            self.temperature(position),
+            self.pressure(position),
             ATMOSPHERE_MOLAR_MASS,
         )
     }
 }
 
+/// Temperature (K) of the atmosphere at a given altitude (m).
+/// Only valid for altitudes below 85,000 meters.
+/// Based on the US Standard Atmosphere, 1976. (aka COESA)
 fn coesa_temperature(altitude: f32) -> f32 {
-    // Temperature (K) of the atmosphere at a given altitude (m).
-    // Only valid for altitudes below 85,000 meters.
-    // Based on the US Standard Atmosphere, 1976. (aka COESA)
     if (-57.0..11000.0).contains(&altitude) {
         celsius2kelvin(15.04 - 0.00649 * altitude)
     } else if (11000.0..25000.0).contains(&altitude) {
@@ -60,10 +62,10 @@ fn coesa_temperature(altitude: f32) -> f32 {
     }
 }
 
+/// Pressure (Pa) of the atmosphere at a given altitude (m).
+/// Only valid for altitudes below 85,000 meters.
+/// Based on the US Standard Atmosphere, 1976. (aka COESA)
 fn coesa_pressure(altitude: f32) -> f32 {
-    // Pressure (Pa) of the atmosphere at a given altitude (m).
-    // Only valid for altitudes below 85,000 meters.
-    // Based on the US Standard Atmosphere, 1976. (aka COESA)
     if (-57.0..11000.0).contains(&altitude) {
         (101.29 * f32::powf(coesa_temperature(altitude) / 288.08, 5.256)) * 1000.0
     } else if (11000.0..25000.0).contains(&altitude) {

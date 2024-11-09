@@ -26,8 +26,10 @@ fn ui_system(mut contexts: EguiContexts) {
         });
     });
     egui::TopBottomPanel::bottom("bottom_panel").show(ctx, |ui| {
-        powered_by_egui_and_bevy(ui);
-        egui::warn_if_debug_build(ui);
+        ui.horizontal(|ui| {
+            powered_by_egui_and_bevy(ui);
+            egui::warn_if_debug_build(ui);
+        });
     });
 }
 

@@ -23,5 +23,13 @@ pub struct CoreUiPlugin;
 impl Plugin for CoreUiPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugins((EguiPlugin, shell::ShellPlugin));
+        app.add_systems(Startup, spawn_camera);
     }
+}
+
+fn spawn_camera(mut commands: Commands) {
+    commands.spawn((
+        Name::new("Camera"),
+        Camera3d::default(),
+    ));
 }

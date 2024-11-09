@@ -11,9 +11,6 @@ pub struct AppCorePlugin;
 
 impl Plugin for AppCorePlugin {
     fn build(&self, app: &mut App) {
-        // Spawn the main camera.
-        app.add_systems(Startup, spawn_camera);
-        
         // Add Bevy plugins.
         app.add_plugins(
             DefaultPlugins
@@ -40,21 +37,16 @@ impl Plugin for AppCorePlugin {
 
         // Add other plugins.
         app.add_plugins((
-            ui::InterfacePlugins,
+            simulator::SimulatorPlugins,
             // assets::AssetTrackingPlugin,
             // assets::ConfigLoaderPlugin,
-            // simulator::SimulatorPlugins,
         ));
+
+        #[cfg(feature = "gui")]
+        app.add_plugins(ui::InterfacePlugins);
 
         // Enable dev tools for dev builds.
         #[cfg(feature = "dev")]
         app.add_plugins(dev_tools::plugin);
     }
-}
-
-fn spawn_camera(mut commands: Commands) {
-    commands.spawn((
-        Name::new("Camera"),
-        Camera3d::default(),
-    ));
 }

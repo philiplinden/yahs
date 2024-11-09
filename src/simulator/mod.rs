@@ -13,7 +13,6 @@ use bevy::app::PluginGroupBuilder;
 pub trait SolidBody {
     fn drag_area(&self) -> f32;
     fn drag_coeff(&self) -> f32;
-    fn total_mass(&self) -> f32;
 }
 
 pub struct SimulatorPlugins;
