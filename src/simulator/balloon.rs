@@ -5,7 +5,7 @@ use serde::Deserialize;
 use std::fmt;
 use bevy::prelude::*;
 
-use crate::simulator::gas::GasVolume;
+use crate::simulator::thermodynamics::IdealGas;
 
 pub struct BalloonPlugin;
 
@@ -18,7 +18,7 @@ impl Plugin for BalloonPlugin {
 #[derive(Component)]
 pub struct BalloonBundle {
     pub balloon: Balloon,
-    pub gas: GasVolume,
+    pub gas: IdealGas,
     pub transform: TransformBundle,
 }
 

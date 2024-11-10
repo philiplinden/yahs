@@ -1,11 +1,8 @@
 pub mod balloon;
 // pub mod bus;
-pub mod constants;
 pub mod dynamics;
-pub mod gas;
 pub mod atmosphere;
-pub mod units;
-// pub mod heat;
+pub mod thermodynamics;
 
 use bevy::prelude::*;
 use bevy::app::PluginGroupBuilder;

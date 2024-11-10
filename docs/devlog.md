@@ -1,5 +1,17 @@
 # development log
 
+## 2024-11-09
+
+Pushing forward toward bringing the basic features into Bevy ECS. Today I am
+focusing on the ideal gas law and dynamics functions.
+
+### Changelog - 2024-11-09
+
+- Moved basic equations around, like into a new thermodynamics module
+- Added custom structs for `Temperature`, `Pressure`, `Volume`, `Density`, and
+  `MolarMass` to abstract unit conversions and such. It is safer to work with
+  structs than bare `f32`s for physics equations.
+
 ## 2024-11-08
 
 Focusing on getting the app running as a simple splash screen followed by a
