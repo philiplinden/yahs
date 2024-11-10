@@ -7,6 +7,8 @@ use bevy::prelude::*;
 
 use crate::simulator::thermodynamics::IdealGas;
 
+const DEFAULT_BALLOON_COLOR: Color = Color::srgba(1.0, 0.0, 0.0, 1.0);
+
 pub struct BalloonPlugin;
 
 impl Plugin for BalloonPlugin {
@@ -22,18 +24,14 @@ pub struct BalloonBundle {
     pub transform: TransformBundle,
 }
 
-#[derive(Component)]
-pub struct Balloon {
-    /// whether or not it has burst
-    pub intact: bool,
-    /// Balloon material type
-    pub skin_material: BalloonMaterial,
-    /// Thickness of balloon membrane in meters
-    pub unstretched_thickness: f32,
-    /// radius of balloon without stretch (m)
-    pub unstretched_radius: f32,
-    /// shape of the balloon
-    pub mesh: Mesh,
+impl Default for BalloonBundle {
+    fn default() -> Self {
+        BalloonBundle {
+            balloon: Balloon::default(),
+            gas: IdealGas::default(),
+            transform: TransformBundle::default(),
+        }
+    }
 }
 
 #[derive(Debug, Deserialize, Clone, PartialEq, Reflect)]
@@ -71,6 +69,29 @@ impl Default for BalloonMaterial {
             elasticity: 0.01e9,         // Example Young's Modulus in Pa
             max_strain: 0.8,            // Example max strain (unitless)
             max_stress: 0.5e6,          // Example max stress in Pa
+        }
+    }
+}
+
+#[derive(Component)]
+pub struct Balloon {
+    /// whether or not it has burst
+    pub intact: bool,
+    /// Balloon material type
+    pub skin_material: BalloonMaterial,
+    /// Thickness of balloon membrane in meters
+    pub unstretched_thickness: f32,
+    /// radius of balloon without stretch (m)
+    pub unstretched_radius: f32,
+    /// shape of the balloon
+    pub mesh: Mesh,
+}
+
+impl Default for Balloon {
+    fn default() -> Self {
+        Balloon {
+            intact: true,
+            ..default()
         }
     }
 }

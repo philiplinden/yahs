@@ -38,8 +38,6 @@ impl Plugin for AppCorePlugin {
         // Add other plugins.
         app.add_plugins((
             simulator::SimulatorPlugins,
-            // assets::AssetTrackingPlugin,
-            // assets::ConfigLoaderPlugin,
         ));
 
         #[cfg(feature = "gui")]

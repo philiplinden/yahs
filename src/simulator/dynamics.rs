@@ -87,6 +87,11 @@ impl From<&Mesh> for Volume {
     }
 }
 
+fn compute_volume_from_mesh(mesh: &Mesh) -> Volume {
+    // TODO: Implement
+    Volume::ZERO
+}
+
 impl Add<Volume> for Volume {
     type Output = Volume;
 
@@ -127,12 +132,25 @@ pub struct VolumetricBody {
 }
 
 impl VolumetricBody {
-    fn new(mesh: Mesh, mass: Mass) -> Self {
+    pub fn from_mesh(mesh: Mesh) -> Self {
         let volume = Volume::from(&mesh);
-        Self { mesh, mass, volume }
+        Self {
+            mesh,
+            mass: Mass::ZERO,
+            volume,
+        }
     }
 
-    fn density(&self) -> Density {
+    pub fn with_density(self, density: Density) -> Self {
+        let mass = Mass(density.0 * self.volume.0);
+        Self {
+            mesh: self.mesh,
+            mass,
+            volume: self.volume,
+        }
+    }
+
+    pub fn density(&self) -> Density {
         Density::new(self.mass, self.volume)
     }
 
@@ -140,9 +158,4 @@ impl VolumetricBody {
         self.mesh = mesh;
         self.volume = compute_volume_from_mesh(&self.mesh);
     }
-}
-
-fn compute_volume_from_mesh(mesh: &Mesh) -> Volume {
-    // TODO: Implement
-    Volume::ZERO
 }

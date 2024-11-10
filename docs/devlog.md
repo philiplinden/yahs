@@ -1,5 +1,13 @@
 # development log
 
+## 2024-11-10
+
+A little bit of cleanup to get the thermodynamics plugin functional and neat.
+
+### Changelog - 2024-11-10
+
+- Added an About window.
+
 ## 2024-11-09
 
 Pushing forward toward bringing the basic features into Bevy ECS. Today I am

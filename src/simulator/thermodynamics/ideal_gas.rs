@@ -4,7 +4,7 @@
 
 use std::ops::{Div, Mul};
 
-use avian3d::{math::Scalar, prelude::Mass};
+use avian3d::{math::Scalar, prelude::*};
 use bevy::prelude::*;
 use serde::Deserialize;
 
@@ -13,10 +13,18 @@ use crate::simulator::{
     thermodynamics::{Density, Pressure, Temperature, R},
 };
 
+const DEFAULT_GAS_COLOR: Color = Color::srgba(0.0, 0.0, 1.0, 0.3);
+
 /// Volume (m³) of an ideal gas from its temperature (K), pressure (Pa),
 /// mass (kg) and molar mass (kg/mol).
-pub fn volume(temperature: Temperature, pressure: Pressure, mass: Mass, molar_mass: MolarMass) -> f32 {
-    (mass.0 / molar_mass.kilograms_per_mole()) * R * temperature.kelvin() / pressure.pascal() // [m³]
+pub fn volume(
+    temperature: Temperature,
+    pressure: Pressure,
+    mass: Mass,
+    molar_mass: MolarMass,
+) -> f32 {
+    (mass.0 / molar_mass.kilograms_per_mole()) * R * temperature.kelvin() / pressure.pascal()
+    // [m³]
 }
 
 /// Density (kg/m³) of an ideal gas frorm its temperature (K), pressure (Pa),
@@ -56,6 +64,16 @@ pub struct GasSpecies {
     pub name: String,
     pub abbreviation: String,
     pub molar_mass: MolarMass, // [kg/mol] molar mass a.k.a. molecular weight
+}
+
+impl Default for GasSpecies {
+    fn default() -> Self {
+        GasSpecies::new(
+            "Air".to_string(),
+            "AIR".to_string(),
+            MolarMass(0.0289647),
+        )
+    }
 }
 
 impl GasSpecies {
@@ -117,6 +135,18 @@ impl IdealGas {
             self.pressure,
             self.body.mass,
             self.species.molar_mass,
+        )
+    }
+}
+
+impl Default for IdealGas {
+    fn default() -> Self {
+        let default_mesh = Sphere::new(1.0).mesh().uv(32, 18);
+        IdealGas::new(
+            GasSpecies::default(),
+            VolumetricBody::from_mesh(default_mesh).with_density(Density::ZERO),
+            Temperature::STANDARD,
+            Pressure::STANDARD,
         )
     }
 }

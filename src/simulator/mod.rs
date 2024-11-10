@@ -1,11 +1,10 @@
-pub mod balloon;
-// pub mod bus;
-pub mod dynamics;
 pub mod atmosphere;
+pub mod balloon;
+pub mod dynamics;
 pub mod thermodynamics;
 
-use bevy::prelude::*;
 use bevy::app::PluginGroupBuilder;
+use bevy::prelude::*;
 
 pub struct SimulatorPlugins;
 
@@ -15,6 +14,7 @@ impl PluginGroup for SimulatorPlugins {
             .add(atmosphere::AtmospherePlugin)
             .add(balloon::BalloonPlugin)
             .add(dynamics::DynamicsPlugin)
+            .add(thermodynamics::ThermodynamicsPlugin)
     }
 }
 

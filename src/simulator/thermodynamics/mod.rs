@@ -11,13 +11,22 @@ pub use heat::*;
 pub use ideal_gas::*;
 
 use avian3d::{math::Scalar, prelude::Mass};
-use bevy::reflect::Reflect;
+use bevy::{prelude::*, reflect::Reflect};
 
 use crate::simulator::dynamics::Volume;
 
 pub const BOLTZMANN_CONSTANT: f32 = 1.38e-23_f32; // [J/K]
 pub const AVOGADRO_CONSTANT: f32 = 6.022e+23_f32; // [1/mol]
 pub const R: f32 = BOLTZMANN_CONSTANT * AVOGADRO_CONSTANT; // [J/K-mol] Ideal gas constant
+
+/// Plugin for thermodynamics systems
+pub struct ThermodynamicsPlugin;
+
+impl Plugin for ThermodynamicsPlugin {
+    fn build(&self, _app: &mut App) {
+        // app.add_plugins();
+    }
+}
 
 /// Temperature (K)
 #[derive(Debug, Clone, Copy, PartialEq, Reflect)]
@@ -136,8 +145,10 @@ impl Div<Scalar> for Pressure {
 pub struct Density(pub Scalar);
 
 impl Density {
+    pub const ZERO: Self = Density(0.0);
+
     pub fn new(kilograms: Mass, volume: Volume) -> Self {
-        Density(kilograms.0 / volume.0) // [kg/m³]
+        Density(kilograms.0 / volume.0)
     }
 
     pub fn kilograms_per_cubic_meter(&self) -> f32 {
@@ -154,7 +165,6 @@ impl Density {
         molar_mass: MolarMass,
     ) -> Density {
         Density((molar_mass.kilograms_per_mole() * pressure.pascal()) / (R * temperature.kelvin()))
-        // [kg/m³]
     }
 }
 
