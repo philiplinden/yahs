@@ -155,17 +155,6 @@ impl Volume {
     }
 }
 
-impl From<&Mesh> for Volume {
-    fn from(mesh: &Mesh) -> Self {
-        compute_volume_from_mesh(mesh)
-    }
-}
-
-fn compute_volume_from_mesh(mesh: &Mesh) -> Volume {
-    // TODO: Implement
-    Volume::ZERO
-}
-
 impl Add<Volume> for Volume {
     type Output = Volume;
 

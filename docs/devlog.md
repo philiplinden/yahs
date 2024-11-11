@@ -6,15 +6,22 @@ A little bit of cleanup to get the thermodynamics plugin functional and neat.
 Also getting the balloon to appear as a simple sphere in the simulation but it's
 annoyingly full of boilerplate and other setup unrelated to the physics.
 
+It's a lot harder than I thought to compute the volume of a mesh, mostly because
+meshes are surfaces and not volumes.
+[Possible, but not simple.](https://github.com/dimforge/parry/blob/68abfc1c22c0beb6d8eba11d57acbb29b4837577/src/mass_properties/mass_properties_trimesh3d.rs#L155)
+Instead of having everything be _directly_ coupled, it is suffiecient to have
+all of these systems (volume, mesh, collider, etc.) update together based on
+the same state.
+
 Instead, I'll make the debug view show the current atmospheric conditions at a
 given point in the simulation.
 
 ### Changelog - 2024-11-10
 
 - Added an About window.
-- Tinkered with meshes to get the balloon to appear as a sphere.
-- Removed `VolumetricBody` from `IdealGas` to make things more direct.
 - Added `bevy-inspector-egui` plugin for debugging.
+- Removed `VolumetricBody` from `IdealGas` to make things more direct.
+- Removed `compute_volume_from_mesh` function.
 
 ## 2024-11-09
 

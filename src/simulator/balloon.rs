@@ -2,18 +2,15 @@
 #![allow(dead_code)]
 
 use serde::Deserialize;
-use std::fmt;
 use bevy::prelude::*;
 
 use crate::simulator::thermodynamics::IdealGas;
-
-const DEFAULT_BALLOON_COLOR: Color = Color::srgba(1.0, 0.0, 0.0, 1.0);
 
 pub struct BalloonPlugin;
 
 impl Plugin for BalloonPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(Startup, spawn_balloon);
+        app.add_systems(Startup, (simple_scene, spawn_balloon));
 
         // Register types for reflection
         app.register_type::<Balloon>();
@@ -63,32 +60,64 @@ impl Default for BalloonMaterial {
 
 #[derive(Component, Reflect)]
 pub struct Balloon {
-    /// whether or not it has burst
-    pub intact: bool,
     /// Balloon material type
     pub skin_material: BalloonMaterial,
     /// Thickness of balloon membrane in meters
     pub unstretched_thickness: f32,
     /// radius of balloon without stretch (m)
     pub unstretched_radius: f32,
-    /// shape of the balloon
-    pub mesh: Handle<Mesh>,
 }
 
 fn spawn_balloon(
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
+    mut materials: ResMut<Assets<StandardMaterial>>
 ) {
+
+    commands.spawn(PbrBundle {
+        mesh: meshes.add(Sphere::new(1.0)),
+        material: materials.add(Color::srgb_u8(124, 144, 255)),
+        transform: Transform::from_xyz(0.0, 0.5, 0.0),
+        ..default()
+    });
     commands.spawn(BalloonBundle {
         balloon: Balloon {
-            intact: true,
             skin_material: BalloonMaterial::default(),
             unstretched_thickness: 0.001,
             unstretched_radius: 1.0,
-            mesh: meshes.add(Sphere::new(1.0).mesh().uv(32, 18)),
         },
         gas: IdealGas::default(),
         transform: TransformBundle::default(),
+    });
+}
+
+
+/// set up a simple 3D scene
+fn simple_scene(
+    mut commands: Commands,
+    mut meshes: ResMut<Assets<Mesh>>,
+    mut materials: ResMut<Assets<StandardMaterial>>,
+) {
+    // circular base
+    commands.spawn(PbrBundle {
+        mesh: meshes.add(Circle::new(4.0)),
+        material: materials.add(Color::WHITE),
+        transform: Transform::from_rotation(Quat::from_rotation_x(-std::f32::consts::FRAC_PI_2)),
+        ..default()
+    });
+    // light
+    commands.spawn(PointLightBundle {
+        point_light: PointLight {
+            shadows_enabled: true,
+            ..default()
+        },
+        transform: Transform::from_xyz(4.0, 8.0, 4.0),
+        ..default()
+    });
+    // camera
+    commands.spawn(Camera3dBundle {
+        transform: Transform::from_xyz(-2.5, 4.5, 9.0).looking_at(Vec3::ZERO, Vec3::Y),
+        ..default()
     });
 }
 
