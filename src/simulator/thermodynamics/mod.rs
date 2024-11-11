@@ -31,7 +31,7 @@ impl Plugin for ThermodynamicsPlugin {
 }
 
 /// Temperature (K)
-#[derive(Debug, Clone, Copy, PartialEq, Reflect)]
+#[derive(Component, Debug, Clone, Copy, PartialEq, Reflect)]
 pub struct Temperature(pub Scalar);
 
 impl Temperature {
@@ -87,7 +87,7 @@ impl Div<Scalar> for Temperature {
 }
 
 /// Pressure (Pa)
-#[derive(Debug, Clone, Copy, PartialEq, Reflect)]
+#[derive(Component, Debug, Clone, Copy, PartialEq, Reflect)]
 pub struct Pressure(pub Scalar);
 
 impl Pressure {
@@ -143,7 +143,7 @@ impl Div<Scalar> for Pressure {
 }
 
 /// The volume of a body in cubic meters.
-#[derive(Debug, Clone, Copy, PartialEq, Reflect)]
+#[derive(Component, Debug, Clone, Copy, PartialEq, Reflect)]
 pub struct Volume(pub Scalar);
 
 impl Volume {
@@ -188,7 +188,7 @@ impl Div<Scalar> for Volume {
 }
 
 /// Density (kg/m³)
-#[derive(Debug, Clone, Copy, PartialEq, Reflect)]
+#[derive(Component, Debug, Clone, Copy, PartialEq, Reflect)]
 pub struct Density(pub Scalar);
 
 impl Density {
@@ -204,14 +204,6 @@ impl Density {
 
     pub fn kg_per_m3(&self) -> f32 {
         self.0
-    }
-
-    pub fn from_gas(
-        temperature: Temperature,
-        pressure: Pressure,
-        molar_mass: MolarMass,
-    ) -> Density {
-        Density((molar_mass.kilograms_per_mole() * pressure.pascal()) / (R * temperature.kelvin()))
     }
 }
 

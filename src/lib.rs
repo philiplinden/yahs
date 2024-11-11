@@ -33,9 +33,7 @@ impl Plugin for AppCorePlugin {
         );
 
         // Add other plugins.
-        app.add_plugins((
-            simulator::SimulatorPlugins,
-        ));
+        app.add_plugins(simulator::SimulatorPlugins);
 
         #[cfg(feature = "gui")]
         app.add_plugins(ui::InterfacePlugins);

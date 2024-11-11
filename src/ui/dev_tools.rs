@@ -8,7 +8,7 @@ use bevy::{
     input::common_conditions::input_just_pressed,
     prelude::*,
 };
-use bevy_inspector_egui::quick::WorldInspectorPlugin;
+use bevy_inspector_egui::{quick::WorldInspectorPlugin, DefaultInspectorConfigPlugin};
 
 #[cfg(not(target_arch = "wasm32"))]
 use bevy::pbr::wireframe::{WireframeConfig, WireframePlugin};
@@ -23,6 +23,7 @@ pub(super) fn plugin(app: &mut App) {
         #[cfg(not(target_arch = "wasm32"))]
         WireframePlugin,
         WorldInspectorPlugin::new(),
+        DefaultInspectorConfigPlugin,
     ));
     app.add_systems(
         Update,

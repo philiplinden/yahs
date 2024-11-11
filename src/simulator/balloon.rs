@@ -1,16 +1,17 @@
 //! Properties, attributes and functions related to the balloon.
 #![allow(dead_code)]
 
-use serde::Deserialize;
+use avian3d::prelude::*;
 use bevy::prelude::*;
+use serde::Deserialize;
 
-use crate::simulator::thermodynamics::IdealGas;
+use super::{forces::ForcesBundle, thermodynamics::IdealGasBundle};
 
 pub struct BalloonPlugin;
 
 impl Plugin for BalloonPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(Startup, (simple_scene, spawn_balloon));
+        app.add_systems(Startup, spawn_balloon);
 
         // Register types for reflection
         app.register_type::<Balloon>();
@@ -21,8 +22,8 @@ impl Plugin for BalloonPlugin {
 #[derive(Bundle)]
 pub struct BalloonBundle {
     pub balloon: Balloon,
-    pub gas: IdealGas,
-    pub transform: TransformBundle,
+    pub gas: IdealGasBundle,
+    pub forces: ForcesBundle,
 }
 
 #[derive(Debug, Deserialize, Clone, PartialEq, Reflect)]
@@ -71,92 +72,32 @@ pub struct Balloon {
 fn spawn_balloon(
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
-    mut materials: ResMut<Assets<StandardMaterial>>
-) {
-
-    commands.spawn(PbrBundle {
-        mesh: meshes.add(Sphere::new(1.0)),
-        material: materials.add(Color::srgb_u8(124, 144, 255)),
-        transform: Transform::from_xyz(0.0, 0.5, 0.0),
-        ..default()
-    });
-    commands.spawn(BalloonBundle {
-        balloon: Balloon {
-            skin_material: BalloonMaterial::default(),
-            unstretched_thickness: 0.001,
-            unstretched_radius: 1.0,
-        },
-        gas: IdealGas::default(),
-        transform: TransformBundle::default(),
-    });
-}
-
-
-/// set up a simple 3D scene
-fn simple_scene(
-    mut commands: Commands,
-    mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
 ) {
-    // circular base
-    commands.spawn(PbrBundle {
-        mesh: meshes.add(Circle::new(4.0)),
-        material: materials.add(Color::WHITE),
-        transform: Transform::from_rotation(Quat::from_rotation_x(-std::f32::consts::FRAC_PI_2)),
-        ..default()
-    });
-    // light
-    commands.spawn(PointLightBundle {
-        point_light: PointLight {
-            shadows_enabled: true,
+    commands.spawn((
+        BalloonBundle {
+            balloon: Balloon {
+                skin_material: BalloonMaterial::default(),
+                unstretched_thickness: 0.001,
+                unstretched_radius: 1.0,
+            },
+            gas: IdealGasBundle::default(),
+            forces: ForcesBundle::default(),
+        },
+        RigidBody::Dynamic,
+        PbrBundle {
+            mesh: meshes.add(Sphere::new(1.0)),
+            material: materials.add(Color::srgb_u8(124, 144, 255)),
+            transform: Transform::from_xyz(0.0, 0.5, 0.0),
             ..default()
         },
-        transform: Transform::from_xyz(4.0, 8.0, 4.0),
-        ..default()
-    });
-    // camera
-    commands.spawn(Camera3dBundle {
-        transform: Transform::from_xyz(-2.5, 4.5, 9.0).looking_at(Vec3::ZERO, Vec3::Y),
-        ..default()
-    });
+    ));
 }
 
 // impl Balloon {
 
-//     pub fn surface_area(&self) -> f32 {
-//         sphere_surface_area(sphere_radius_from_volume(self.lift_gas.volume()))
-//     }
-
-//     pub fn radius(&self) -> f32 {
-//         sphere_radius_from_volume(self.volume())
-//     }
-
-//     pub fn volume(&self) -> f32 {
-//         self.lift_gas.volume()
-//     }
-
-//     fn set_volume(&mut self, new_volume: f32) {
-//         self.lift_gas.set_volume(new_volume)
-//     }
-
-//     pub fn pressure(&self) -> f32 {
-//         self.lift_gas.pressure()
-//     }
-
-//     fn set_pressure(&mut self, new_pressure: f32) {
-//         self.lift_gas.set_pressure(new_pressure)
-//     }
-
-//     fn set_thickness(&mut self, new_thickness: f32) {
-//         self.skin_thickness = new_thickness
-//     }
-
 //     pub fn gage_pressure(&self, external_pressure: f32) -> f32 {
 //         self.lift_gas.pressure() - external_pressure
-//     }
-
-//     pub fn stress(&self) -> f32 {
-//         self.stress
 //     }
 
 //     fn set_stress(&mut self, external_pressure: f32) {
@@ -171,10 +112,6 @@ fn simple_scene(
 //                 self.stress, self.material.max_stress
 //             ));
 //         }
-//     }
-
-//     pub fn strain(&self) -> f32 {
-//         self.strain
 //     }
 
 //     fn set_strain(&mut self) {
@@ -251,20 +188,6 @@ fn simple_scene(
 //         self.set_volume(0.0);
 //         self.lift_gas.set_mass(0.0);
 //         warn!("The balloon has burst! Reason: {:?}", reason)
-//     }
-// }
-
-// impl<'a> SolidBody for Balloon<'a> {
-//     fn drag_area(&self) -> f32 {
-//         if self.intact {
-//             sphere_radius_from_volume(self.volume())
-//         } else {
-//             0.0
-//         }
-//     }
-
-//     fn drag_coeff(&self) -> f32 {
-//         self.drag_coeff
 //     }
 // }
 

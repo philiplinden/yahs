@@ -1,5 +1,30 @@
 # development log
 
+## 2024-11-11
+
+More tightening up of the systems using `bevy-inspector-egui` and making sure
+the numbers update correctly.
+
+I am considering reducing the `IdealGas` component to be paired with a rigid
+body. The rigid body would have a `Mass` and a `Collider` (sphere, ellipsoid,
+etc.) and the `IdealGas` would have a `Volume` and a `GasSpecies`. This would
+allow for more flexibility in how the gas volume is computed and updated. For
+example, if the gas volume is not attached to the rigid body it may be
+desirable to compute the volume based on the mesh instead. It would also allow
+for more complex gas interactions with the rigid body, like inside a parachute.
+
+Converted forces to use the new `ExternalForce` component from Avian.
+
+### Changelog - 2024-11-11
+
+- Renamed `mechanics` module to `forces`
+- Corrected the buoyancy force calculation to use only the ambient density of
+  the atmosphere and not the density of the gas inside the balloon. The weight
+  of the gas is already accounted for in the `mass` of the gas.
+- Added the `Component` trait to `Temperature`, `Pressure`, `Density`, and
+  `Volume`.
+- Removed `config.rs` since its duties are fulfilled by `assets.rs`
+
 ## 2024-11-10
 
 A little bit of cleanup to get the thermodynamics plugin functional and neat.

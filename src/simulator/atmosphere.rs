@@ -9,9 +9,9 @@
 
 use bevy::prelude::*;
 
-use crate::simulator::thermodynamics::{Density, MolarMass, Pressure, Temperature};
-
-pub const ATMOSPHERE_MOLAR_MASS: f32 = 0.02897; // [kg/mol] molar mass of air
+use crate::simulator::thermodynamics::{
+    Density, ideal_gas_density, GasSpecies, Pressure, Temperature,
+};
 
 pub struct AtmospherePlugin;
 impl Plugin for AtmospherePlugin {
@@ -25,7 +25,7 @@ impl Plugin for AtmospherePlugin {
 pub struct Atmosphere;
 
 impl Atmosphere {
-    pub const MOLAR_MASS: MolarMass = MolarMass(ATMOSPHERE_MOLAR_MASS);
+    pub const SPECIES: GasSpecies = GasSpecies::AIR;
     /// Temperature (K) of the atmosphere at a position.
     pub fn temperature(&self, position: Vec3) -> Temperature {
         // TODO: Look up temperature based on latitude, longitude, and altitude.
@@ -40,10 +40,10 @@ impl Atmosphere {
 
     /// Density (kg/m³) of the atmosphere at a position.
     pub fn density(&self, position: Vec3) -> Density {
-        Density::from_gas(
+        ideal_gas_density(
             self.temperature(position),
             self.pressure(position),
-            Atmosphere::MOLAR_MASS,
+            &Atmosphere::SPECIES,
         )
     }
 }
