@@ -10,7 +10,19 @@ use serde::Deserialize;
 
 use super::{Density, Pressure, Temperature, Volume, R};
 
-const DEFAULT_GAS_COLOR: Color = Color::srgba(0.0, 0.0, 1.0, 0.3);
+pub struct IdealGasPlugin;
+
+impl Plugin for IdealGasPlugin {
+    fn build(&self, app: &mut App) {
+        app.register_type::<IdealGas>();
+        app.register_type::<GasSpecies>();
+        app.register_type::<MolarMass>();
+
+        app.add_systems(Update, (
+            update_ideal_gas_volume_from_pressure,
+        ));
+    }
+}
 
 /// Volume (m³) of an ideal gas from its temperature (K), pressure (Pa),
 /// mass (kg) and molar mass (kg/mol).
@@ -24,7 +36,7 @@ pub fn volume(
     // [m³]
 }
 
-fn ideal_gas_volume(temperature: Temperature, pressure: Pressure, mass: Mass, species: GasSpecies) -> Volume {
+fn ideal_gas_volume(temperature: Temperature, pressure: Pressure, mass: Mass, species: &GasSpecies) -> Volume {
     Volume(volume(temperature, pressure, mass, species.molar_mass))
 }
 
@@ -90,11 +102,11 @@ impl GasSpecies {
 /// A finite amount of a particular ideal gas
 #[derive(Component, Debug, Reflect)]
 pub struct IdealGas {
-    species: GasSpecies,
-    mass: Mass,
-    temperature: Temperature,
-    pressure: Pressure,
-    volume: Volume,
+    pub species: GasSpecies,
+    pub mass: Mass,
+    pub temperature: Temperature,
+    pub pressure: Pressure,
+    pub volume: Volume,
 }
 
 impl IdealGas {
@@ -114,7 +126,7 @@ impl IdealGas {
                 temperature,
                 pressure,
                 mass,
-                species,
+                &species,
             ),
             temperature,
             pressure,
@@ -170,5 +182,11 @@ impl Default for IdealGas {
             temperature: Temperature::STANDARD,
             pressure: Pressure::STANDARD,
         }
+    }
+}
+
+fn update_ideal_gas_volume_from_pressure(mut query: Query<&mut IdealGas>) {
+    for mut gas in query.iter_mut() {
+        gas.volume = ideal_gas_volume(gas.temperature, gas.pressure, gas.mass, &gas.species);
     }
 }

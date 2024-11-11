@@ -26,6 +26,7 @@ impl Plugin for ThermodynamicsPlugin {
         app.register_type::<Pressure>();
         app.register_type::<Volume>();
         app.register_type::<Density>();
+        app.add_plugins(IdealGasPlugin);
     }
 }
 

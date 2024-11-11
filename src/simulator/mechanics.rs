@@ -27,14 +27,14 @@ pub fn weight(position: Vec3, mass: f32) -> Vec3 {
 }
 
 /// Force (N) due to air displaced by the given gas volume.
-pub fn buoyancy(body: VolumetricBody, position: Vec3, ambient_density: Density) -> Vec3 {
-    let v = body.volume.0;
+pub fn buoyancy(position: Vec3, volume: Volume, density: Density, ambient_density: Density) -> Vec3 {
+    let v = volume.0;
     if v <= 0.0 {
         // No buoyancy if the volume is zero
         return Vec3::ZERO
     }
 
-    let rho_lift = body.density.0;
+    let rho_lift = density.0;
     let rho_atmo = ambient_density.0;
     (v * (rho_lift - rho_atmo)) * g(position)
 }
@@ -43,9 +43,4 @@ pub fn buoyancy(body: VolumetricBody, position: Vec3, ambient_density: Density) 
 pub fn drag(ambient_density: f32, velocity: Vec3, drag_area: f32, drag_coeff: f32) -> Vec3 {
     let direction = -velocity.normalize();
     direction * drag_coeff / 2.0 * ambient_density * f32::powf(velocity.length(), 2.0) * drag_area
-}
-
-pub struct VolumetricBody {
-    volume: Volume,
-    density: Density,
 }

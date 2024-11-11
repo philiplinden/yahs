@@ -43,12 +43,6 @@ pub struct BalloonMaterial {
     pub max_stress: f32,           // tangential stress at failure (Pa)
 }
 
-impl fmt::Display for BalloonMaterial {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}", self.name)
-    }
-}
-
 impl Default for BalloonMaterial {
     fn default() -> Self {
         BalloonMaterial {
