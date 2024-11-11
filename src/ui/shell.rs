@@ -53,6 +53,7 @@ fn shell_ui_system(mut contexts: EguiContexts, mut shell_state: ResMut<UiShellSt
     });
     egui::TopBottomPanel::bottom("bottom_panel").show(ctx, |ui| {
         ui.horizontal(|ui| {
+            credits_label(ui);
             egui::warn_if_debug_build(ui);
         });
     });
@@ -82,7 +83,10 @@ fn about_ui_system(is_open: &mut bool, ctx: &mut egui::Context) {
         .resizable(false)
         .show(ctx, |ui| {
             ui.heading("Yet Another HAB Simulator");
-            powered_by_egui_and_bevy(ui);
+            ui.vertical_centered(|ui| {
+                ui.label("A simulator for high altitude balloons.");
+                ui.hyperlink_to("brickworks/yahs", "https://github.com/brickworks/yahs");
+            });
         });
 }
 
@@ -101,10 +105,36 @@ fn debug_ui_system(is_open: &mut bool, ctx: &mut egui::Context) {
 fn powered_by_egui_and_bevy(ui: &mut egui::Ui) {
     ui.horizontal(|ui| {
         ui.spacing_mut().item_spacing.x = 0.0;
-        ui.label("Powered by ");
+        ui.label("🔌 by ");
         ui.hyperlink_to("egui", "https://github.com/emilk/egui");
-        ui.label(" and ");
+        ui.label(" + ");
         ui.hyperlink_to("bevy", "https://github.com/bevyengine/bevy");
-        ui.label(".");
+    });
+}
+
+fn made_by_philiplinden(ui: &mut egui::Ui) {
+    ui.horizontal(|ui| {
+        ui.spacing_mut().item_spacing.x = 0.0;
+        ui.label("🛠 by ");
+        ui.hyperlink_to("philiplinden", "https://github.com/philiplinden");
+    });
+}
+
+fn github_link(ui: &mut egui::Ui) {
+    ui.horizontal(|ui| {
+        ui.spacing_mut().item_spacing.x = 0.0;
+        ui.label(format!("{} ", egui::special_emojis::GITHUB));
+        ui.hyperlink_to("brickworks/yahs", "https://github.com/brickworks/yahs");
+    }); 
+}
+
+fn credits_label(ui: &mut egui::Ui) {
+    ui.horizontal(|ui| {
+        ui.spacing_mut().item_spacing.x = 0.0;
+        made_by_philiplinden(ui);
+        ui.separator();
+        powered_by_egui_and_bevy(ui);
+        ui.separator();
+        github_link(ui);
     });
 }

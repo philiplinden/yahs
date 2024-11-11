@@ -3,10 +3,18 @@
 ## 2024-11-10
 
 A little bit of cleanup to get the thermodynamics plugin functional and neat.
+Also getting the balloon to appear as a simple sphere in the simulation but it's
+annoyingly full of boilerplate and other setup unrelated to the physics.
+
+Instead, I'll make the debug view show the current atmospheric conditions at a
+given point in the simulation.
 
 ### Changelog - 2024-11-10
 
 - Added an About window.
+- Tinkered with meshes to get the balloon to appear as a sphere.
+- Removed `VolumetricBody` from `IdealGas` to make things more direct.
+- Added `bevy-inspector-egui` plugin for debugging.
 
 ## 2024-11-09
 

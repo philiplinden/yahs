@@ -13,8 +13,6 @@ pub use ideal_gas::*;
 use avian3d::{math::Scalar, prelude::Mass};
 use bevy::{prelude::*, reflect::Reflect};
 
-use crate::simulator::dynamics::Volume;
-
 pub const BOLTZMANN_CONSTANT: f32 = 1.38e-23_f32; // [J/K]
 pub const AVOGADRO_CONSTANT: f32 = 6.022e+23_f32; // [1/mol]
 pub const R: f32 = BOLTZMANN_CONSTANT * AVOGADRO_CONSTANT; // [J/K-mol] Ideal gas constant
@@ -23,8 +21,11 @@ pub const R: f32 = BOLTZMANN_CONSTANT * AVOGADRO_CONSTANT; // [J/K-mol] Ideal ga
 pub struct ThermodynamicsPlugin;
 
 impl Plugin for ThermodynamicsPlugin {
-    fn build(&self, _app: &mut App) {
-        // app.add_plugins();
+    fn build(&self, app: &mut App) {
+        app.register_type::<Temperature>();
+        app.register_type::<Pressure>();
+        app.register_type::<Volume>();
+        app.register_type::<Density>();
     }
 }
 
@@ -137,6 +138,62 @@ impl Div<Scalar> for Pressure {
 
     fn div(self, rhs: Scalar) -> Self::Output {
         Pressure(self.0 / rhs)
+    }
+}
+
+/// The volume of a body in cubic meters.
+#[derive(Debug, Clone, Copy, PartialEq, Reflect)]
+pub struct Volume(pub Scalar);
+
+impl Volume {
+    /// Zero volume.
+    pub const ZERO: Self = Self(0.0);
+
+    pub fn cubic_meters(&self) -> f32 {
+        self.0
+    }
+}
+
+impl From<&Mesh> for Volume {
+    fn from(mesh: &Mesh) -> Self {
+        compute_volume_from_mesh(mesh)
+    }
+}
+
+fn compute_volume_from_mesh(mesh: &Mesh) -> Volume {
+    // TODO: Implement
+    Volume::ZERO
+}
+
+impl Add<Volume> for Volume {
+    type Output = Volume;
+
+    fn add(self, rhs: Volume) -> Self::Output {
+        Volume(self.0 + rhs.0)
+    }
+}
+
+impl Sub<Volume> for Volume {
+    type Output = Volume;
+
+    fn sub(self, rhs: Volume) -> Self::Output {
+        Volume(self.0 - rhs.0)
+    }
+}
+
+impl Mul<Scalar> for Volume {
+    type Output = Volume;
+
+    fn mul(self, rhs: Scalar) -> Self::Output {
+        Volume(self.0 * rhs)
+    }
+}
+
+impl Div<Scalar> for Volume {
+    type Output = Volume;
+
+    fn div(self, rhs: Scalar) -> Self::Output {
+        Volume(self.0 / rhs)
     }
 }
 

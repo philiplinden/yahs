@@ -1,6 +1,6 @@
 pub mod atmosphere;
 pub mod balloon;
-pub mod dynamics;
+pub mod mechanics;
 pub mod thermodynamics;
 
 use bevy::app::PluginGroupBuilder;
@@ -13,7 +13,7 @@ impl PluginGroup for SimulatorPlugins {
         PluginGroupBuilder::start::<Self>()
             .add(atmosphere::AtmospherePlugin)
             .add(balloon::BalloonPlugin)
-            .add(dynamics::DynamicsPlugin)
+            .add(mechanics::DynamicsPlugin)
             .add(thermodynamics::ThermodynamicsPlugin)
     }
 }

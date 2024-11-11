@@ -12,26 +12,20 @@ const DEFAULT_BALLOON_COLOR: Color = Color::srgba(1.0, 0.0, 0.0, 1.0);
 pub struct BalloonPlugin;
 
 impl Plugin for BalloonPlugin {
-    fn build(&self, _app: &mut App) {
-        // app.add_systems(Update, step);
+    fn build(&self, app: &mut App) {
+        app.add_systems(Startup, spawn_balloon);
+
+        // Register types for reflection
+        app.register_type::<Balloon>();
+        app.register_type::<BalloonMaterial>();
     }
 }
 
-#[derive(Component)]
+#[derive(Bundle)]
 pub struct BalloonBundle {
     pub balloon: Balloon,
     pub gas: IdealGas,
     pub transform: TransformBundle,
-}
-
-impl Default for BalloonBundle {
-    fn default() -> Self {
-        BalloonBundle {
-            balloon: Balloon::default(),
-            gas: IdealGas::default(),
-            transform: TransformBundle::default(),
-        }
-    }
 }
 
 #[derive(Debug, Deserialize, Clone, PartialEq, Reflect)]
@@ -73,7 +67,7 @@ impl Default for BalloonMaterial {
     }
 }
 
-#[derive(Component)]
+#[derive(Component, Reflect)]
 pub struct Balloon {
     /// whether or not it has burst
     pub intact: bool,
@@ -84,16 +78,24 @@ pub struct Balloon {
     /// radius of balloon without stretch (m)
     pub unstretched_radius: f32,
     /// shape of the balloon
-    pub mesh: Mesh,
+    pub mesh: Handle<Mesh>,
 }
 
-impl Default for Balloon {
-    fn default() -> Self {
-        Balloon {
+fn spawn_balloon(
+    mut commands: Commands,
+    mut meshes: ResMut<Assets<Mesh>>,
+) {
+    commands.spawn(BalloonBundle {
+        balloon: Balloon {
             intact: true,
-            ..default()
-        }
-    }
+            skin_material: BalloonMaterial::default(),
+            unstretched_thickness: 0.001,
+            unstretched_radius: 1.0,
+            mesh: meshes.add(Sphere::new(1.0).mesh().uv(32, 18)),
+        },
+        gas: IdealGas::default(),
+        transform: TransformBundle::default(),
+    });
 }
 
 // impl Balloon {

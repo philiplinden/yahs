@@ -2,9 +2,6 @@
 mod simulator;
 mod ui;
 
-#[cfg(feature = "dev")]
-mod dev_tools;
-
 use bevy::{asset::AssetMetaCheck, prelude::*};
 
 pub struct AppCorePlugin;
@@ -42,9 +39,5 @@ impl Plugin for AppCorePlugin {
 
         #[cfg(feature = "gui")]
         app.add_plugins(ui::InterfacePlugins);
-
-        // Enable dev tools for dev builds.
-        #[cfg(feature = "dev")]
-        app.add_plugins(dev_tools::plugin);
     }
 }

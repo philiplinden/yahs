@@ -8,10 +8,7 @@ use avian3d::{math::Scalar, prelude::*};
 use bevy::prelude::*;
 use serde::Deserialize;
 
-use crate::simulator::{
-    dynamics::VolumetricBody,
-    thermodynamics::{Density, Pressure, Temperature, R},
-};
+use super::{Density, Pressure, Temperature, Volume, R};
 
 const DEFAULT_GAS_COLOR: Color = Color::srgba(0.0, 0.0, 1.0, 0.3);
 
@@ -25,6 +22,10 @@ pub fn volume(
 ) -> f32 {
     (mass.0 / molar_mass.kilograms_per_mole()) * R * temperature.kelvin() / pressure.pascal()
     // [m³]
+}
+
+fn ideal_gas_volume(temperature: Temperature, pressure: Pressure, mass: Mass, species: GasSpecies) -> Volume {
+    Volume(volume(temperature, pressure, mass, species.molar_mass))
 }
 
 /// Density (kg/m³) of an ideal gas frorm its temperature (K), pressure (Pa),
@@ -87,18 +88,19 @@ impl GasSpecies {
 }
 
 /// A finite amount of a particular ideal gas
-#[derive(Component, Debug)]
+#[derive(Component, Debug, Reflect)]
 pub struct IdealGas {
     species: GasSpecies,
-    body: VolumetricBody,
+    mass: Mass,
     temperature: Temperature,
     pressure: Pressure,
+    volume: Volume,
 }
 
 impl IdealGas {
-    pub fn new(
+    pub fn from_mass(
         species: GasSpecies,
-        body: VolumetricBody,
+        mass: Mass,
         temperature: Temperature,
         pressure: Pressure,
     ) -> Self {
@@ -106,10 +108,35 @@ impl IdealGas {
         // particular species of gas. Gas is initialized at standard
         // temperature and pressure.
         IdealGas {
-            species,
-            body,
-            temperature: Temperature::STANDARD,
-            pressure: Pressure::STANDARD,
+            species: species.clone(),
+            mass,
+            volume: ideal_gas_volume(
+                temperature,
+                pressure,
+                mass,
+                species,
+            ),
+            temperature,
+            pressure,
+        }
+    }
+
+
+    pub fn from_volume(
+        species: GasSpecies,
+        volume: Volume,
+        temperature: Temperature,
+        pressure: Pressure,
+    ) -> Self {
+        // Create a new gas volume as a finite amount of mass (kg) of a
+        // particular species of gas. Gas is initialized at standard
+        // temperature and pressure.
+        IdealGas {
+            species: species.clone(),
+            mass: Mass(volume.0 * density(temperature, pressure, species.molar_mass)),
+            volume,
+            temperature,
+            pressure,
         }
     }
 
@@ -130,23 +157,18 @@ impl IdealGas {
 
     /// Ideal gas volume (m³)
     pub fn volume(&self) -> f32 {
-        volume(
-            self.temperature,
-            self.pressure,
-            self.body.mass,
-            self.species.molar_mass,
-        )
+        self.volume.cubic_meters()
     }
 }
 
 impl Default for IdealGas {
     fn default() -> Self {
-        let default_mesh = Sphere::new(1.0).mesh().uv(32, 18);
-        IdealGas::new(
-            GasSpecies::default(),
-            VolumetricBody::from_mesh(default_mesh).with_density(Density::ZERO),
-            Temperature::STANDARD,
-            Pressure::STANDARD,
-        )
+        IdealGas {
+            species: GasSpecies::default(),
+            mass: Mass::ZERO,
+            volume: Volume::ZERO,
+            temperature: Temperature::STANDARD,
+            pressure: Pressure::STANDARD,
+        }
     }
 }
