@@ -49,6 +49,9 @@ jobs:
       - name: Setup Rust toolchain
         uses: actions-rust-lang/setup-rust-toolchain@v1
 
+      - name: Install Bevy dependencies
+        run: sudo apt-get update; sudo apt-get install --no-install-recommends libasound2-dev libudev-dev libwayland-dev libxkbcommon-dev
+
       - name: Populate target directory from cache
         uses: Leafwing-Studios/cargo-cache@v2
         with:
