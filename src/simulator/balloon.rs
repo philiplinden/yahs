@@ -5,7 +5,10 @@ use avian3d::prelude::*;
 use bevy::prelude::*;
 use serde::Deserialize;
 
-use super::{forces::ForcesBundle, ideal_gas::IdealGasBundle};
+use super::{
+    ideal_gas::{GasSpecies, IdealGasBundle},
+    properties::*,
+};
 
 pub struct BalloonPlugin;
 
@@ -23,7 +26,6 @@ impl Plugin for BalloonPlugin {
 pub struct BalloonBundle {
     pub balloon: Balloon,
     pub gas: IdealGasBundle,
-    pub forces: ForcesBundle,
 }
 
 #[derive(Debug, Deserialize, Clone, PartialEq, Reflect)]
@@ -82,8 +84,12 @@ fn spawn_balloon(
                 unstretched_thickness: 0.001,
                 unstretched_radius: 1.0,
             },
-            gas: IdealGasBundle::default(),
-            forces: ForcesBundle::default(),
+            gas: IdealGasBundle::new(
+                Collider::sphere(1.0),
+                GasSpecies::air(),
+                Temperature::STANDARD,
+                Pressure::STANDARD,
+            ),
         },
         RigidBody::Dynamic,
         PbrBundle {

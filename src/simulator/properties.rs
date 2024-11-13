@@ -4,7 +4,7 @@
 
 use std::ops::{Add, Div, Mul, Sub};
 
-use avian3d::{prelude::ColliderMassProperties, math::Scalar};
+use avian3d::{math::Scalar, prelude::{ColliderDensity, ColliderMassProperties, RigidBody, PhysicsSet}};
 use bevy::{prelude::*, reflect::Reflect};
 use serde::{Serialize, Deserialize};
 
@@ -21,6 +21,10 @@ impl Plugin for CorePropertiesPlugin {
         app.register_type::<Density>();
         app.register_type::<Mass>();
         app.register_type::<MolarMass>();
+
+        // Ensure that the Avian density matches our computed density before
+        // solving physics.
+        app.add_systems(Update, sync_avian_density.in_set(PhysicsSet::Prepare));
     }
 }
 
@@ -234,6 +238,13 @@ impl Div<Scalar> for Density {
 
     fn div(self, rhs: Scalar) -> Self::Output {
         Density(self.0 / rhs)
+    }
+}
+
+fn sync_avian_density(mut densities: Query<(&mut ColliderDensity, &Volume, &Mass), With<RigidBody>>) {
+    for (mut density, volume, mass) in densities.iter_mut() {
+        let our_density = mass.kg() / volume.m3();
+        density.0 = our_density;
     }
 }
 

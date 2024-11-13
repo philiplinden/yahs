@@ -14,46 +14,13 @@ pub struct ForcesPlugin;
 
 impl Plugin for ForcesPlugin {
     fn build(&self, app: &mut App) {
-        app.register_type::<WeightForce>();
-        app.register_type::<BuoyantForce>();
-        app.register_type::<DragForce>();
-
+        // Disable the default gravity since we apply our own.
+        app.insert_resource(Gravity(Vec3::ZERO));
+        // Update forces before solving physics.
         app.add_systems(Update, (
-            update_weight_force,
-            update_buoyant_force,
-        ));
-    }
-}
-
-#[derive(Bundle)]
-pub struct ForcesBundle {
-    pub weight_force: WeightForce,
-    pub buoyant_force: BuoyantForce,
-    pub drag_force: DragForce,
-}
-
-impl Default for ForcesBundle {
-    fn default() -> Self {
-        Self {
-            weight_force: WeightForce::ZERO,
-            buoyant_force: BuoyantForce::ZERO,
-            drag_force: DragForce::ZERO,
-        }
-    }
-}
-
-#[derive(Component, Reflect)]
-pub struct WeightForce(ExternalForce);
-
-impl WeightForce {
-    pub const ZERO: Self = Self(ExternalForce::ZERO);
-
-    pub fn new(mass: f32, position: Vec3) -> Self {
-        Self(ExternalForce::new(weight(position, mass)))
-    }
-
-    pub fn update(&mut self, position: Vec3, mass: f32) {
-        self.0.set_force(weight(position, mass));
+            apply_weight_force,
+            apply_buoyant_force,
+        ).in_set(PhysicsStepSet::First));
     }
 }
 
@@ -68,24 +35,9 @@ pub fn weight(position: Vec3, mass: f32) -> Vec3 {
     Vec3::NEG_Y * g(position) * mass // [N]
 }
 
-fn update_weight_force(mut bodies: Query<(&mut WeightForce, &Position, &Mass)>) {
-    for (mut weight_force, position, mass) in bodies.iter_mut() {
-        weight_force.update(position.0, mass.kg());
-    }
-}
-
-#[derive(Component, Reflect)]
-pub struct BuoyantForce(ExternalForce);
-
-impl BuoyantForce {
-    pub const ZERO: Self = Self(ExternalForce::ZERO);
-
-    pub fn new(position: Vec3, volume: Volume, density: Density) -> Self {
-        Self(ExternalForce::new(buoyancy(position, volume, density)))
-    }
-
-    pub fn update(&mut self, position: Vec3, volume: Volume, density: Density) {
-        self.0.set_force(buoyancy(position, volume, density));
+fn apply_weight_force(mut bodies: Query<(&mut ExternalForce, &Position, &Mass), With<RigidBody>>) {
+    for (mut total_force, position, mass) in bodies.iter_mut() {
+        total_force.apply_force(weight(position.0, mass.kg()));
     }
 }
 
@@ -94,21 +46,10 @@ pub fn buoyancy(position: Vec3, volume: Volume, ambient_density: Density) -> Vec
     Vec3::Y * (volume.cubic_meters() * ambient_density.kg_per_m3() * g(position))
 }
 
-fn update_buoyant_force(atmosphere: Res<Atmosphere>, mut bodies: Query<(&mut BuoyantForce, &Position, &Volume)>) {
-    for (mut buoyant_force, position, volume) in bodies.iter_mut() {
+fn apply_buoyant_force(atmosphere: Res<Atmosphere>, mut bodies: Query<(&mut ExternalForce, &Position, &Volume), With<RigidBody>>) {
+    for (mut total_force, position, volume) in bodies.iter_mut() {
         let density = atmosphere.density(position.0);
-        buoyant_force.update(position.0, *volume, density);
-    }
-}
-
-#[derive(Component, Reflect)]
-pub struct DragForce(ExternalForce);
-
-impl DragForce {
-    pub const ZERO: Self = Self(ExternalForce::ZERO);
-
-    pub fn new(force: Vec3) -> Self {
-        Self(ExternalForce::new(force))
+        total_force.apply_force(buoyancy(position.0, *volume, density));
     }
 }
 

@@ -8,6 +8,10 @@ like temperature and pressure. The Avian component is not reflected in the
 inspector plugin so it's hard to debug, too. I can make a custom `Mass` that
 hooks up to the Avian one and then otherwise is whatever I want.
 
+I realized I was using `ExternalForce` incorrectly. Instead of adding more
+force components, I should be applying additional vectors to the existing
+`ExternalForce` component using the `apply_force` method.
+
 - Added names to the all entities in the test scene.
 - Moved core properties (Temperature, Pressure, Volume, Density, Mass) to their
   own module called `properties.rs` and added a plugin for registering them. To
@@ -19,6 +23,9 @@ hooks up to the Avian one and then otherwise is whatever I want.
 - Added systems to update the density, weight, and buoyant forces every frame.
   This wasn't working until I added the default Avian physics plugins,
   obviously.
+- Got buoyancy and weight forces working on the collider. When the gas species
+  is set to air, the balloon slowly sinks to the ground. When the gas species
+  is set to helium, the balloon floats.
 
 ## 2024-11-11
 

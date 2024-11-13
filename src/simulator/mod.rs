@@ -28,7 +28,7 @@ struct CorePhysicsPlugin;
 impl Plugin for CorePhysicsPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugins((
-            PhysicsPlugins::default(), // Avian physics plugins
+            PhysicsPlugins::default(),
             properties::CorePropertiesPlugin,
             ideal_gas::IdealGasPlugin,
             forces::ForcesPlugin,

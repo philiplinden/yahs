@@ -1,11 +1,11 @@
 //! Ideal gas equations.
 #![allow(dead_code)]
 
-use avian3d::collision::{Collider, AnyCollider};
+use avian3d::prelude::*;
 use bevy::prelude::*;
 use serde::Deserialize;
 
-use crate::simulator::properties::*;
+use crate::simulator::properties::{Mass as SimMass, *};
 
 pub const R: f32 = BOLTZMANN_CONSTANT * AVOGADRO_CONSTANT; // [J/K-mol] Ideal gas constant
 
@@ -37,6 +37,14 @@ impl GasSpecies {
             molar_mass: MolarMass(0.0289647),
         }
     }
+
+    pub fn helium() -> Self {
+        GasSpecies {
+            name: "Helium".to_string(),
+            abbreviation: "He".to_string(),
+            molar_mass: MolarMass(0.0040026),
+        }
+    }
 }
 
 impl Default for GasSpecies {
@@ -60,7 +68,7 @@ impl GasSpecies {
 pub fn ideal_gas_volume(
     temperature: Temperature,
     pressure: Pressure,
-    mass: Mass,
+    mass: SimMass,
     species: &GasSpecies,
 ) -> Volume {
     Volume(
@@ -92,7 +100,7 @@ pub struct IdealGasBundle {
     pub temperature: Temperature,
     pub pressure: Pressure,
     pub volume: Volume,
-    pub mass: Mass,
+    pub mass: SimMass,
 }
 
 impl IdealGasBundle {
@@ -104,7 +112,7 @@ impl IdealGasBundle {
     ) -> Self {
         let density = ideal_gas_density(temperature, pressure, &species);
         let mass_props = collider.mass_properties(density.kg_per_m3());
-        let mass = Mass::from_mass_properties(mass_props);
+        let mass = SimMass::from_mass_properties(mass_props);
         Self {
             collider,
             species: species.clone(),
@@ -128,7 +136,7 @@ impl Default for IdealGasBundle {
 }
 
 fn update_ideal_gas_volume_from_pressure(
-    mut query: Query<(&mut Volume, &Temperature, &Pressure, &Mass, &GasSpecies), With<IdealGas>>,
+    mut query: Query<(&mut Volume, &Temperature, &Pressure, &SimMass, &GasSpecies), With<IdealGas>>,
 ) {
     for (mut volume, temperature, pressure, mass, species) in query.iter_mut() {
         *volume = ideal_gas_volume(*temperature, *pressure, *mass, &species);
@@ -136,7 +144,7 @@ fn update_ideal_gas_volume_from_pressure(
 }
 
 fn update_ideal_gas_density_from_volume(
-    mut query: Query<(&mut Density, &Volume, &Mass), With<IdealGas>>,
+    mut query: Query<(&mut Density, &Volume, &SimMass), With<IdealGas>>,
 ) {
     for (mut density, volume, mass) in query.iter_mut() {
         *density = *mass / *volume;
