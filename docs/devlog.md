@@ -119,9 +119,9 @@ support for now.
 
 ## 2024-11-07
 
-I am switching to Bevy for the simulation. Bevy is a "bevy engine" which is A
-framework for building games and simulations. It allows for high performance,
-multi-threaded, dynamic simulations.
+I am switching to Bevy for the simulation. Bevy is a game engine built upon an
+ECS framework. It allows for high performance, multi-threaded, dynamic
+simulations with 3D graphics and rich interactive GUIs.
 
 The first reason is that I want to be able to spend more time on the
 interactions between the HAB components and less time on the fundamental physics
