@@ -48,27 +48,30 @@ impl Div<Scalar> for MolarMass {
 
 #[derive(Component, Debug, Deserialize, Clone, Reflect)]
 pub struct GasSpecies {
-    pub name: &'static str,
-    pub abbreviation: &'static str,
+    pub name: String,
+    pub abbreviation: String,
     pub molar_mass: MolarMass, // [kg/mol] molar mass a.k.a. molecular weight
 }
 
 impl GasSpecies {
-    pub const AIR: Self = GasSpecies {
-        name: "Air",
-        abbreviation: "AIR",
-        molar_mass: MolarMass(0.0289647),
-    };
+    /// Dry air.
+    pub fn air() -> Self {
+        GasSpecies {
+            name: "Air".to_string(),
+            abbreviation: "AIR".to_string(),
+            molar_mass: MolarMass(0.0289647),
+        }
+    }
 }
 
 impl Default for GasSpecies {
     fn default() -> Self {
-        GasSpecies::AIR
+        GasSpecies::air()
     }
 }
 
 impl GasSpecies {
-    pub fn new(name: &'static str, abbreviation: &'static str, molar_mass: MolarMass) -> Self {
+    pub fn new(name: String, abbreviation: String, molar_mass: MolarMass) -> Self {
         GasSpecies {
             name,
             abbreviation,

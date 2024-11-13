@@ -25,7 +25,6 @@ impl Plugin for AtmospherePlugin {
 pub struct Atmosphere;
 
 impl Atmosphere {
-    pub const SPECIES: GasSpecies = GasSpecies::AIR;
     /// Temperature (K) of the atmosphere at a position.
     pub fn temperature(&self, position: Vec3) -> Temperature {
         // TODO: Look up temperature based on latitude, longitude, and altitude.
@@ -43,7 +42,7 @@ impl Atmosphere {
         ideal_gas_density(
             self.temperature(position),
             self.pressure(position),
-            &Atmosphere::SPECIES,
+            &GasSpecies::air(),
         )
     }
 }

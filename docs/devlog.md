@@ -1,5 +1,9 @@
 # development log
 
+## 2024-11-13
+
+
+
 ## 2024-11-11
 
 More tightening up of the systems using `bevy-inspector-egui` and making sure
@@ -14,8 +18,6 @@ desirable to compute the volume based on the mesh instead. It would also allow
 for more complex gas interactions with the rigid body, like inside a parachute.
 
 Converted forces to use the new `ExternalForce` component from Avian.
-
-### Changelog - 2024-11-11
 
 - Renamed `mechanics` module to `forces`
 - Corrected the buoyancy force calculation to use only the ambient density of
@@ -41,8 +43,6 @@ the same state.
 Instead, I'll make the debug view show the current atmospheric conditions at a
 given point in the simulation.
 
-### Changelog - 2024-11-10
-
 - Added an About window.
 - Added `bevy-inspector-egui` plugin for debugging.
 - Removed `VolumetricBody` from `IdealGas` to make things more direct.
@@ -52,8 +52,6 @@ given point in the simulation.
 
 Pushing forward toward bringing the basic features into Bevy ECS. Today I am
 focusing on the ideal gas law and dynamics functions.
-
-### Changelog - 2024-11-09
 
 - Moved basic equations around, like into a new thermodynamics module
 - Added custom structs for `Temperature`, `Pressure`, `Volume`, `Density`, and
@@ -87,8 +85,6 @@ graphics outside of a terminal. We could implement a terminal UI or continue to
 support a CLI, but that's 2xs or 3x the work to maintain multiples. Since I plan
 to leverage the 3D physics (with things like raycasting) we will drop CLI
 support for now.
-
-### Changelog - 2024-11-08
 
 - Added splash screen to the application.
 - Changed the generic asset loader to a configuration loader for now.
@@ -134,8 +130,6 @@ I had in the previous Rust simulation. Namely, I need to:
 The Bevy schedule system will completely replace the threaded event loop that I
 had in the previous simulation, including things like `SimCommands`,
 `SimOutput`, `SimInstant`, and the `AsyncSim` struct.
-
-### Changelog - 2024-11-07
 
 - **Main Application (`src/main.rs`):**
   - Integrated `simulator::SimulatorPlugins` to replace the previous UI plugins
