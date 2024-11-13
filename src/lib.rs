@@ -1,5 +1,6 @@
 // mod assets;
 mod simulator;
+mod scene;
 mod ui;
 
 use bevy::{asset::AssetMetaCheck, prelude::*};
@@ -33,9 +34,10 @@ impl Plugin for AppCorePlugin {
         );
 
         // Add other plugins.
-        app.add_plugins(simulator::SimulatorPlugins);
-
-        #[cfg(feature = "gui")]
-        app.add_plugins(ui::InterfacePlugins);
+        app.add_plugins((
+            simulator::SimulatorPlugins,
+            ui::InterfacePlugins,
+            scene::ScenePlugin,
+        ));
     }
 }

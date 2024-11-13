@@ -1,37 +1,31 @@
-//! Thermodynamics
+//! Basic physical properties.
+
 #![allow(dead_code)]
-#![allow(unused_imports)]
 
 use std::ops::{Add, Div, Mul, Sub};
 
-mod heat;
-mod ideal_gas;
-
-pub use heat::*;
-pub use ideal_gas::*;
-
-use avian3d::{math::Scalar, prelude::Mass};
+use avian3d::{prelude::ColliderMassProperties, math::Scalar};
 use bevy::{prelude::*, reflect::Reflect};
+use serde::{Serialize, Deserialize};
 
 pub const BOLTZMANN_CONSTANT: f32 = 1.38e-23_f32; // [J/K]
 pub const AVOGADRO_CONSTANT: f32 = 6.022e+23_f32; // [1/mol]
-pub const R: f32 = BOLTZMANN_CONSTANT * AVOGADRO_CONSTANT; // [J/K-mol] Ideal gas constant
 
-/// Plugin for thermodynamics systems
-pub struct ThermodynamicsPlugin;
+pub struct CorePropertiesPlugin;
 
-impl Plugin for ThermodynamicsPlugin {
+impl Plugin for CorePropertiesPlugin {
     fn build(&self, app: &mut App) {
         app.register_type::<Temperature>();
         app.register_type::<Pressure>();
         app.register_type::<Volume>();
         app.register_type::<Density>();
-        app.add_plugins(IdealGasPlugin);
+        app.register_type::<Mass>();
+        app.register_type::<MolarMass>();
     }
 }
 
 /// Temperature (K)
-#[derive(Component, Debug, Clone, Copy, PartialEq, Reflect)]
+#[derive(Component, Debug, Serialize, Deserialize, Clone, Copy, PartialEq, Reflect)]
 pub struct Temperature(pub Scalar);
 
 impl Temperature {
@@ -87,7 +81,7 @@ impl Div<Scalar> for Temperature {
 }
 
 /// Pressure (Pa)
-#[derive(Component, Debug, Clone, Copy, PartialEq, Reflect)]
+#[derive(Component, Debug, Serialize, Deserialize, Clone, Copy, PartialEq, Reflect)]
 pub struct Pressure(pub Scalar);
 
 impl Pressure {
@@ -143,7 +137,7 @@ impl Div<Scalar> for Pressure {
 }
 
 /// The volume of a body in cubic meters.
-#[derive(Component, Debug, Clone, Copy, PartialEq, Reflect)]
+#[derive(Component, Debug, Serialize, Deserialize, Clone, Copy, PartialEq, Reflect)]
 pub struct Volume(pub Scalar);
 
 impl Volume {
@@ -151,6 +145,10 @@ impl Volume {
     pub const ZERO: Self = Self(0.0);
 
     pub fn cubic_meters(&self) -> f32 {
+        self.0
+    }
+
+    pub fn m3(&self) -> f32 {
         self.0
     }
 }
@@ -188,7 +186,7 @@ impl Div<Scalar> for Volume {
 }
 
 /// Density (kg/m³)
-#[derive(Component, Debug, Clone, Copy, PartialEq, Reflect)]
+#[derive(Component, Debug, Serialize, Deserialize, Clone, Copy, PartialEq, Reflect)]
 pub struct Density(pub Scalar);
 
 impl Density {
@@ -236,5 +234,89 @@ impl Div<Scalar> for Density {
 
     fn div(self, rhs: Scalar) -> Self::Output {
         Density(self.0 / rhs)
+    }
+}
+
+/// Mass (kg)
+#[derive(Component, Debug, Serialize, Deserialize, Clone, Copy, PartialEq, Reflect)]
+pub struct Mass(pub Scalar);
+
+impl Mass {
+    pub fn kilograms(&self) -> f32 {
+        self.0
+    }
+
+    pub fn kg(&self) -> f32 {
+        self.0
+    }
+
+    pub fn from_mass_properties(mass_props: ColliderMassProperties) -> Self {
+        Mass(mass_props.mass.0)
+    }
+}
+
+impl Add<Mass> for Mass {
+    type Output = Mass;
+
+    fn add(self, rhs: Mass) -> Self::Output {
+        Mass(self.0 + rhs.0)
+    }
+}
+
+impl Sub<Mass> for Mass {
+    type Output = Mass;
+
+    fn sub(self, rhs: Mass) -> Self::Output {
+        Mass(self.0 - rhs.0)
+    }
+}
+
+impl Mul<Scalar> for Mass {
+    type Output = Mass;
+
+    fn mul(self, rhs: Scalar) -> Self::Output {
+        Mass(self.0 * rhs)
+    }
+}
+
+impl Div<Volume> for Mass {
+    type Output = Density;
+
+    fn div(self, rhs: Volume) -> Self::Output {
+        Density(self.0 / rhs.0)
+    }
+}
+
+impl Div<Scalar> for Mass {
+    type Output = Mass;
+
+    fn div(self, rhs: Scalar) -> Self::Output {
+        Mass(self.0 / rhs)
+    }
+}
+
+/// Molar mass (kg/mol) of a substance.
+#[derive(Component, Debug, Serialize, Deserialize, Clone, Copy, Reflect)]
+pub struct MolarMass(pub Scalar);
+
+impl MolarMass {
+    pub fn kilograms_per_mole(&self) -> f32 {
+        self.0
+    }
+}
+
+impl Mul<Scalar> for MolarMass {
+    type Output = MolarMass;
+
+    fn mul(self, rhs: Scalar) -> Self::Output {
+        MolarMass(self.0 * rhs)
+    }
+}
+
+impl Div<Scalar> for MolarMass {
+    type Output = MolarMass;
+
+    fn div(self, rhs: Scalar) -> Self::Output {
+        MolarMass(self.0 / rhs)
     }
 }

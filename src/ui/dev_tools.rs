@@ -13,6 +13,8 @@ use bevy_inspector_egui::quick::WorldInspectorPlugin;
 #[cfg(not(target_arch = "wasm32"))]
 use bevy::pbr::wireframe::{WireframeConfig, WireframePlugin};
 
+use avian3d::debug_render::PhysicsDebugPlugin;
+
 const TOGGLE_DEBUG_UI_KEY: KeyCode = KeyCode::F3;
 const TOGGLE_WIREFRAME_KEY: KeyCode = KeyCode::F4;
 
@@ -23,6 +25,7 @@ pub(super) fn plugin(app: &mut App) {
         #[cfg(not(target_arch = "wasm32"))]
         WireframePlugin,
         WorldInspectorPlugin::new(),
+        PhysicsDebugPlugin::default(),
     ));
     app.add_systems(
         Update,

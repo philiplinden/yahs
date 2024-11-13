@@ -5,7 +5,7 @@ use avian3d::prelude::*;
 use bevy::prelude::*;
 use serde::Deserialize;
 
-use super::{forces::ForcesBundle, thermodynamics::IdealGasBundle};
+use super::{forces::ForcesBundle, ideal_gas::IdealGasBundle};
 
 pub struct BalloonPlugin;
 
@@ -75,6 +75,7 @@ fn spawn_balloon(
     mut materials: ResMut<Assets<StandardMaterial>>,
 ) {
     commands.spawn((
+        Name::new("HAB"),
         BalloonBundle {
             balloon: Balloon {
                 skin_material: BalloonMaterial::default(),
@@ -88,7 +89,7 @@ fn spawn_balloon(
         PbrBundle {
             mesh: meshes.add(Sphere::new(1.0)),
             material: materials.add(Color::srgb_u8(124, 144, 255)),
-            transform: Transform::from_xyz(0.0, 0.5, 0.0),
+            transform: Transform::from_xyz(0.0, 2.0, 0.0),
             ..default()
         },
     ));

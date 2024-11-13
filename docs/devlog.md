@@ -2,7 +2,23 @@
 
 ## 2024-11-13
 
+Avian has its own `Mass` component but it is not as convenient for this project
+as something custom that can be updated with the other thermodynamics properties
+like temperature and pressure. The Avian component is not reflected in the
+inspector plugin so it's hard to debug, too. I can make a custom `Mass` that
+hooks up to the Avian one and then otherwise is whatever I want.
 
+- Added names to the all entities in the test scene.
+- Moved core properties (Temperature, Pressure, Volume, Density, Mass) to their
+  own module called `properties.rs` and added a plugin for registering them. To
+  make things more ergonomic, these properties are exposed at the top level of
+  the simulator plugin so that they can be used in other systems.
+- Removed the `thermodynamics` module since it became redundant.
+- Added a `CorePhysicsPlugin` for registering the physics plugins.
+- Added a `ScenePlugin` for setting up the scene with the HAB and atmosphere.
+- Added systems to update the density, weight, and buoyant forces every frame.
+  This wasn't working until I added the default Avian physics plugins,
+  obviously.
 
 ## 2024-11-11
 

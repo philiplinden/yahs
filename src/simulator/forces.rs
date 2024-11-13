@@ -5,7 +5,7 @@
 use bevy::prelude::*;
 use avian3d::prelude::*;
 
-use super::{thermodynamics::{Density, Volume}, atmosphere::Atmosphere};
+use super::{Density, Volume, Atmosphere, Mass};
 
 pub const STANDARD_G: f32 = 9.80665; // [m/s^2] standard gravitational acceleration
 pub const EARTH_RADIUS_M: f32 = 6371007.2; // [m] mean radius of Earth
@@ -17,6 +17,11 @@ impl Plugin for ForcesPlugin {
         app.register_type::<WeightForce>();
         app.register_type::<BuoyantForce>();
         app.register_type::<DragForce>();
+
+        app.add_systems(Update, (
+            update_weight_force,
+            update_buoyant_force,
+        ));
     }
 }
 
@@ -65,7 +70,7 @@ pub fn weight(position: Vec3, mass: f32) -> Vec3 {
 
 fn update_weight_force(mut bodies: Query<(&mut WeightForce, &Position, &Mass)>) {
     for (mut weight_force, position, mass) in bodies.iter_mut() {
-        weight_force.update(position.0, mass.0);
+        weight_force.update(position.0, mass.kg());
     }
 }
 
@@ -112,3 +117,25 @@ pub fn drag(ambient_density: f32, velocity: Vec3, drag_area: f32, drag_coeff: f3
     let direction = -velocity.normalize();
     direction * drag_coeff / 2.0 * ambient_density * f32::powf(velocity.length(), 2.0) * drag_area
 }
+
+// pub fn step() {
+
+//     let total_dry_mass = body.total_mass() + parachute.total_mass();
+//     let weight_force = forces::weight(altitude, total_dry_mass);
+//     let buoyancy_force = forces::buoyancy(altitude, atmosphere, balloon.lift_gas);
+
+//     let total_drag_force = forces::drag(atmosphere, ascent_rate, balloon)
+//         + forces::drag(atmosphere, ascent_rate, body)
+//         + forces::drag(atmosphere, ascent_rate, parachute.main)
+//         + forces::drag(atmosphere, ascent_rate, parachute.drogue);
+//     debug!(
+//         "weight: {:?} buoyancy: {:?} drag: {:?}",
+//         weight_force, buoyancy_force, total_drag_force
+//     );
+
+//     // calculate the net force
+//     let net_force = weight_force + buoyancy_force + total_drag_force;
+//     let acceleration = net_force / total_dry_mass;
+//     let ascent_rate = ascent_rate + acceleration * delta_t;
+//     let altitude = altitude + ascent_rate * delta_t;
+// }

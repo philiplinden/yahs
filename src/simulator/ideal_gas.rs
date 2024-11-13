@@ -1,48 +1,23 @@
 //! Ideal gas equations.
 #![allow(dead_code)]
 
-use std::ops::{Div, Mul};
-
-use avian3d::{math::Scalar, prelude::*};
+use avian3d::collision::{Collider, AnyCollider};
 use bevy::prelude::*;
 use serde::Deserialize;
 
-use super::{Density, Pressure, Temperature, Volume, R};
+use crate::simulator::properties::*;
+
+pub const R: f32 = BOLTZMANN_CONSTANT * AVOGADRO_CONSTANT; // [J/K-mol] Ideal gas constant
 
 pub struct IdealGasPlugin;
 
 impl Plugin for IdealGasPlugin {
     fn build(&self, app: &mut App) {
         app.register_type::<GasSpecies>();
-        app.register_type::<MolarMass>();
-
-        app.add_systems(Update, update_ideal_gas_volume_from_pressure);
-    }
-}
-
-/// Molar mass (kg/mol) of a gas species
-#[derive(Component, Debug, Deserialize, Clone, Copy, Reflect)]
-pub struct MolarMass(pub Scalar);
-
-impl MolarMass {
-    pub fn kilograms_per_mole(&self) -> f32 {
-        self.0
-    }
-}
-
-impl Mul<Scalar> for MolarMass {
-    type Output = MolarMass;
-
-    fn mul(self, rhs: Scalar) -> Self::Output {
-        MolarMass(self.0 * rhs)
-    }
-}
-
-impl Div<Scalar> for MolarMass {
-    type Output = MolarMass;
-
-    fn div(self, rhs: Scalar) -> Self::Output {
-        MolarMass(self.0 / rhs)
+        app.add_systems(Update, (
+            update_ideal_gas_volume_from_pressure,
+            update_ideal_gas_density_from_volume,
+        ));
     }
 }
 
@@ -89,7 +64,7 @@ pub fn ideal_gas_volume(
     species: &GasSpecies,
 ) -> Volume {
     Volume(
-        (mass.0 / species.molar_mass.kilograms_per_mole()) * R * temperature.kelvin()
+        (mass.kilograms() / species.molar_mass.kilograms_per_mole()) * R * temperature.kelvin()
             / pressure.pascal(),
     )
 }
@@ -117,6 +92,7 @@ pub struct IdealGasBundle {
     pub temperature: Temperature,
     pub pressure: Pressure,
     pub volume: Volume,
+    pub mass: Mass,
 }
 
 impl IdealGasBundle {
@@ -127,13 +103,15 @@ impl IdealGasBundle {
         pressure: Pressure,
     ) -> Self {
         let density = ideal_gas_density(temperature, pressure, &species);
-        let mass = collider.mass_properties(density.kg_per_m3()).mass;
+        let mass_props = collider.mass_properties(density.kg_per_m3());
+        let mass = Mass::from_mass_properties(mass_props);
         Self {
             collider,
             species: species.clone(),
             temperature,
             pressure,
             volume: ideal_gas_volume(temperature, pressure, mass, &species),
+            mass,
         }
     }
 }
@@ -154,5 +132,13 @@ fn update_ideal_gas_volume_from_pressure(
 ) {
     for (mut volume, temperature, pressure, mass, species) in query.iter_mut() {
         *volume = ideal_gas_volume(*temperature, *pressure, *mass, &species);
+    }
+}
+
+fn update_ideal_gas_density_from_volume(
+    mut query: Query<(&mut Density, &Volume, &Mass), With<IdealGas>>,
+) {
+    for (mut density, volume, mass) in query.iter_mut() {
+        *density = *mass / *volume;
     }
 }

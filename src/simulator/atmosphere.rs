@@ -9,8 +9,9 @@
 
 use bevy::prelude::*;
 
-use crate::simulator::thermodynamics::{
-    Density, ideal_gas_density, GasSpecies, Pressure, Temperature,
+use super::{
+    ideal_gas::{ideal_gas_density, GasSpecies},
+    Density, Pressure, Temperature,
 };
 
 pub struct AtmospherePlugin;
