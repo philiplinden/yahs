@@ -89,6 +89,13 @@ pub fn ideal_gas_density(
     )
 }
 
+/// Gage pressure (Pa) of an ideal gas. This is the relative pressure compared
+/// to the ambient pressure. Use `Atmosphere::pressure()` to get ambient
+/// conditions.
+pub fn gage_pressure(pressure: Pressure, ambient_pressure: Pressure) -> Pressure {
+    pressure - ambient_pressure
+}
+
 /// A finite amount of a particular ideal gas
 #[derive(Component, Debug)]
 pub struct IdealGas;

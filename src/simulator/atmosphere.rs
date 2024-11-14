@@ -5,8 +5,6 @@
 //! - https://www.translatorscafe.com/unit-converter/en-US/calculator/altitude
 //! - https://www.grc.nasa.gov/WWW/K-12/airplane/atmosmet.html
 
-#![allow(dead_code)]
-
 use bevy::prelude::*;
 
 use super::{

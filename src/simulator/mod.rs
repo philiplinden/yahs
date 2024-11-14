@@ -2,6 +2,7 @@ pub mod atmosphere;
 pub mod balloon;
 pub mod forces;
 pub mod ideal_gas;
+pub mod payload;
 pub mod properties;
 
 use bevy::app::PluginGroupBuilder;

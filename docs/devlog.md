@@ -1,5 +1,26 @@
 # development log
 
+## 2024-11-14
+
+My focus today is to spend some time getting the balloon to "look right". Things
+like the balloon's shape, skin material, and thickness. Also things like the
+tether and a payload box. My plan for balloon material stress is to calculate
+stress from the change in surface area. The gas volume can change shape all it
+wants, as long as the density follows the ideal gas law. The balloon skin will
+stretch and deform to follow the gas volume shape, and the stress will be
+calculated from the change in surface area of the skin's mesh.
+
+My goal at the end of today is to see a balloon with a little payload hanging
+from it that slowly rises into the air.
+
+- Added a bunch of handy geometry functions to `properties.rs`.
+- Moved the `PbrBundle` into the `BalloonBundle` so the balloon is more tightly
+  associated with its mesh, material, and transform. Here the PBR (physics based
+  rendering) is not relevant to the physics simulation, it just happens to be
+  the bundle that contains these components.
+- Added `PayloadPlugin` for spawning a payload and tether. Placeholder for now.
+- Removed `#![allow(dead_code)]` from a few modules as I remove placeholders.
+
 ## 2024-11-13
 
 Avian has its own `Mass` component but it is not as convenient for this project

@@ -4,12 +4,36 @@
 
 use std::ops::{Add, Div, Mul, Sub};
 
-use avian3d::{math::Scalar, prelude::{ColliderDensity, ColliderMassProperties, RigidBody, PhysicsSet}};
+use avian3d::{math::{Scalar, PI}, prelude::{ColliderDensity, ColliderMassProperties, PhysicsSet, RigidBody}};
 use bevy::{prelude::*, reflect::Reflect};
 use serde::{Serialize, Deserialize};
 
 pub const BOLTZMANN_CONSTANT: f32 = 1.38e-23_f32; // [J/K]
 pub const AVOGADRO_CONSTANT: f32 = 6.022e+23_f32; // [1/mol]
+
+fn sphere_volume(radius: f32) -> f32 {
+    (4.0 / 3.0) * PI * f32::powf(radius, 3.0)
+}
+
+fn shell_volume(internal_radius: f32, thickness: f32) -> f32 {
+    let external_radius = internal_radius + thickness;
+    let internal_volume = sphere_volume(internal_radius);
+    let external_volume = sphere_volume(external_radius);
+    external_volume - internal_volume
+}
+
+fn sphere_radius_from_volume(volume: f32) -> f32 {
+    f32::powf(volume, 1.0 / 3.0) / (4.0 / 3.0) * PI
+}
+
+fn sphere_surface_area(radius: f32) -> f32 {
+    4.0 * PI * f32::powf(radius, 2.0)
+}
+
+pub fn projected_spherical_area(volume: f32) -> f32 {
+    // Get the projected area (m^2) of a sphere with a given volume (m³)
+    f32::powf(sphere_radius_from_volume(volume), 2.0) * PI
+}
 
 pub struct CorePropertiesPlugin;
 

@@ -1,5 +1,4 @@
 //! Properties, attributes and functions related to the balloon.
-#![allow(dead_code)]
 
 use avian3d::prelude::*;
 use bevy::prelude::*;
@@ -26,6 +25,7 @@ impl Plugin for BalloonPlugin {
 pub struct BalloonBundle {
     pub balloon: Balloon,
     pub gas: IdealGasBundle,
+    pub pbr: PbrBundle,
 }
 
 #[derive(Debug, Deserialize, Clone, PartialEq, Reflect)]
@@ -61,14 +61,26 @@ impl Default for BalloonMaterial {
     }
 }
 
+/// Balloon properties. The balloon always conforms to the surface of a
+/// collider. It does not have its own rigid body.
 #[derive(Component, Reflect)]
 pub struct Balloon {
     /// Balloon material type
     pub skin_material: BalloonMaterial,
-    /// Thickness of balloon membrane in meters
+    /// Thickness of balloon membrane in meters. For use in calculating stress.
     pub unstretched_thickness: f32,
-    /// radius of balloon without stretch (m)
-    pub unstretched_radius: f32,
+    /// surface area of balloon without stretch (m²). For use in calculating stress.
+    pub unstretched_area: f32,
+}
+
+impl Default for Balloon {
+    fn default() -> Self {
+        Balloon {
+            skin_material: BalloonMaterial::default(),
+            unstretched_thickness: 0.001,
+            unstretched_area: 4.0 * std::f32::consts::PI,
+        }
+    }
 }
 
 fn spawn_balloon(
@@ -77,27 +89,23 @@ fn spawn_balloon(
     mut materials: ResMut<Assets<StandardMaterial>>,
 ) {
     commands.spawn((
-        Name::new("HAB"),
+        Name::new("BalloonBundle"),
         BalloonBundle {
-            balloon: Balloon {
-                skin_material: BalloonMaterial::default(),
-                unstretched_thickness: 0.001,
-                unstretched_radius: 1.0,
-            },
+            balloon: Balloon::default(),
             gas: IdealGasBundle::new(
                 Collider::sphere(1.0),
                 GasSpecies::air(),
                 Temperature::STANDARD,
                 Pressure::STANDARD,
             ),
+            pbr: PbrBundle {
+                mesh: meshes.add(Sphere::new(1.0)),
+                material: materials.add(Color::srgb_u8(124, 144, 255)),
+                transform: Transform::from_xyz(0.0, 2.0, 0.0),
+                ..default()
+            },
         },
         RigidBody::Dynamic,
-        PbrBundle {
-            mesh: meshes.add(Sphere::new(1.0)),
-            material: materials.add(Color::srgb_u8(124, 144, 255)),
-            transform: Transform::from_xyz(0.0, 2.0, 0.0),
-            ..default()
-        },
     ));
 }
 
@@ -196,28 +204,4 @@ fn spawn_balloon(
 //         self.lift_gas.set_mass(0.0);
 //         warn!("The balloon has burst! Reason: {:?}", reason)
 //     }
-// }
-
-// fn sphere_volume(radius: f32) -> f32 {
-//     (4.0 / 3.0) * PI * f32::powf(radius, 3.0)
-// }
-
-// fn shell_volume(internal_radius: f32, thickness: f32) -> f32 {
-//     let external_radius = internal_radius + thickness;
-//     let internal_volume = sphere_volume(internal_radius);
-//     let external_volume = sphere_volume(external_radius);
-//     external_volume - internal_volume
-// }
-
-// fn sphere_radius_from_volume(volume: f32) -> f32 {
-//     f32::powf(volume, 1.0 / 3.0) / (4.0 / 3.0) * PI
-// }
-
-// fn sphere_surface_area(radius: f32) -> f32 {
-//     4.0 * PI * f32::powf(radius, 2.0)
-// }
-
-// pub fn projected_spherical_area(volume: f32) -> f32 {
-//     // Get the projected area (m^2) of a sphere with a given volume (m³)
-//     f32::powf(sphere_radius_from_volume(volume), 2.0) * PI
 // }
