@@ -6,7 +6,7 @@ use bevy::prelude::*;
 pub struct PayloadPlugin;
 
 impl Plugin for PayloadPlugin {
-    fn build(&self, app: &mut App) {
+    fn build(&self, _app: &mut App) {
         // app.add_systems(Startup, spawn_payload);
     }
 }

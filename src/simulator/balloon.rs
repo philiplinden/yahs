@@ -6,6 +6,7 @@ use serde::Deserialize;
 
 use super::{
     ideal_gas::{GasSpecies, IdealGasBundle},
+    forces::ForcesBundle,
     properties::*,
 };
 
@@ -26,6 +27,7 @@ pub struct BalloonBundle {
     pub balloon: Balloon,
     pub gas: IdealGasBundle,
     pub pbr: PbrBundle,
+    pub forces: ForcesBundle,
 }
 
 #[derive(Debug, Deserialize, Clone, PartialEq, Reflect)]
@@ -104,6 +106,7 @@ fn spawn_balloon(
                 transform: Transform::from_xyz(0.0, 2.0, 0.0),
                 ..default()
             },
+            forces: ForcesBundle::default(),
         },
         RigidBody::Dynamic,
     ));

@@ -13,6 +13,22 @@ calculated from the change in surface area of the skin's mesh.
 My goal at the end of today is to see a balloon with a little payload hanging
 from it that slowly rises into the air.
 
+In Avian, forces persist across frames by default. The way the forces are set up
+now ends up applying the same force every frame, which is accumulating and not
+correct. I think there are also some issues with applying forces in separate
+systems. I'm not entirely sure what the best way to handle this is. I think if
+we remove the persistence assumption then every frame the only forces applied
+are the ones that _we_ explicitly apply in systems. This situation is more
+complex than the simple case Avian is pre-configured for, like 1G of gravity
+down and maybe some friction.
+
+I'm second-guessing whether I should use a new `ExternalForce` component for
+each force instead of mutating the default component that spawns in when the
+rigid body is created. The default component is persistent by default, and
+this is probably why the forces are accumulating. It feels gross to have to
+clear the force every frame or apply an impulse every frame instead of just
+updating the force.
+
 - Added a bunch of handy geometry functions to `properties.rs`.
 - Moved the `PbrBundle` into the `BalloonBundle` so the balloon is more tightly
   associated with its mesh, material, and transform. Here the PBR (physics based
