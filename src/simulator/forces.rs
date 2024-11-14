@@ -25,8 +25,8 @@ impl Plugin for ForcesPlugin {
             Update,
             (
                 update_weight_force,
-                update_buoyant_force,
                 apply_weight_force_when_spawning,
+                update_buoyant_force,
                 apply_buoyant_force_when_spawning,
             )
                 .in_set(PhysicsStepSet::First),
@@ -124,7 +124,6 @@ pub fn weight(position: Vec3, mass: f32) -> Vec3 {
 fn update_weight_force(mut bodies: Query<(&mut WeightForce, &Position, &Mass)>) {
     for (mut force, position, mass) in bodies.iter_mut() {
         force.set_force(weight(position.0, mass.kg()));
-        info!("updated weight force: {:?}", force.force());
     }
 }
 
@@ -132,7 +131,6 @@ fn update_weight_force(mut bodies: Query<(&mut WeightForce, &Position, &Mass)>) 
 fn apply_weight_force_when_spawning(mut query: Query<&mut WeightForce, Added<WeightForce>>) {
     for mut force in query.iter_mut() {
         force.apply_self();
-        info!("applied new weight force: {:?}", force.force());
     }
 }
 
@@ -140,7 +138,6 @@ fn apply_weight_force_when_spawning(mut query: Query<&mut WeightForce, Added<Wei
 fn apply_buoyant_force_when_spawning(mut query: Query<&mut BuoyantForce, Added<BuoyantForce>>) {
     for mut force in query.iter_mut() {
         force.apply_self();
-        info!("applied new buoyant force: {:?}", force.force());
     }
 }
 
@@ -172,7 +169,6 @@ fn update_buoyant_force(
     for (mut force, position, volume) in bodies.iter_mut() {
         let density = atmosphere.density(position.0);
         force.set_force(buoyancy(position.0, *volume, density));
-        info!("updated buoyant force: {:?}", force.force());
     }
 }
 

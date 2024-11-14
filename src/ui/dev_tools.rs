@@ -3,7 +3,7 @@
 use bevy::{
     dev_tools::{
         states::log_transitions,
-        ui_debug_overlay::{DebugUiPlugin, UiDebugOptions},
+        fps_overlay::{FpsOverlayPlugin, FpsOverlayConfig},
     },
     input::common_conditions::input_just_pressed,
     prelude::*,
@@ -21,11 +21,11 @@ const TOGGLE_WIREFRAME_KEY: KeyCode = KeyCode::F4;
 pub(super) fn plugin(app: &mut App) {
     // Toggle the debug overlay for UI.
     app.add_plugins((
-        DebugUiPlugin,
         #[cfg(not(target_arch = "wasm32"))]
         WireframePlugin,
         WorldInspectorPlugin::new(),
         PhysicsDebugPlugin::default(),
+        FpsOverlayPlugin::default(),
     ));
     app.add_systems(
         Update,
@@ -38,8 +38,9 @@ pub(super) fn plugin(app: &mut App) {
     );
 }
 
-fn toggle_debug_ui(mut options: ResMut<UiDebugOptions>) {
-    options.toggle();
+/// Toggle the debug overlay for UI. Placeholder for now.
+fn toggle_debug_ui() {
+    // TODO: Implement
 }
 
 #[cfg(not(target_arch = "wasm32"))]
