@@ -134,13 +134,6 @@ fn apply_weight_force_when_spawning(mut query: Query<&mut WeightForce, Added<Wei
     }
 }
 
-/// Apply the force vector when it is spawned.
-fn apply_buoyant_force_when_spawning(mut query: Query<&mut BuoyantForce, Added<BuoyantForce>>) {
-    for mut force in query.iter_mut() {
-        force.apply_self();
-    }
-}
-
 #[derive(Component, Reflect)]
 pub struct BuoyantForce(ExternalForce);
 
@@ -169,6 +162,13 @@ fn update_buoyant_force(
     for (mut force, position, volume) in bodies.iter_mut() {
         let density = atmosphere.density(position.0);
         force.set_force(buoyancy(position.0, *volume, density));
+    }
+}
+
+/// Apply the force vector when it is spawned.
+fn apply_buoyant_force_when_spawning(mut query: Query<&mut BuoyantForce, Added<BuoyantForce>>) {
+    for mut force in query.iter_mut() {
+        force.apply_self();
     }
 }
 
