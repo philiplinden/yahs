@@ -12,6 +12,12 @@ is what gets applied to the rigid body.
 Remember that `WeightForce`, `BuoyantForce`, and `DragForce` are _components_,
 not forces themselves. We name them so we can query the _kinds_ of forces,
 otherwise generic force vectors would not be distinguishable from each other.
+The alternative (when we can't tell which vector is which) is to add the vectors
+to a "blind" array and then update the `ExternalForce` component as before,
+except that when we sum them we don't know which vector is which. Now that I
+think about it, that might be easier and simpler in the long run. If we need to
+know each force's value and identity, we can add it to a resource or something
+that the UI can query.
 
 I fell in love with [iyes_perf_ui](https://github.com/IyesGames/iyes_perf_ui).
 It is simple and easy to work with. Egui was adding a lot of overhead, more than

@@ -22,13 +22,16 @@ const TOGGLE_WIREFRAME_KEY: KeyCode = KeyCode::F4;
 pub(super) fn plugin(app: &mut App) {
     // Toggle the debug overlay for UI.
     app.add_plugins((
-        #[cfg(not(target_arch = "wasm32"))]
-        WireframePlugin,
+        // physics
         PhysicsDebugPlugin::default(),
+        // performance
         FrameTimeDiagnosticsPlugin,
         EntityCountDiagnosticsPlugin,
         SystemInformationDiagnosticsPlugin,
         PerfUiPlugin,
+        // rendering
+        #[cfg(not(target_arch = "wasm32"))]
+        WireframePlugin,
     ));
     app.add_systems(
         Update,
@@ -74,13 +77,8 @@ fn toggle_debug_ui(
                 PerfUiWidgetBar::new(PerfUiEntryFrameTime::default()),
                 PerfUiWidgetBar::new(PerfUiEntryFrameTimeWorst::default()),
                 PerfUiWidgetBar::new(PerfUiEntryEntityCount::default()),
-                PerfUiWidgetBar::new(PerfUiEntryCpuUsage::default()),
-                PerfUiWidgetBar::new(PerfUiEntryMemUsage::default()),
-                // PerfUiEntryFrameCount::default(),
             ),
             (
-                PerfUiEntryFixedTimeStep::default(),
-                PerfUiWidgetBar::new(PerfUiEntryFixedOverstep::default()),
                 PerfUiEntryRunningTime::default(),
                 PerfUiEntryClock::default(),
             ),
