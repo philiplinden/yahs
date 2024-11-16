@@ -28,7 +28,6 @@ pub(super) fn plugin(app: &mut App) {
         FrameTimeDiagnosticsPlugin,
         EntityCountDiagnosticsPlugin,
         SystemInformationDiagnosticsPlugin,
-        PerfUiPlugin,
         // rendering
         #[cfg(not(target_arch = "wasm32"))]
         WireframePlugin,

@@ -2,13 +2,18 @@
 mod dev_tools;
 
 use bevy::{app::PluginGroupBuilder, prelude::*};
+use iyes_perf_ui::prelude::*;
 
 /// A plugin group that includes all interface-related plugins
 pub struct InterfacePlugins;
 
 impl PluginGroup for InterfacePlugins {
     fn build(self) -> PluginGroupBuilder {
-        PluginGroupBuilder::start::<Self>().add(CoreUiPlugin)
+        PluginGroupBuilder::start::<Self>()
+            .add(CoreUiPlugin)
+            // .add(DynamicsStatsPlugin)
+            // .add(KinematicsStatsPlugin)
+            // .add(FlightStatsPlugin)
     }
 }
 
@@ -19,8 +24,7 @@ pub struct CoreUiPlugin;
 impl Plugin for CoreUiPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugins((
-            // TODO: plugins that sets up the basics.
-
+            PerfUiPlugin,
             #[cfg(feature = "dev")]
             dev_tools::plugin,
         ));

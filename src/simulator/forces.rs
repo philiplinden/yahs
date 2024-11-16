@@ -14,8 +14,9 @@ pub struct ForcesPlugin;
 
 impl Plugin for ForcesPlugin {
     fn build(&self, app: &mut App) {
-        app.register_type::<Force>();
-        app.register_type::<ForceCollection>();
+        app.register_type::<WeightForce>();
+        app.register_type::<BuoyantForce>();
+        app.register_type::<DragForce>();
 
         // Disable the default forces since we apply our own.
         app.insert_resource(Gravity(Vec3::ZERO));
@@ -30,7 +31,10 @@ impl Plugin for ForcesPlugin {
             )
                 .before(PhysicsStepSet::First),
         );
-        app.add_systems(Update, on_rigid_body_added.in_set(ForceUpdateOrder::First));
+        app.add_systems(
+            Update,
+            on_rigid_body_added.in_set(ForceUpdateOrder::First),
+        );
         app.add_systems(
             Update,
             (update_weight_force, update_buoyant_force, update_drag_force)
@@ -49,25 +53,18 @@ enum ForceUpdateOrder {
     Prepare,
     Apply,
 }
-/// A generic struct representing any force vector applied to an entity.
-/// This is not a physics force, but rather a force vector. We could use bare
-/// `Vec3` structs, but this provides a type for clarity.
-pub type Force = Vec3;
-
-/// A component to store all `Force`s acting on an entity. This component collects
-/// all the force vectors that act on an entity, such as weight and buoyancy.
-#[derive(Component, Default, Reflect)]
-pub struct ForceCollection {
-    pub items: Vec<Force>,
-}
 
 /// Add a `ForceCollection` to entities with a `RigidBody` when they are added.
 fn on_rigid_body_added(mut commands: Commands, query: Query<Entity, Added<RigidBody>>) {
     for entity in &query {
-        commands.entity(entity).insert(ForceCollection::default());
-        info!("RigidBody added to entity {:?}", entity);
+        commands.entity(entity).insert((WeightForce::default(), BuoyantForce::default(), DragForce::default(), ForceCollection::default()));
     }
 }
+
+/// Downward force (N) vector due to gravity as a function of altitude (m) and
+/// mass (kg). The direction of this force is always world-space down.
+#[derive(Component, Default, Reflect)]
+pub struct WeightForce(Vec3);
 
 /// Force (N) from gravity at an altitude (m) above mean sea level.
 fn g(position: Vec3) -> f32 {
@@ -82,12 +79,16 @@ pub fn weight(position: Vec3, mass: f32) -> Vec3 {
 }
 
 fn update_weight_force(
-    mut bodies: Query<(&mut ForceCollection, &Position, &Mass), With<RigidBody>>,
+    mut bodies: Query<(&mut WeightForce, &Position, &Mass), With<RigidBody>>,
 ) {
-    for (mut forces, position, mass) in bodies.iter_mut() {
-        forces.items.push(weight(position.0, mass.kg()));
+    for (mut force, position, mass) in bodies.iter_mut() {
+        force.0 = weight(position.0, mass.kg());
     }
 }
+
+/// Upward force (N) vector due to atmosphere displaced by the given gas volume.
+#[derive(Component, Default, Reflect)]
+pub struct BuoyantForce(Vec3);
 
 /// Upward force (N) vector due to atmosphere displaced by the given gas volume.
 /// The direction of this force is always world-space up.
@@ -97,13 +98,17 @@ pub fn buoyancy(position: Vec3, volume: Volume, ambient_density: Density) -> Vec
 
 fn update_buoyant_force(
     atmosphere: Res<Atmosphere>,
-    mut bodies: Query<(&mut ForceCollection, &Position, &Volume), With<RigidBody>>,
+    mut bodies: Query<(&mut BuoyantForce, &Position, &Volume), With<RigidBody>>,
 ) {
-    for (mut forces, position, volume) in bodies.iter_mut() {
+    for (mut force, position, volume) in bodies.iter_mut() {
         let density = atmosphere.density(position.0);
-        forces.items.push(buoyancy(position.0, *volume, density));
+        force.0 = buoyancy(position.0, *volume, density);
     }
 }
+
+/// Force (N) due to drag as a solid body moves through a fluid.
+#[derive(Component, Default, Reflect)]
+pub struct DragForce(Vec3);
 
 /// Force (N) due to drag as a solid body moves through a fluid.
 pub fn drag(ambient_density: f32, velocity: Vec3, drag_area: f32, drag_coeff: f32) -> Vec3 {
@@ -115,27 +120,25 @@ pub fn drag(ambient_density: f32, velocity: Vec3, drag_area: f32, drag_coeff: f3
 #[allow(unused_mut)]
 fn update_drag_force(
     atmosphere: Res<Atmosphere>,
-    mut bodies: Query<
-        (
-            &ForceCollection,
-            &Position,
-            &LinearVelocity,
-            // &DragArea,
-            // &DragCoeff,
-        ),
-        With<RigidBody>,
-    >,
+    mut bodies: Query<(&mut DragForce, &Position, &LinearVelocity), With<RigidBody>>,
 ) {
     // Todo: update drag force
 }
+
+/// Dump all the forces into a single vector that can be queried and summed.
+/// TODO: maybe use observer pattern to find and update this collection, or
+/// populate it by emitting an event from each force system to populate the
+/// array. 
+#[derive(Component, Default, Reflect)]
+struct ForceCollection(Vec<Vec3>);
 
 /// Set the `ExternalForce` to the sum of all forces in the `Forces` collection.
 /// This effectively applies all the calculated force vectors to the physics
 /// rigid body without regard to where the forces came from.
 fn update_total_external_force(
-    mut forces: Query<(&mut ExternalForce, &ForceCollection), With<RigidBody>>,
+    mut external_forces: Query<(&mut ExternalForce, &ForceCollection), With<RigidBody>>,
 ) {
-    for (mut physics_force, collection) in forces.iter_mut() {
-        physics_force.set_force(collection.items.iter().sum());
+    for (mut physics_force, forces) in external_forces.iter_mut() {
+        physics_force.set_force(forces.0.iter().sum());
     }
 }

@@ -23,7 +23,7 @@ dev_native = [
     # Enable system information plugin for native dev builds.
     "bevy/sysinfo_plugin",
 ]
-ron = ["ron", "bevy_common_assets"]
+configs = ["ron", "bevy_common_assets"]
 inspect = ["bevy-inspector-egui"]
 
 [dependencies]

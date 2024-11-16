@@ -19,6 +19,9 @@ think about it, that might be easier and simpler in the long run. If we need to
 know each force's value and identity, we can add it to a resource or something
 that the UI can query.
 
+Update: it was not better. Still ran into the forever accumulating force issue
+using a `ForceCollection` aggregator component and generic vectors. However, I
+found a way to 
 I fell in love with [iyes_perf_ui](https://github.com/IyesGames/iyes_perf_ui).
 It is simple and easy to work with. Egui was adding a lot of overhead, more than
 I want right now. This is perfect until I'm done with the basic features of the
@@ -26,7 +29,7 @@ simulation.
 
 - Fixed systems for computing the weight, buoyancy, and drag forces.
 - Dropped egui.
-- Added `iyes_perf_ui` for performance monitoring and other quick-n-dirty tools.
+- Added `iyes_perf_ui` for performance monitoring and other UI.
 
 ## 2024-11-14
 

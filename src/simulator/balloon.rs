@@ -88,20 +88,21 @@ fn spawn_balloon(
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
 ) {
+    let radius = 0.3;
     commands.spawn((
         Name::new("BalloonBundle"),
         BalloonBundle {
             balloon: Balloon::default(),
             gas: IdealGasBundle::new(
-                Collider::sphere(1.0),
+                Collider::sphere(radius),
                 GasSpecies::air(),
                 Temperature::STANDARD,
                 Pressure::STANDARD,
             ),
             pbr: PbrBundle {
-                mesh: meshes.add(Sphere::new(1.0)),
+                mesh: meshes.add(Sphere::new(radius)),
                 material: materials.add(Color::srgb_u8(124, 144, 255)),
-                transform: Transform::from_xyz(0.0, 2.0, 0.0),
+                transform: Transform::from_xyz(0.0, 0.0, 0.0),
                 ..default()
             },
         },
