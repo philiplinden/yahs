@@ -4,6 +4,7 @@
 
 use avian3d::prelude::*;
 use bevy::prelude::*;
+use bevy_trait_query::{self, RegisterExt};
 
 use super::{Atmosphere, Density, Mass, Volume};
 
@@ -17,6 +18,10 @@ impl Plugin for ForcesPlugin {
         app.register_type::<WeightForce>();
         app.register_type::<BuoyantForce>();
         app.register_type::<DragForce>();
+
+        app.register_component_as::<dyn Force, WeightForce>();
+        app.register_component_as::<dyn Force, BuoyantForce>();
+        app.register_component_as::<dyn Force, DragForce>();
 
         // Disable the default forces since we apply our own.
         app.insert_resource(Gravity(Vec3::ZERO));
@@ -38,12 +43,16 @@ impl Plugin for ForcesPlugin {
         app.add_systems(
             Update,
             (update_weight_force, update_buoyant_force, update_drag_force)
+                .before(collect_forces)
                 .in_set(ForceUpdateOrder::Prepare),
         );
         app.add_systems(
             Update,
             update_total_external_force.in_set(ForceUpdateOrder::Apply),
         );
+
+        // for debugging, let's assume there will always be just one balloon.
+        app.init_resource::<NetForce>();
     }
 }
 
@@ -54,17 +63,44 @@ enum ForceUpdateOrder {
     Apply,
 }
 
+#[derive(Bundle)]
+pub struct ForceBundle {
+    collection: ForceCollection,
+    weight: WeightForce,
+    buoyancy: BuoyantForce,
+    drag: DragForce,
+}
+
 /// Add a `ForceCollection` to entities with a `RigidBody` when they are added.
 fn on_rigid_body_added(mut commands: Commands, query: Query<Entity, Added<RigidBody>>) {
     for entity in &query {
-        commands.entity(entity).insert((WeightForce::default(), BuoyantForce::default(), DragForce::default(), ForceCollection::default()));
+        commands.entity(entity).insert((ForceBundle {
+            collection: ForceCollection::default(),
+            weight: WeightForce::default(),
+            buoyancy: BuoyantForce::default(),
+            drag: DragForce::default(),
+        }));
     }
+}
+
+/// This trait is used to identify a force component.
+#[bevy_trait_query::queryable]
+pub trait Force {
+    fn force(&self) -> Vec3 { self.0 }
+    fn update(&mut self);
+    fn direction(&self) -> Vec3 { self.force().normalize() }
+    fn magnitude(&self) -> f32 { self.force().length() }
 }
 
 /// Downward force (N) vector due to gravity as a function of altitude (m) and
 /// mass (kg). The direction of this force is always world-space down.
 #[derive(Component, Default, Reflect)]
 pub struct WeightForce(Vec3);
+impl Force for WeightForce {
+    fn update(&mut self, position: Vec3, mass: f32) {
+        self.0 = weight(position, mass);
+    }
+}
 
 /// Force (N) from gravity at an altitude (m) above mean sea level.
 fn g(position: Vec3) -> f32 {
@@ -130,15 +166,30 @@ fn update_drag_force(
 /// populate it by emitting an event from each force system to populate the
 /// array. 
 #[derive(Component, Default, Reflect)]
-struct ForceCollection(Vec<Vec3>);
+struct ForceCollection {
+    forces: Vec<Box<dyn Force>>,
+}
+
+#[derive(Resource, Default, Reflect)]
+struct NetForce(Vec3);
+
+/// Collect all the forces into the force collection.
+fn collect_forces(mut forces: Query<(&mut ForceCollection, With<RigidBody>>) {
+    for mut collection in forces.iter_mut() {
+        collection.0.push(Vec3::ZERO);
+    }
+}
 
 /// Set the `ExternalForce` to the sum of all forces in the `Forces` collection.
 /// This effectively applies all the calculated force vectors to the physics
 /// rigid body without regard to where the forces came from.
 fn update_total_external_force(
     mut external_forces: Query<(&mut ExternalForce, &ForceCollection), With<RigidBody>>,
+    // TODO: this is a temporary resource that assumes there is only balloon.
+    mut net_force: ResMut<NetForce>,
 ) {
     for (mut physics_force, forces) in external_forces.iter_mut() {
-        physics_force.set_force(forces.0.iter().sum());
+        net_force.0 = forces.0.iter().sum();
+        physics_force.set_force(net_force.0);
     }
 }

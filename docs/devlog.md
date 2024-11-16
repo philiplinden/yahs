@@ -1,5 +1,15 @@
 # development log
 
+## 2024-11-17
+
+Time to see what's going on with the forces through some new UIs instead of
+relying on the inspector plugin. It would be nice to have some gizmos that show
+the forces as vectors in the scene.
+
+I added a new plugin that lets me query components by a trait. This greatly
+simplifies the logic for collecting forces, and makes the coupling between the
+force components and the equations that define them more direct.
+
 ## 2024-11-16
 
 I figured out how to get the forces to update correctly setting `WeightForce`,
