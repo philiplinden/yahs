@@ -23,12 +23,8 @@ impl Plugin for ForcesPlugin {
         // Update forces before solving physics.
         app.add_systems(
             Update,
-            (
-                update_weight_force,
-                apply_weight_force_when_spawning,
-                update_buoyant_force,
-                apply_buoyant_force_when_spawning,
-            )
+            (update_weight_force, update_buoyant_force, update_drag_force)
+                .before(update_total_force)
                 .in_set(PhysicsStepSet::First),
         );
     }
@@ -39,75 +35,21 @@ impl Plugin for ForcesPlugin {
 pub struct ForcesBundle {
     weight: WeightForce,
     buoyancy: BuoyantForce,
+    drag: DragForce,
 }
 
 impl Default for ForcesBundle {
     fn default() -> Self {
         ForcesBundle {
-            weight: WeightForce(ExternalForce::new(Vec3::ZERO)),
-            buoyancy: BuoyantForce(ExternalForce::new(Vec3::ZERO)),
+            weight: WeightForce(Vec3::ZERO),
+            buoyancy: BuoyantForce(Vec3::ZERO),
+            drag: DragForce(Vec3::ZERO),
         }
     }
 }
 
-trait Force {
-    fn external_force(&self) -> &ExternalForce;
-    fn external_force_mut(&mut self) -> &mut ExternalForce;
-
-    /// Same as ExternalForce::force()
-    fn force(&self) -> Vec3 {
-        self.external_force().force()
-    }
-
-    /// Same as ExternalForce::set_force()
-    fn set_force(&mut self, force: Vec3) {
-        self.external_force_mut().set_force(force);
-    }
-
-    /// Same as ExternalForce::apply_force()
-    fn apply_force(&mut self, force: Vec3) {
-        self.external_force_mut().apply_force(force);
-    }
-
-    /// If a force already has a vector, apply it with that same vector.
-    fn apply_self(&mut self) {
-        self.apply_force(self.force());
-    }
-
-    /// Returns the normalized force vector.
-    fn normalize(&self) -> Vec3 {
-        self.force().normalize()
-    }
-}
-
-// Implement the trait for any type that has an ExternalForce field
-impl<T> Force for T
-where
-    T: AsRef<ExternalForce> + AsMut<ExternalForce>,
-{
-    fn external_force(&self) -> &ExternalForce {
-        self.as_ref()
-    }
-
-    fn external_force_mut(&mut self) -> &mut ExternalForce {
-        self.as_mut()
-    }
-}
-
 #[derive(Component, Reflect)]
-pub struct WeightForce(ExternalForce);
-
-impl AsRef<ExternalForce> for WeightForce {
-    fn as_ref(&self) -> &ExternalForce {
-        &self.0
-    }
-}
-
-impl AsMut<ExternalForce> for WeightForce {
-    fn as_mut(&mut self) -> &mut ExternalForce {
-        &mut self.0
-    }
-}
+pub struct WeightForce(Vec3);
 
 /// Force (N) from gravity at an altitude (m) above mean sea level.
 fn g(position: Vec3) -> f32 {
@@ -121,33 +63,14 @@ pub fn weight(position: Vec3, mass: f32) -> Vec3 {
     Vec3::NEG_Y * g(position) * mass // [N]
 }
 
-fn update_weight_force(mut bodies: Query<(&mut WeightForce, &Position, &Mass)>) {
+fn update_weight_force(mut bodies: Query<(&mut WeightForce, &Position, &Mass), With<RigidBody>>) {
     for (mut force, position, mass) in bodies.iter_mut() {
-        force.set_force(weight(position.0, mass.kg()));
-    }
-}
-
-/// Apply the force vector when it is spawned.
-fn apply_weight_force_when_spawning(mut query: Query<&mut WeightForce, Added<WeightForce>>) {
-    for mut force in query.iter_mut() {
-        force.apply_self();
+        *force = WeightForce(weight(position.0, mass.kg()));
     }
 }
 
 #[derive(Component, Reflect)]
-pub struct BuoyantForce(ExternalForce);
-
-impl AsRef<ExternalForce> for BuoyantForce {
-    fn as_ref(&self) -> &ExternalForce {
-        &self.0
-    }
-}
-
-impl AsMut<ExternalForce> for BuoyantForce {
-    fn as_mut(&mut self) -> &mut ExternalForce {
-        &mut self.0
-    }
-}
+pub struct BuoyantForce(Vec3);
 
 /// Upward force (N) vector due to atmosphere displaced by the given gas volume.
 /// The direction of this force is always world-space up.
@@ -157,20 +80,16 @@ pub fn buoyancy(position: Vec3, volume: Volume, ambient_density: Density) -> Vec
 
 fn update_buoyant_force(
     atmosphere: Res<Atmosphere>,
-    mut bodies: Query<(&mut BuoyantForce, &Position, &Volume)>,
+    mut bodies: Query<(&mut BuoyantForce, &Position, &Volume), With<RigidBody>>,
 ) {
     for (mut force, position, volume) in bodies.iter_mut() {
         let density = atmosphere.density(position.0);
-        force.set_force(buoyancy(position.0, *volume, density));
+        *force = BuoyantForce(buoyancy(position.0, *volume, density));
     }
 }
 
-/// Apply the force vector when it is spawned.
-fn apply_buoyant_force_when_spawning(mut query: Query<&mut BuoyantForce, Added<BuoyantForce>>) {
-    for mut force in query.iter_mut() {
-        force.apply_self();
-    }
-}
+#[derive(Component, Reflect)]
+pub struct DragForce(Vec3);
 
 /// Force (N) due to drag as a solid body moves through a fluid.
 pub fn drag(ambient_density: f32, velocity: Vec3, drag_area: f32, drag_coeff: f32) -> Vec3 {
@@ -178,24 +97,29 @@ pub fn drag(ambient_density: f32, velocity: Vec3, drag_area: f32, drag_coeff: f3
     direction * drag_coeff / 2.0 * ambient_density * f32::powf(velocity.length(), 2.0) * drag_area
 }
 
-// pub fn step() {
+fn update_drag_force(
+    atmosphere: Res<Atmosphere>,
+    mut bodies: Query<
+        (
+            &mut DragForce,
+            &Position,
+            &LinearVelocity,
+            // &DragArea,
+            // &DragCoeff,
+        ),
+        With<RigidBody>,
+    >,
+) {
+    // Todo: update drag force
+}
 
-//     let total_dry_mass = body.total_mass() + parachute.total_mass();
-//     let weight_force = forces::weight(altitude, total_dry_mass);
-//     let buoyancy_force = forces::buoyancy(altitude, atmosphere, balloon.lift_gas);
-
-//     let total_drag_force = forces::drag(atmosphere, ascent_rate, balloon)
-//         + forces::drag(atmosphere, ascent_rate, body)
-//         + forces::drag(atmosphere, ascent_rate, parachute.main)
-//         + forces::drag(atmosphere, ascent_rate, parachute.drogue);
-//     debug!(
-//         "weight: {:?} buoyancy: {:?} drag: {:?}",
-//         weight_force, buoyancy_force, total_drag_force
-//     );
-
-//     // calculate the net force
-//     let net_force = weight_force + buoyancy_force + total_drag_force;
-//     let acceleration = net_force / total_dry_mass;
-//     let ascent_rate = ascent_rate + acceleration * delta_t;
-//     let altitude = altitude + ascent_rate * delta_t;
-// }
+fn update_total_force(
+    mut forces: Query<
+        (&mut ExternalForce, &WeightForce, &BuoyantForce, &DragForce),
+        With<RigidBody>,
+    >,
+) {
+    for (mut total_force, weight, buoyancy, drag) in forces.iter_mut() {
+        total_force.set_force(weight.0 + buoyancy.0 + drag.0);
+    }
+}

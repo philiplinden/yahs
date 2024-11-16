@@ -1,5 +1,27 @@
 # development log
 
+## 2024-11-16
+
+I figured out how to get the forces to update correctly setting `WeightForce`,
+`BuoyantForce`, and `DragForce` to wrap an `ExternalForce` component was a mistake.
+Instead, I had to change them to wrap a `Vec3`, which is the input to the
+`set_force` method. What I'm doing now is having systems that update the forces,
+then after that run the system that adds the forces into a single vector. That
+is what gets applied to the rigid body.
+
+Remember that `WeightForce`, `BuoyantForce`, and `DragForce` are _components_,
+not forces themselves. We name them so we can query the _kinds_ of forces,
+otherwise generic force vectors would not be distinguishable from each other.
+
+I fell in love with [iyes_perf_ui](https://github.com/IyesGames/iyes_perf_ui).
+It is simple and easy to work with. Egui was adding a lot of overhead, more than
+I want right now. This is perfect until I'm done with the basic features of the
+simulation.
+
+- Fixed systems for computing the weight, buoyancy, and drag forces.
+- Dropped egui.
+- Added `iyes_perf_ui` for performance monitoring and other quick-n-dirty tools.
+
 ## 2024-11-14
 
 My focus today is to spend some time getting the balloon to "look right". Things

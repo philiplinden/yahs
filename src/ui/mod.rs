@@ -1,31 +1,26 @@
-mod shell;
-
 #[cfg(feature = "dev")]
 mod dev_tools;
 
-use bevy::{
-    app::PluginGroupBuilder, prelude::*,
-};
-use bevy_egui::EguiPlugin;
+use bevy::{app::PluginGroupBuilder, prelude::*};
 
 /// A plugin group that includes all interface-related plugins
 pub struct InterfacePlugins;
 
 impl PluginGroup for InterfacePlugins {
     fn build(self) -> PluginGroupBuilder {
-        PluginGroupBuilder::start::<Self>()
-            .add(CoreUiPlugin)
+        PluginGroupBuilder::start::<Self>().add(CoreUiPlugin)
     }
 }
 
-/// Base UI plugin. This sets up Bevy Egui and the "shell" or frame for the UI.
+/// Base UI plugin. This sets up the base plugins that all other ui plugins
+/// need. .Placeholder for now
 pub struct CoreUiPlugin;
 
 impl Plugin for CoreUiPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugins((
-            EguiPlugin,
-            shell::ShellPlugin,
+            // TODO: plugins that sets up the basics.
+
             #[cfg(feature = "dev")]
             dev_tools::plugin,
         ));
