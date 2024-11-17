@@ -235,7 +235,7 @@ impl Force for Drag {
 pub fn drag(ambient_density: f32, drag_normal: Vec3, drag_area: f32, drag_coeff: f32) -> Vec3 {
     drag_normal * drag_coeff / 2.0
         * ambient_density
-        * f32::powf(drag_normal.length(), 2.0)
+        * drag_normal.length_squared()
         * drag_area
 }
 
@@ -248,8 +248,18 @@ fn update_drag_parameters(
     for (mut drag, position, velocity, collider) in bodies.iter_mut() {
         let density = atmosphere.density(position.0);
         let local_gravity = g(position.0);
-        let (drag_normal, drag_area, drag_coeff) = aero_drag_from_collider(collider, *velocity);
-        drag.update(local_gravity, drag_normal, density, drag_area, drag_coeff);
+        
+        let wind_velocity = Vec3::ZERO; // Can be updated with actual wind
+        let drag_force = aero_drag_from_collider(collider, *velocity, wind_velocity);
+        
+        // Update drag component with normalized force direction
+        drag.update(
+            local_gravity,
+            if drag_force == Vec3::ZERO { Vec3::ZERO } else { -drag_force.normalize() },
+            density,
+            1.0, // Area handled in aero_drag_from_collider
+            1.0, // Coefficient handled in aero_drag_from_collider
+        );
     }
 }
 

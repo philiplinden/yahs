@@ -10,6 +10,13 @@ I added a new plugin that lets me query components by a trait. This greatly
 simplifies the logic for collecting forces, and makes the coupling between the
 force components and the equations that define them more direct.
 
+I used the [Newtonian Aerodynamics for General Body Shapes](https://ntrs.nasa.gov/citations/19780014285)
+paper to help me understand the equations for computing drag. o1-mini helped
+interpret the equations and implement them. A summary of the paper is saved in
+[drag.md](drag.md). I overcomplicated the drag calculation by sampling points on
+the surface of the collider and then projecting them onto the surface but it was
+fun to implement.
+
 ## 2024-11-16
 
 I figured out how to get the forces to update correctly setting `WeightForce`,
