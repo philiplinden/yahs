@@ -6,20 +6,14 @@ use bevy_trait_query::{self, RegisterExt};
 
 use super::{Atmosphere, Density, Mass, Volume, ForceUpdateOrder, Force};
 
-/// Air density at sea level in kg/m³.
-const AIR_DENSITY: f32 = 1.225;
-
-/// Number of samples for surface sampling.
-const NUM_SAMPLES: usize = 100;
-
 pub struct AeroPlugin;
 
 impl Plugin for AeroPlugin {
     fn build(&self, app: &mut App) {
         app.register_type::<Drag>();
         app.register_component_as::<dyn Force, Drag>();
+        app.init_resource::<SurfaceSamplingConfig>();
         app.add_systems(Update, update_drag_parameters.in_set(ForceUpdateOrder::Prepare));
-
     }
 }
 
@@ -71,6 +65,34 @@ impl Force for Drag {
     }
 }
 
+fn update_drag_parameters(
+    atmosphere: Res<Atmosphere>,
+    mut bodies: Query<(&mut Drag, &Position, &LinearVelocity, &Collider), With<RigidBody>>,
+    sampling_config: Res<SurfaceSamplingConfig>,
+) {
+    let num_samples = sampling_config.num_samples;
+
+    let wind_velocity = Vec3::ZERO; // TODO: update with actual wind
+
+    for (mut drag, position, velocity, collider) in bodies.iter_mut() {
+        let ambient_density = atmosphere.density(position.0);
+        
+        // Calculate relative flow velocity
+        let relative_flow_velocity = velocity.0 - wind_velocity;
+
+        // Update drag component with normalized force direction
+        let drag_force = aero_drag_from_collider(collider, relative_flow_velocity, ambient_density, num_samples);
+        let drag_normal = if drag_force == Vec3::ZERO { Vec3::ZERO } else { -drag_force.normalize() };
+
+        drag.update(
+            ambient_density,
+            drag_normal,
+            1.0, // Area handled in aero_drag_from_collider
+            1.0, // Coefficient handled in aero_drag_from_collider
+        );
+    }
+}
+
 /// Force (N) due to drag as a solid body moves through a fluid.
 pub fn drag(ambient_density: f32, drag_normal: Vec3, drag_area: f32, drag_coeff: f32) -> Vec3 {
     drag_normal * drag_coeff / 2.0
@@ -79,25 +101,14 @@ pub fn drag(ambient_density: f32, drag_normal: Vec3, drag_area: f32, drag_coeff:
         * drag_area
 }
 
-#[allow(unused_variables)]
-#[allow(unused_mut)]
-fn update_drag_parameters(
-    atmosphere: Res<Atmosphere>,
-    mut bodies: Query<(&mut Drag, &Position, &LinearVelocity, &Collider), With<RigidBody>>,
-) {
-    for (mut drag, position, velocity, collider) in bodies.iter_mut() {
-        let density = atmosphere.density(position.0);
-        
-        let wind_velocity = Vec3::ZERO; // Can be updated with actual wind
-        let drag_force = aero_drag_from_collider(collider, velocity.0, wind_velocity);
-        
-        // Update drag component with normalized force direction
-        drag.update(
-            density,
-            if drag_force == Vec3::ZERO { Vec3::ZERO } else { -drag_force.normalize() },
-            1.0, // Area handled in aero_drag_from_collider
-            1.0, // Coefficient handled in aero_drag_from_collider
-        );
+/// Number of samples for surface sampling.
+#[derive(Resource, Reflect)]
+pub struct SurfaceSamplingConfig {
+    num_samples: usize,
+}
+impl Default for SurfaceSamplingConfig {
+    fn default() -> Self {
+        SurfaceSamplingConfig { num_samples: 100 }
     }
 }
 
@@ -121,24 +132,21 @@ struct SurfaceSample {
 /// A `Vec3` representing the drag force vector.
 pub fn aero_drag_from_collider(
     collider: &Collider,
-    velocity: Vec3,
-    wind_velocity: Vec3,
+    relative_flow_velocity: Vec3,
+    ambient_density: Density,
+    num_samples: usize,
 ) -> Vec3 {
-    // Calculate relative flow velocity
-    let flow_velocity = velocity - wind_velocity;
-    let view_vector = flow_velocity;
-
     // Handle case where flow_velocity is near zero to avoid invalid rotations
-    let view_dir = flow_velocity.normalize_or_zero();
+    let view_dir = relative_flow_velocity.normalize_or_zero();
     if view_dir.length_squared() < 1e-6 {
         return Vec3::ZERO;
     }
 
     // Sample surface points along with their differential areas using simplified iterator
-    let surface_samples = sample_surface_with_area(collider, NUM_SAMPLES, view_dir);
+    let surface_samples = sample_surface_with_area(collider, num_samples, view_dir);
 
     // Calculate net drag using differential areas with optimized parallel processing
-    calculate_net_drag(&surface_samples, flow_velocity)
+    calculate_net_drag(&surface_samples, relative_flow_velocity, ambient_density)
 }
 
 /// Samples points on the collider's surface and calculates their differential areas.
@@ -222,8 +230,9 @@ fn sample_surface_with_area(
 fn calculate_net_drag(
     surface_samples: &[SurfaceSample],
     flow_velocity: Vec3,
+    ambient_density: Density,
 ) -> Vec3 {
-    let dynamic_pressure = 0.5 * AIR_DENSITY * flow_velocity.length_squared();
+    let dynamic_pressure = 0.5 * ambient_density.0 * flow_velocity.length_squared();
 
     surface_samples.iter().map(|sample| {
         // Effective area is projected area based on the angle of incidence
