@@ -1,3 +1,4 @@
+pub mod aero;
 pub mod atmosphere;
 pub mod balloon;
 pub mod forces;
