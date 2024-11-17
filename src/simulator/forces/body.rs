@@ -1,13 +1,15 @@
+//! Forces applied to rigid bodies due to gravity and buoyancy.
+
 use avian3d::prelude::*;
 use bevy::prelude::*;
 use bevy_trait_query::{self, RegisterExt};
 
 use super::{Atmosphere, Density, Force, ForceUpdateOrder, Mass, Volume};
-use crate::simulator::properties::{STANDARD_G, EARTH_RADIUS_M};
+use crate::simulator::properties::{EARTH_RADIUS_M, STANDARD_G};
 
-pub struct ForcesPlugin;
+pub struct BodyForcesPlugin;
 
-impl Plugin for ForcesPlugin {
+impl Plugin for BodyForcesPlugin {
     fn build(&self, app: &mut App) {
         app.register_type::<Weight>();
         app.register_type::<Buoyancy>();

@@ -1,9 +1,10 @@
+//! Forces applied to rigid bodies.
 pub mod aero;
 pub mod body;
 
 use avian3d::prelude::*;
 use bevy::prelude::*;
-use bevy_trait_query::{self, RegisterExt};
+use bevy_trait_query;
 
 use super::{Atmosphere, Density, Mass, Volume};
 
@@ -30,8 +31,7 @@ impl Plugin for ForcesPlugin {
             update_total_external_force.in_set(ForceUpdateOrder::Apply),
         );
 
-        // for debugging, let's assume there will always be just one balloon.
-        // app.init_resource::<NetForce>();
+        app.add_plugins((aero::AeroForcesPlugin, body::BodyForcesPlugin));
     }
 }
 
@@ -79,6 +79,9 @@ pub trait Force {
 /// Set the `ExternalForce` to the sum of all forces in the `Forces` collection.
 /// This effectively applies all the calculated force vectors to the physics
 /// rigid body without regard to where the forces came from.
+/// 
+/// TODO: preserve the position of the total force vector and apply it at that
+/// point instead of the center of mass.
 fn update_total_external_force(
     mut body_forces: Query<(&mut ExternalForce, &dyn Force), With<RigidBody>>,
 ) {
