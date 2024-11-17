@@ -3,7 +3,8 @@
 
 use avian3d::prelude::*;
 use bevy::prelude::*;
-use serde::Deserialize;
+#[cfg(feature = "config-files")]
+use serde::{Deserialize, Serialize};
 
 use crate::simulator::properties::{Mass as SimMass, *};
 
@@ -21,7 +22,8 @@ impl Plugin for IdealGasPlugin {
     }
 }
 
-#[derive(Component, Debug, Deserialize, Clone, Reflect)]
+#[derive(Component, Debug, Clone, PartialEq, Reflect)]
+#[cfg_attr(feature = "config-files", derive(Serialize, Deserialize))]
 pub struct GasSpecies {
     pub name: String,
     pub abbreviation: String,

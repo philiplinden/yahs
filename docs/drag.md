@@ -1,4 +1,8 @@
-# Summary of [Newtonian Aerodynamics for General Body Shapes](https://ntrs.nasa.gov/citations/19660012440)
+# Aerodynamic Drag Calculations
+This is a summary of the paper
+[Newtonian Aerodynamics for General Body Shapes](https://ntrs.nasa.gov/citations/19660012440)
+and its implementation in our simulation. It is generated using ChatGPT
+`o1-mini`.
 
 ## 1. Introduction to Newtonian Aerodynamics
 Newtonian Aerodynamics applies Newtonian mechanics to predict aerodynamic forces
@@ -97,10 +101,3 @@ the implemented models.
    of all sampled points to compute total drag and lift forces.
 5. **Normalization and Scaling**: Adjust the computed forces based on fluid
    density and relative velocity squared.
-
-## 9. Recommendations for Your Simulation
-- Implement robust surface sampling methods.
-- Calculate actual differential areas for more accurate drag force computation.
-- Incorporate correction factors for drag coefficients based on flow conditions.
-- Optimize the number of surface sample points for performance.
-- Validate simulation results against experimental data.

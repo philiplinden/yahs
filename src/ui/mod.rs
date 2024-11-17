@@ -1,5 +1,6 @@
 #[cfg(feature = "dev")]
 mod dev_tools;
+// mod vectors;
 
 use bevy::{app::PluginGroupBuilder, prelude::*};
 use iyes_perf_ui::prelude::*;
@@ -11,9 +12,7 @@ impl PluginGroup for InterfacePlugins {
     fn build(self) -> PluginGroupBuilder {
         PluginGroupBuilder::start::<Self>()
             .add(CoreUiPlugin)
-            // .add(DynamicsStatsPlugin)
-            // .add(KinematicsStatsPlugin)
-            // .add(FlightStatsPlugin)
+            // .add(vectors::ForceVisualizationPlugin)
     }
 }
 

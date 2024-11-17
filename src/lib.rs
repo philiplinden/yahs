@@ -1,7 +1,8 @@
-// mod assets;
 mod simulator;
 mod scene;
 mod ui;
+#[cfg(feature = "config-files")]
+mod assets;
 
 use bevy::{asset::AssetMetaCheck, prelude::*};
 

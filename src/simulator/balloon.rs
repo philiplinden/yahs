@@ -2,7 +2,8 @@
 
 use avian3d::prelude::*;
 use bevy::prelude::*;
-use serde::Deserialize;
+#[cfg(feature = "config-files")]
+use serde::{Deserialize, Serialize};
 
 use super::{
     ideal_gas::{GasSpecies, IdealGasBundle},
@@ -28,7 +29,8 @@ pub struct BalloonBundle {
     pub pbr: PbrBundle,
 }
 
-#[derive(Debug, Deserialize, Clone, PartialEq, Reflect)]
+#[derive(Debug, Clone, PartialEq, Reflect)]
+#[cfg_attr(feature = "config-files", derive(Serialize, Deserialize))]
 pub struct BalloonMaterial {
     pub name: String,
     pub max_temperature: f32, // temperature (K) where the given material fails
@@ -64,6 +66,7 @@ impl Default for BalloonMaterial {
 /// Balloon properties. The balloon always conforms to the surface of a
 /// collider. It does not have its own rigid body.
 #[derive(Component, Reflect)]
+#[cfg_attr(feature = "config-files", derive(Serialize, Deserialize))]
 pub struct Balloon {
     /// Balloon material type
     pub skin_material: BalloonMaterial,

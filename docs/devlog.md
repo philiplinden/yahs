@@ -1,5 +1,22 @@
 # development log
 
+## 2024-11-18
+
+Iterating with AI on the drag calculations. It is set up to perform a raycast
+along the velocity vector and compute the drag as a function of the angle of
+attack. Each raycast hits a point on the surface of the collider and the normal
+and differential area is used to compute the drag force for each one.
+
+- Split the `forces` module into `body` and `aero`. The base `forces` module
+  contains the common code for all forces.
+- Added `AeroPlugin` for computing drag on solid bodies.
+- Added `BodyForcesPlugin` that deals with forces related to the mass and
+  volume of the rigid bodies.
+- Added `ForceVisualizationPlugin` for visualizing the forces as vectors in the
+  scene.
+- Moved serde features behind the `config-files` feature flag. I'm hoping to
+  pare down the default dependencies for the project.
+
 ## 2024-11-17
 
 Time to see what's going on with the forces through some new UIs instead of
