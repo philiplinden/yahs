@@ -1,4 +1,3 @@
-// mod vectors;
 // mod monitors;
 
 #[cfg(feature = "dev")]
@@ -14,7 +13,7 @@ impl PluginGroup for InterfacePlugins {
     fn build(self) -> PluginGroupBuilder {
         PluginGroupBuilder::start::<Self>()
             .add(CoreUiPlugin)
-            // .add(vectors::ForceVectorPlugin)
+            .add(monitors::ForceMonitorPlugin)
     }
 }
 

@@ -1,3 +1,5 @@
+mod camera;
+
 use avian3d::prelude::*;
 use bevy::prelude::*;
 
@@ -5,6 +7,7 @@ pub struct ScenePlugin;
 
 impl Plugin for ScenePlugin {
     fn build(&self, app: &mut App) {
+        app.add_plugins(camera::CameraPlugin);
         app.add_systems(Startup, simple_scene);
     }
 }
@@ -24,14 +27,6 @@ fn simple_scene(
                 ..default()
             },
             transform: Transform::from_xyz(4.0, 8.0, 4.0),
-            ..default()
-        },
-    ));
-    // camera
-    commands.spawn((
-        Name::new("Camera"),
-        Camera3dBundle {
-            transform: Transform::from_xyz(-2.5, 4.5, 9.0).looking_at(Vec3::ZERO, Vec3::Y),
             ..default()
         },
     ));

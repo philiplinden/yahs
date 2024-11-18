@@ -6,7 +6,7 @@ use avian3d::prelude::*;
 use bevy::prelude::*;
 use bevy_trait_query;
 
-use super::{Atmosphere, Density, Mass, Volume};
+use super::{Atmosphere, Density, Mass, Volume, SimulatedBody};
 
 pub struct ForcesPlugin;
 
@@ -20,12 +20,16 @@ impl Plugin for ForcesPlugin {
             Update,
             (
                 ForceUpdateOrder::First,
-                ForceUpdateOrder::Prepare,
-                ForceUpdateOrder::Apply,
-            )
-                .before(PhysicsStepSet::First),
+                ForceUpdateOrder::Prepare.after(ForceUpdateOrder::First),
+                ForceUpdateOrder::Apply
+                    .after(ForceUpdateOrder::Prepare)
+                    .before(PhysicsStepSet::First),
+            ),
         );
-        app.add_systems(Update, on_rigid_body_added.in_set(ForceUpdateOrder::First));
+        app.add_systems(
+            Update,
+            on_simulated_body_added.in_set(ForceUpdateOrder::First),
+        );
         app.add_systems(
             Update,
             update_total_external_force.in_set(ForceUpdateOrder::Apply),
@@ -42,21 +46,19 @@ enum ForceUpdateOrder {
     Apply,
 }
 
-#[derive(Bundle)]
+/// A bundle of force components to be added to entities with a `RigidBody`. The
+/// body can only have one of each type of force component.
+#[derive(Bundle, Default)]
 pub struct ForceBundle {
     weight: body::Weight,
     buoyancy: body::Buoyancy,
     drag: aero::Drag,
 }
 
-/// Add a `ForceCollection` to entities with a `RigidBody` when they are added.
-fn on_rigid_body_added(mut commands: Commands, query: Query<Entity, Added<RigidBody>>) {
+/// Add a `ForceBundle` to entities with a `RigidBody` when they are added.
+fn on_simulated_body_added(mut commands: Commands, query: Query<Entity, Added<SimulatedBody>>) {
     for entity in &query {
-        commands.entity(entity).insert(ForceBundle {
-            weight: body::Weight::default(),
-            buoyancy: body::Buoyancy::default(),
-            drag: aero::Drag::default(),
-        });
+        commands.entity(entity).insert(ForceBundle::default());
     }
 }
 
@@ -66,6 +68,9 @@ fn on_rigid_body_added(mut commands: Commands, query: Query<Entity, Added<RigidB
 /// Newtons.
 #[bevy_trait_query::queryable]
 pub trait Force {
+    fn name(&self) -> String {
+        String::from("Force")
+    }
     fn force(&self) -> Vec3;
     fn direction(&self) -> Vec3 {
         self.force().normalize()
@@ -79,19 +84,23 @@ pub trait Force {
 /// Set the `ExternalForce` to the sum of all forces in the `Forces` collection.
 /// This effectively applies all the calculated force vectors to the physics
 /// rigid body without regard to where the forces came from.
-/// 
+///
 /// TODO: preserve the position of the total force vector and apply it at that
 /// point instead of the center of mass.
 fn update_total_external_force(
-    mut body_forces: Query<(&mut ExternalForce, &dyn Force), With<RigidBody>>,
+    mut body_forces: Query<(&mut ExternalForce, &dyn Force, &RigidBody), With<SimulatedBody>>,
 ) {
     // Iterate over each entity that has force vector components.
-    for (mut physics_force_component, acting_forces) in body_forces.iter_mut() {
-        let mut net_force = Vec3::ZERO; // reset the net force to zero
-                                        // Iterate over each force vector component and compute its value.
-        for force in acting_forces {
-            net_force += force.force();
+    for (mut physics_force_component, acting_forces, rigid_body) in body_forces.iter_mut() {
+        if rigid_body.is_dynamic() {
+            let mut net_force = Vec3::ZERO; // reset the net force to zero
+
+            // Iterate over each force vector component and compute its value.
+            for force in acting_forces.iter() {
+                net_force += force.force();
+                info!("{}: {:?}", force.name(), force.force());
+            }
+            physics_force_component.set_force(net_force);
         }
-        physics_force_component.set_force(net_force);
     }
 }

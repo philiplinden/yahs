@@ -7,6 +7,19 @@ along the velocity vector and compute the drag as a function of the angle of
 attack. Each raycast hits a point on the surface of the collider and the normal
 and differential area is used to compute the drag force for each one.
 
+Turns out air viscosity also changes with altitude for the standard atmosphere.
+I learned today that there is also _dynamic_ viscosity and _kinematic_
+viscosity. The latter is the former divided by the density. So as density
+changes, so too does viscosity. These two types are really just different ways
+to express the same thing.
+
+In any case, I will wire up drag to be calculated from the bounding-sphere of
+the collider. That way I can get a simple drag calculation working before
+wiring up the more complex stuff and ignore things like shear and asymmetry for
+now.
+
+I reorganized the module hierarchy again shut up I'm not the problem you are.
+
 - Split the `forces` module into `body` and `aero`. The base `forces` module
   contains the common code for all forces.
 - Added `AeroPlugin` for computing drag on solid bodies.
@@ -16,6 +29,15 @@ and differential area is used to compute the drag force for each one.
   scene.
 - Moved serde features behind the `config-files` feature flag. I'm hoping to
   pare down the default dependencies for the project.
+- Added `intro_to_drag.md` as I learn how to compute drag on arbitrary shapes.
+- Added `camera.rs` as a simple pan-orbit camera controller.
+- Added `controls.rs` for managing keybindings, and `KeyBindingsConfig` resource
+  for storing the keybindings. I use a resource instead of constants because
+  it makes the keybindings easier to change at runtime and feels more natural
+  alongside how Bevy handles inputs anyway.
+- Moved `scene` and `ui` modules to a `graphics` module. Hopefully this will
+  make it easier to separate the concerns of physics simulation and graphics,
+  like if I ever want to add a TUI or CLI instead of a 3D graphics UI.
 
 ## 2024-11-17
 

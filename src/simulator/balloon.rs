@@ -6,6 +6,7 @@ use bevy::prelude::*;
 use serde::{Deserialize, Serialize};
 
 use super::{
+    SimulatedBody,
     ideal_gas::{GasSpecies, IdealGasBundle},
     properties::*,
 };
@@ -85,7 +86,6 @@ impl Default for Balloon {
         }
     }
 }
-
 fn spawn_balloon(
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
@@ -94,6 +94,7 @@ fn spawn_balloon(
     let radius = 0.3;
     commands.spawn((
         Name::new("BalloonBundle"),
+        SimulatedBody,
         BalloonBundle {
             balloon: Balloon::default(),
             gas: IdealGasBundle::new(

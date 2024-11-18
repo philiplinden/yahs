@@ -1,6 +1,6 @@
 mod simulator;
-mod scene;
-mod ui;
+mod app3d;
+
 #[cfg(feature = "config-files")]
 mod assets;
 
@@ -34,11 +34,14 @@ impl Plugin for AppCorePlugin {
                 }),
         );
 
-        // Add other plugins.
+        // Add the simulator plugins (that don't deal with graphics).
+        app.add_plugins(simulator::SimulatorPlugins);
+
+        // Add the 3D application plugins.
         app.add_plugins((
-            simulator::SimulatorPlugins,
-            ui::InterfacePlugins,
-            scene::ScenePlugin,
+            app3d::InterfacePlugins,
+            app3d::ScenePlugin,
+            app3d::ControlsPlugin,
         ));
     }
 }

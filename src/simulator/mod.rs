@@ -13,6 +13,11 @@ use avian3d::prelude::*;
 pub use properties::{Temperature, Pressure, Volume, Density, Mass};
 pub use atmosphere::Atmosphere;
 
+/// A marker component for entities that are simulated.
+#[derive(Component, Default)]
+pub struct SimulatedBody;
+
+
 pub struct SimulatorPlugins;
 
 impl PluginGroup for SimulatorPlugins {

@@ -4,7 +4,7 @@ use avian3d::prelude::*;
 use bevy::prelude::*;
 use bevy_trait_query::{self, RegisterExt};
 
-use super::{Atmosphere, Density, Force, ForceUpdateOrder, Mass, Volume};
+use super::{Atmosphere, Density, Force, ForceUpdateOrder, Mass, SimulatedBody, Volume};
 use crate::simulator::properties::{EARTH_RADIUS_M, STANDARD_G};
 
 pub struct BodyForcesPlugin;
@@ -46,6 +46,9 @@ impl Weight {
     }
 }
 impl Force for Weight {
+    fn name(&self) -> String {
+        String::from("Weight")
+    }
     fn force(&self) -> Vec3 {
         weight(self.position, self.mass)
     }
@@ -66,7 +69,9 @@ pub fn weight(position: Vec3, mass: f32) -> Vec3 {
     Vec3::NEG_Y * g(position) * mass // [N]
 }
 
-fn update_weight_parameters(mut bodies: Query<(&mut Weight, &Position, &Mass), With<RigidBody>>) {
+fn update_weight_parameters(
+    mut bodies: Query<(&mut Weight, &Position, &Mass), With<SimulatedBody>>,
+) {
     for (mut weight, position, mass) in bodies.iter_mut() {
         weight.update(position.0, mass.kg());
     }
@@ -96,6 +101,9 @@ impl Buoyancy {
     }
 }
 impl Force for Buoyancy {
+    fn name(&self) -> String {
+        String::from("Buoyancy")
+    }
     fn force(&self) -> Vec3 {
         buoyancy(self.position, self.displaced_volume, self.ambient_density)
     }
@@ -112,7 +120,7 @@ pub fn buoyancy(position: Vec3, displaced_volume: Volume, ambient_density: Densi
 
 fn update_buoyant_parameters(
     atmosphere: Res<Atmosphere>,
-    mut bodies: Query<(&mut Buoyancy, &Position, &Volume), With<RigidBody>>,
+    mut bodies: Query<(&mut Buoyancy, &Position, &Volume), With<SimulatedBody>>,
 ) {
     for (mut buoyancy, position, volume) in bodies.iter_mut() {
         let density = atmosphere.density(position.0);

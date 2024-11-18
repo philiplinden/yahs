@@ -34,11 +34,6 @@ fn sphere_surface_area(radius: f32) -> f32 {
     4.0 * PI * f32::powf(radius, 2.0)
 }
 
-pub fn projected_spherical_area(volume: f32) -> f32 {
-    // Get the projected area (m^2) of a sphere with a given volume (m³)
-    f32::powf(sphere_radius_from_volume(volume), 2.0) * PI
-}
-
 pub struct CorePropertiesPlugin;
 
 impl Plugin for CorePropertiesPlugin {
