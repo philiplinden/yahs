@@ -82,11 +82,11 @@ fn update_drag_parameters(
 }
 
 /// Force (N) due to drag as a solid body moves through a fluid.
-pub fn drag(flow_velocity: Vec3, ambient_density: f32, drag_area: f32, drag_coeff: f32) -> Vec3 {
-    let drag_direction = flow_velocity.normalize_or_zero(); // parallel to flow
+pub fn drag(velocity: Vec3, ambient_density: f32, drag_area: f32, drag_coeff: f32) -> Vec3 {
+    let drag_direction = -velocity.normalize_or_zero(); // oppose the object's velocity
     let drag_magnitude = drag_coeff / 2.0
         * ambient_density
-        * flow_velocity.length_squared()
+        * velocity.length_squared()
         * drag_area;
     drag_direction * drag_magnitude
 }

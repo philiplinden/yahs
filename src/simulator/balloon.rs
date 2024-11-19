@@ -99,7 +99,7 @@ fn spawn_balloon(
             balloon: Balloon::default(),
             gas: IdealGasBundle::new(
                 Collider::sphere(radius),
-                GasSpecies::air(),
+                GasSpecies::helium(),
                 Temperature::STANDARD,
                 Pressure::STANDARD,
             ),

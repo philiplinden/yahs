@@ -12,6 +12,12 @@ bring in the "out of bounds" level to be less than the true bounds.
 
 The drag force is the one that is causing the bad acceleration. Weight and
 buoyancy don't change with time since the balloon has constant size right now.
+Annoying since the drag is supposed to be the placeholder.
+
+I found the bug. The drag's "flow velocity" variable was being set to the
+_balloon_ velocity, rather than the opposing force. After making that change,
+the balloon gently floats to the ground when filled with air, and gently rises
+when filled with helium.
 
 - Added pause/play controls. Default key is `Space`.
 - Added a new ui that displays the simulation state.
@@ -93,9 +99,8 @@ think about it, that might be easier and simpler in the long run. If we need to
 know each force's value and identity, we can add it to a resource or something
 that the UI can query.
 
-Update: it was not better. Still ran into the forever accumulating force issue
-using a `ForceCollection` aggregator component and generic vectors. However, I
-found a way to 
+Update: it was not better.
+
 I fell in love with [iyes_perf_ui](https://github.com/IyesGames/iyes_perf_ui).
 It is simple and easy to work with. Egui was adding a lot of overhead, more than
 I want right now. This is perfect until I'm done with the basic features of the

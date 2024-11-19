@@ -154,8 +154,10 @@ struct ForceMonitor {
     /// Should we display units?
     pub display_units: bool,
     /// Highlight the value if it goes above this threshold
+    #[allow(dead_code)]
     pub threshold_highlight: Option<f32>,
     /// Support color gradients!
+    #[allow(dead_code)]
     pub color_gradient: ColorGradient,
     /// Width for formatting the string
     pub digits: u8,
@@ -172,7 +174,7 @@ impl Default for ForceMonitor {
             display_units: true,
             threshold_highlight: Some(10.0),
             color_gradient: ColorGradient::new_preset_gyr(0.0, 10.0, 100.0).unwrap(),
-            digits: 12,
+            digits: 5,
             precision: 2,
             sort_key: iyes_perf_ui::utils::next_sort_key(),
         }
