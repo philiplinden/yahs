@@ -1,14 +1,15 @@
-mod simulator;
 mod app3d;
+mod controls;
+mod simulator;
 
 #[cfg(feature = "config-files")]
 mod assets;
 
 use bevy::{asset::AssetMetaCheck, prelude::*};
 
-pub struct AppCorePlugin;
+pub struct YahsPlugin;
 
-impl Plugin for AppCorePlugin {
+impl Plugin for YahsPlugin {
     fn build(&self, app: &mut App) {
         // Add Bevy plugins.
         app.add_plugins(
@@ -34,14 +35,16 @@ impl Plugin for AppCorePlugin {
                 }),
         );
 
-        // Add the simulator plugins (that don't deal with graphics).
-        app.add_plugins(simulator::SimulatorPlugins);
+        // Add the simulator plugins that don't deal with graphics.
+        app.add_plugins((
+            simulator::SimulatorPlugins,
+            controls::ControlsPlugin,
+        ));
 
         // Add the 3D application plugins.
         app.add_plugins((
-            app3d::InterfacePlugins,
             app3d::ScenePlugin,
-            app3d::ControlsPlugin,
+            app3d::InterfacePlugins,
         ));
     }
 }

@@ -8,19 +8,11 @@ impl Plugin for ControlsPlugin {
     }
 }
 
-#[derive(Resource)]
+#[derive(Resource, Default)]
 pub struct KeyBindingsConfig {
     pub camera_controls: CameraControls,
     pub debug_controls: DebugControls,
-}
-
-impl Default for KeyBindingsConfig {
-    fn default() -> Self {
-        Self {
-            camera_controls: CameraControls::default(),
-            debug_controls: DebugControls::default(),
-        }
-    }
+    pub time_controls: TimeControls,
 }
 
 #[derive(Reflect)]
@@ -36,6 +28,11 @@ pub struct DebugControls {
     pub toggle_wireframe: KeyCode,
     pub toggle_inspector: KeyCode,
     pub toggle_perf_ui: KeyCode,
+}
+
+#[derive(Reflect)]
+pub struct TimeControls {
+    pub toggle_pause: KeyCode,
 }
 
 // ============================ DEFAULT KEYBINDINGS ============================
@@ -58,6 +55,14 @@ impl Default for DebugControls {
             toggle_wireframe: KeyCode::KeyW,
             toggle_inspector: KeyCode::KeyI,
             toggle_perf_ui: KeyCode::KeyP,
+        }
+    }
+}
+
+impl Default for TimeControls {
+    fn default() -> Self {
+        Self {
+            toggle_pause: KeyCode::Space,
         }
     }
 }

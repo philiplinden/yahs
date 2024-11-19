@@ -22,6 +22,7 @@ dev_native = [
     "dev",
     # Enable system information plugin for native dev builds.
     "bevy/sysinfo_plugin",
+    "iyes_perf_ui/sysinfo",
 ]
 config-files = ["ron", "bevy_common_assets", "serde"]
 inspect = ["bevy-inspector-egui", "bevy_panorbit_camera/bevy_egui"]
@@ -35,7 +36,7 @@ avian3d = { version = "0.1.2", features = ["debug-plugin"] }
 # ui dependencies
 bevy_panorbit_camera = { version = "0.20.0" }
 bevy-inspector-egui = { version = "0.27.0", features = ["highlight_changes"], optional = true }
-iyes_perf_ui = { version = "0.3.0" }
+iyes_perf_ui = "0.3.0"
 # file io dependencies
 bevy_common_assets = { version = "0.11.0", features = ["ron"], optional = true }
 ron = { version = "0.8.1", optional = true }

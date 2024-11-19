@@ -2,7 +2,7 @@ use bevy::prelude::*;
 use bevy_panorbit_camera::{PanOrbitCamera, PanOrbitCameraPlugin};
 use avian3d::math::TAU;
 
-use crate::app3d::KeyBindingsConfig;
+use crate::controls::KeyBindingsConfig;
 
 pub struct CameraPlugin;
 

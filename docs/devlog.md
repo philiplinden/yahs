@@ -1,5 +1,23 @@
 # development log
 
+## 2024-11-18 again
+
+I think I was a bit naive to install `bevy-trait-query`. It works for now but in
+the future we should really move away from it. It is currently a crutch.
+
+For some reason when the balloon bounces, it accelerates upward to oblivion. I
+added some errors to stop the simulation when the balloon goes out of bounds,
+but right now it panics. Not great but better than nothing. Best I can do is
+bring in the "out of bounds" level to be less than the true bounds.
+
+The drag force is the one that is causing the bad acceleration. Weight and
+buoyancy don't change with time since the balloon has constant size right now.
+
+- Added pause/play controls. Default key is `Space`.
+- Added a new ui that displays the simulation state.
+- Added a new ui that displays forces in real time, assuming only one balloon.
+- Added an `Anomaly` state to the sim that is supposed to freeze.
+
 ## 2024-11-18
 
 Iterating with AI on the drag calculations. It is set up to perform a raycast

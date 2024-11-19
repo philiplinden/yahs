@@ -2,8 +2,8 @@
 #![cfg_attr(not(feature = "dev"), windows_subsystem = "windows")]
 
 use bevy::prelude::*;
-use yahs::AppCorePlugin;
+use yahs::YahsPlugin;
 
 fn main() -> AppExit {
-    App::new().add_plugins(AppCorePlugin).run()
+    App::new().add_plugins(YahsPlugin).run()
 }

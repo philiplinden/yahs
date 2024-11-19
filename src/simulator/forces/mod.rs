@@ -6,8 +6,13 @@ use avian3d::prelude::*;
 use bevy::prelude::*;
 use bevy_trait_query;
 
-use super::{Atmosphere, Density, Mass, Volume, SimulatedBody};
+// Re-expert common forces
+#[allow(unused_imports)]
+pub use body::{Weight, Buoyancy};
+#[allow(unused_imports)]
+pub use aero::Drag;
 
+use super::{Atmosphere, Density, Mass, Volume, SimulatedBody};
 pub struct ForcesPlugin;
 
 impl Plugin for ForcesPlugin {
@@ -92,13 +97,13 @@ fn update_total_external_force(
 ) {
     // Iterate over each entity that has force vector components.
     for (mut physics_force_component, acting_forces, rigid_body) in body_forces.iter_mut() {
+        // Forces only act on dynamic bodies. Don't bother with other kinds.
         if rigid_body.is_dynamic() {
             let mut net_force = Vec3::ZERO; // reset the net force to zero
 
             // Iterate over each force vector component and compute its value.
             for force in acting_forces.iter() {
                 net_force += force.force();
-                info!("{}: {:?}", force.name(), force.force());
             }
             physics_force_component.set_force(net_force);
         }

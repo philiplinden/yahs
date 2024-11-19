@@ -39,5 +39,25 @@ impl Plugin for CorePhysicsPlugin {
             ideal_gas::IdealGasPlugin,
             forces::ForcesPlugin,
         ));
+        app.init_state::<SimState>();
+        app.add_systems(Update, pause_physics_time);
     }
+}
+
+#[derive(States, Debug, Default, Clone, Copy, Hash, PartialEq, Eq)]
+pub enum SimState {
+    #[default]
+    Running,
+    Stopped,
+    Anomaly,
+}
+
+fn pause_physics_time(
+    sim_state: Res<State<SimState>>,
+    mut physics_time: ResMut<Time<Physics>>) {
+        match sim_state.as_ref().get() {
+            SimState::Running => physics_time.unpause(),
+            SimState::Stopped => physics_time.pause(),
+            SimState::Anomaly => physics_time.pause(),
+        }
 }

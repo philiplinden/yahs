@@ -52,7 +52,7 @@ impl Plugin for CorePropertiesPlugin {
 }
 
 /// Temperature (K)
-#[derive(Component, Debug, Clone, Copy, PartialEq, Reflect)]
+#[derive(Component, Debug, Default, Clone, Copy, PartialEq, Reflect)]
 #[cfg_attr(feature = "config-files", derive(Serialize, Deserialize))]
 pub struct Temperature(pub Scalar);
 
@@ -109,7 +109,7 @@ impl Div<Scalar> for Temperature {
 }
 
 /// Pressure (Pa)
-#[derive(Component, Debug, Clone, Copy, PartialEq, Reflect)]
+#[derive(Component, Debug, Default, Clone, Copy, PartialEq, Reflect)]
 #[cfg_attr(feature = "config-files", derive(Serialize, Deserialize))]
 pub struct Pressure(pub Scalar);
 
@@ -166,7 +166,7 @@ impl Div<Scalar> for Pressure {
 }
 
 /// The volume of a body in cubic meters.
-#[derive(Component, Debug, Clone, Copy, PartialEq, Reflect)]
+#[derive(Component, Debug, Default, Clone, Copy, PartialEq, Reflect)]
 #[cfg_attr(feature = "config-files", derive(Serialize, Deserialize))]
 pub struct Volume(pub Scalar);
 
@@ -216,7 +216,7 @@ impl Div<Scalar> for Volume {
 }
 
 /// Density (kg/m³)
-#[derive(Component, Debug, Clone, Copy, PartialEq, Reflect)]
+#[derive(Component, Debug, Default, Clone, Copy, PartialEq, Reflect)]
 #[cfg_attr(feature = "config-files", derive(Serialize, Deserialize))]
 pub struct Density(pub Scalar);
 
@@ -276,7 +276,7 @@ fn sync_avian_density(mut densities: Query<(&mut ColliderDensity, &Volume, &Mass
 }
 
 /// Mass (kg)
-#[derive(Component, Debug, Clone, Copy, PartialEq, Reflect)]
+#[derive(Component, Debug, Default, Clone, Copy, PartialEq, Reflect)]
 #[cfg_attr(feature = "config-files", derive(Serialize, Deserialize))]
 pub struct Mass(pub Scalar);
 
@@ -335,7 +335,7 @@ impl Div<Scalar> for Mass {
 }
 
 /// Molar mass (kg/mol) of a substance.
-#[derive(Component, Debug, Clone, Copy, PartialEq, Reflect)]
+#[derive(Component, Debug, Default, Clone, Copy, PartialEq, Reflect)]
 #[cfg_attr(feature = "config-files", derive(Serialize, Deserialize))]
 pub struct MolarMass(pub Scalar);
 

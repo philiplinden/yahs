@@ -16,7 +16,7 @@ use bevy::pbr::wireframe::{WireframeConfig, WireframePlugin};
 
 use avian3d::debug_render::PhysicsDebugPlugin;
 
-use crate::app3d::KeyBindingsConfig;
+use crate::controls::KeyBindingsConfig;
 
 pub(super) fn plugin(app: &mut App) {
     // Toggle the debug overlay for UI.
