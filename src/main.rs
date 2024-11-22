@@ -1,15 +1,9 @@
-mod cli;
-mod simulator;
+// Disable console on Windows for non-dev builds.
+#![cfg_attr(not(feature = "dev"), windows_subsystem = "windows")]
 
-#[cfg(feature = "gui")]
-mod gui;
+use bevy::prelude::*;
+use yahs::YahsPlugin;
 
-fn main() {
-    // look for the RUST_LOG env var or default to "info"
-    let rust_log = std::env::var("RUST_LOG").unwrap_or_else(|_| "info".to_owned());
-    std::env::set_var("RUST_LOG", rust_log);
-    // initialize pretty print logger
-    pretty_env_logger::init();
-    // parse the commands, arguments, and options
-    cli::parse_inputs();
+fn main() -> AppExit {
+    App::new().add_plugins(YahsPlugin).run()
 }
