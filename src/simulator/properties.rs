@@ -6,7 +6,7 @@ use std::ops::{Add, Div, Mul, Sub};
 
 use avian3d::{
     math::{Scalar, PI},
-    prelude::{ColliderDensity, ColliderMassProperties, PhysicsSet, RigidBody},
+    prelude::{ColliderDensity, ColliderMassProperties, PhysicsSet},
 };
 use bevy::{prelude::*, reflect::Reflect};
 #[cfg(feature = "config-files")]

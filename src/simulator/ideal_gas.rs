@@ -148,7 +148,7 @@ fn update_ideal_gas_volume_from_pressure(
     mut query: Query<(&mut Volume, &Temperature, &Pressure, &SimMass, &GasSpecies), With<IdealGas>>,
 ) {
     for (mut volume, temperature, pressure, mass, species) in query.iter_mut() {
-        *volume = ideal_gas_volume(*temperature, *pressure, *mass, &species);
+        *volume = ideal_gas_volume(*temperature, *pressure, *mass, species);
     }
 }
 
