@@ -2,9 +2,6 @@ mod app3d;
 mod controls;
 mod simulator;
 
-#[cfg(feature = "config-files")]
-mod assets;
-
 use bevy::{asset::AssetMetaCheck, prelude::*};
 
 pub struct YahsPlugin;
