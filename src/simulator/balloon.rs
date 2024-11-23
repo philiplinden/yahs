@@ -93,7 +93,7 @@ fn spawn_balloon(
 ) {
     let radius = 0.3;
     commands.spawn((
-        Name::new("BalloonBundle"),
+        Name::new("Balloon"),
         SimulatedBody,
         BalloonBundle {
             balloon: Balloon::default(),

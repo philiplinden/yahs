@@ -1,5 +1,4 @@
 //! Ideal gas equations.
-#![allow(dead_code)]
 
 use avian3d::prelude::*;
 use bevy::prelude::*;
@@ -55,6 +54,7 @@ impl Default for GasSpecies {
     }
 }
 
+#[allow(dead_code)]
 impl GasSpecies {
     pub fn new(name: String, abbreviation: String, molar_mass: MolarMass) -> Self {
         GasSpecies {
@@ -91,6 +91,7 @@ pub fn ideal_gas_density(
     )
 }
 
+#[allow(dead_code)]
 /// Gage pressure (Pa) of an ideal gas. This is the relative pressure compared
 /// to the ambient pressure. Use `Atmosphere::pressure()` to get ambient
 /// conditions.

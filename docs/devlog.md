@@ -1,5 +1,16 @@
 # development log
 
+## 2024-11-23
+
+Now that the basic forces are working, I will add look to adding the other
+fundamentals of the flight simulation:
+
+- Ideal gas law, including expansion of gas volume as pressure changes.
+- Stats or plots showing the state of the gas and balloon kinematics over time.
+- A payload hanging from a tether would be fun too. For this we can lean on the
+  Avian [chain_3d](https://github.com/Jondolf/avian/blob/main/examples/chain_3d.rs)
+  example.
+
 ## 2024-11-18 again
 
 I think I was a bit naive to install `bevy-trait-query`. It works for now but in
