@@ -5,18 +5,18 @@ pub mod ideal_gas;
 pub mod payload;
 pub mod properties;
 
+use avian3d::prelude::*;
 use bevy::app::PluginGroupBuilder;
 use bevy::prelude::*;
-use avian3d::prelude::*;
 
 // Re-export the properties module at the top level.
-pub use properties::{Temperature, Pressure, Volume, Density, Mass};
 pub use atmosphere::Atmosphere;
+#[allow(unused-imports)]
+pub use properties::{Density, Pressure, Temperature, Volume};
 
 /// A marker component for entities that are simulated.
 #[derive(Component, Default)]
 pub struct SimulatedBody;
-
 
 pub struct SimulatorPlugins;
 
@@ -40,7 +40,14 @@ impl Plugin for CorePhysicsPlugin {
             forces::ForcesPlugin,
         ));
         app.init_state::<SimState>();
-        app.add_systems(Update, pause_physics_time);
+        app.add_systems(
+            OnEnter(SimState::Running),
+            |mut time: ResMut<Time<Physics>>| time.as_mut().unpause(),
+        );
+        app.add_systems(
+            OnExit(SimState::Running),
+            |mut time: ResMut<Time<Physics>>| time.as_mut().pause(),
+        );
     }
 }
 
@@ -50,14 +57,4 @@ pub enum SimState {
     Running,
     Stopped,
     Anomaly,
-}
-
-fn pause_physics_time(
-    sim_state: Res<State<SimState>>,
-    mut physics_time: ResMut<Time<Physics>>) {
-        match sim_state.as_ref().get() {
-            SimState::Running => physics_time.unpause(),
-            SimState::Stopped => physics_time.pause(),
-            SimState::Anomaly => physics_time.pause(),
-        }
 }

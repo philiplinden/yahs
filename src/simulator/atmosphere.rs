@@ -6,10 +6,13 @@
 //! - https://www.grc.nasa.gov/WWW/K-12/airplane/atmosmet.html
 
 use bevy::prelude::*;
+use avian3d::prelude::Position;
+use thiserror;
 
 use super::{
     ideal_gas::{ideal_gas_density, GasSpecies},
-    Density, Position, Pressure, SimState, SimulatedBody, Temperature,
+    properties::{Density, Pressure, Temperature},
+    SimState, SimulatedBody,
 };
 
 pub struct AtmospherePlugin;
@@ -58,6 +61,12 @@ impl Atmosphere {
     }
 }
 
+#[derive(Debug, thiserror::Error)]
+enum AtmosphereError {
+    #[error("Altitude {0} m is outside of the accepted range! Must be {min}-{max} m", min = 0., max = 80_000.)]
+    OutOfBounds(f32)
+}
+
 /// If any of the simulated bodies are out of bounds, set the app state to anomaly
 /// TODO: we should use an event for this
 fn fault_if_out_of_bounds(
@@ -75,7 +84,7 @@ fn fault_if_out_of_bounds(
 /// Temperature (K) of the atmosphere at a given altitude (m).
 /// Only valid for altitudes below 85,000 meters.
 /// Based on the US Standard Atmosphere, 1976. (aka COESA)
-fn coesa_temperature(altitude: f32) -> Result<Temperature, String> {
+fn coesa_temperature(altitude: f32) -> Result<Temperature, AtmosphereError> {
     if (-57.0..11000.0).contains(&altitude) {
         Ok(Temperature::from_celsius(15.04 - 0.00649 * altitude))
     } else if (11000.0..25000.0).contains(&altitude) {
@@ -83,17 +92,14 @@ fn coesa_temperature(altitude: f32) -> Result<Temperature, String> {
     } else if (25000.0..85000.0).contains(&altitude) {
         Ok(Temperature::from_celsius(-131.21 + 0.00299 * altitude))
     } else {
-        Err(format!(
-            "Altitude {:}m is outside of the accepted range! Must be 0-85000m",
-            altitude
-        ))
+        Err(AtmosphereError::OutOfBounds(altitude))
     }
 }
 
 /// Pressure (Pa) of the atmosphere at a given altitude (m).
 /// Only valid for altitudes below 85,000 meters.
 /// Based on the US Standard Atmosphere, 1976. (aka COESA)
-fn coesa_pressure(altitude: f32) -> Result<Pressure, String> {
+fn coesa_pressure(altitude: f32) -> Result<Pressure, AtmosphereError> {
     if (-57.0..11000.0).contains(&altitude) {
         Ok(Pressure::from_kilopascal(
             101.29
@@ -115,9 +121,6 @@ fn coesa_pressure(altitude: f32) -> Result<Pressure, String> {
                 ),
         ))
     } else {
-        Err(format!(
-            "Altitude {:}m is outside of the accepted range! Must be 0-85000m",
-            altitude
-        ))
+        Err(AtmosphereError::OutOfBounds(altitude))
     }
 }

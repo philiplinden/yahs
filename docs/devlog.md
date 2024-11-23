@@ -11,6 +11,24 @@ fundamentals of the flight simulation:
   Avian [chain_3d](https://github.com/Jondolf/avian/blob/main/examples/chain_3d.rs)
   example.
 
+I upgraded Bevy to 0.15.0-rc.3 and it broke the build, especially with regard to
+the avian physics plugins. In migrating to the new Bevy version I simplified
+some things, like removing the `crate::properties::Mass` component and instead
+using Avian's mass properties. There are some complications because after
+upgrading bevy it is crashing due to `Mass` not being a component. I guess mass
+properties [being refactored](https://github.com/Jondolf/avian/discussions/499).
+
+The Avian maintainer created a new crate called
+[bevy_heavy](https://github.com/Jondolf/bevy_heavy) that contains the new mass
+properties tools that allow for directly updating mass properties on primitive
+shapes. Then we can use primitive shapes for mass and volume. That simplifies
+things by ~~removing mass, volume, and density as separate components~~. Turns
+out it is not that simple and having them as separate components is useful and
+clean. It is much simpler to write systems that update these components.
+
+[Migrating to Bevy `0.15.0-rc.3`](https://github.com/bevyengine/bevy-website/tree/main/release-content/0.15/migration-guides)
+is proving to be a bit of a challenge.
+
 ## 2024-11-18 again
 
 I think I was a bit naive to install `bevy-trait-query`. It works for now but in
