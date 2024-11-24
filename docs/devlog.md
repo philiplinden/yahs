@@ -27,7 +27,46 @@ out it is not that simple and having them as separate components is useful and
 clean. It is much simpler to write systems that update these components.
 
 [Migrating to Bevy `0.15.0-rc.3`](https://github.com/bevyengine/bevy-website/tree/main/release-content/0.15/migration-guides)
-is proving to be a bit of a challenge.
+is proving to be a bit of a challenge. The main feature from it that I want to
+use is the new separation of meshes from rendering, since then we can use meshes
+for calculations like volume and drag even if we want to use a CLI and don't
+want to render anything. This feature also led to some welcome improvements to
+Bevy's meshing tools.
+
+Something about 0.15 seems to have broken bundles. I wonder if the API changed
+or if there's some old garbage hanging around that is causing issues. I wiped
+the cache and rebuilt the project (`cargo clean && cargo build`). It turns out
+the reason that builds are failing is because some of the 3rd party dependencies
+I'm using are not compatible with the new Bevy version. I need to go through and
+update them or remove them.
+
+- [x] `avian3d` -> branch `bevy-0.15`
+- [ ] ~~`bevy_heavy`~~ remove for now
+- [ ] ~~`bevy-trait-query`~~ remove for now
+- [ ] ~~`bevy_common_assets`~~ remove for now
+- [ ] ~~`bevy_panorbit_camera`~~ remove for now
+- [ ] ~~`iyes_perf_ui`~~ remove for now
+- [ ] ~~`bevy-inspector-egui`~~ remove for now
+
+I also removed `serde` from the dependencies. I won't be getting to config files
+any time soon.
+
+It's probably better to not use so many 3rd party plugins. Fortunately most of
+these are debug tools and not essential to the simulator.
+
+This demo does a great job using Egui and debug vectors:
+[bevy_motion_matching](https://github.com/kahboon0425/bevy_motion_matching)
+something to look into later.
+
+I'm gonna do it. I'm going to make the simulator and the 3D app separate crates.
+There are three reasons for this:
+
+1. The simulator crate can be used as a library in other projects.
+2. The 3D app can be built and run independently of the rest of the code.
+3. I want faster compile times.
+
+Nevermind, it complicated things way too much and was distracting. In the future
+it might be worthwhile but it's probably best to just use feature flags anyway.
 
 ## 2024-11-18 again
 

@@ -1,4 +1,6 @@
 //! Basic physical properties.
+#![allow(dead_code)]
+
 use std::ops::{Add, Div, Mul, Sub};
 
 use avian3d::{
@@ -6,8 +8,6 @@ use avian3d::{
     prelude::Mass,
 };
 use bevy::{prelude::*, reflect::Reflect};
-#[cfg(feature = "config-files")]
-use serde::{Deserialize, Serialize};
 
 pub const BOLTZMANN_CONSTANT: f32 = 1.38e-23_f32; // [J/K]
 pub const AVOGADRO_CONSTANT: f32 = 6.022e+23_f32; // [1/mol]
@@ -44,7 +44,6 @@ impl Plugin for CorePropertiesPlugin {
 
 /// Temperature (K)
 #[derive(Component,Debug, Default, Clone, Copy, PartialEq, Reflect)]
-#[cfg_attr(feature = "config-files", derive(Serialize, Deserialize))]
 pub struct Temperature(pub Scalar);
 
 impl Temperature {
@@ -101,7 +100,6 @@ impl Div<Scalar> for Temperature {
 
 /// Pressure (Pa)
 #[derive(Component, Debug, Default, Clone, Copy, PartialEq, Reflect)]
-#[cfg_attr(feature = "config-files", derive(Serialize, Deserialize))]
 pub struct Pressure(pub Scalar);
 
 impl Pressure {
@@ -158,7 +156,6 @@ impl Div<Scalar> for Pressure {
 
 /// The volume of a body in cubic meters.
 #[derive(Component, Debug, Default, Clone, Copy, PartialEq, Reflect)]
-#[cfg_attr(feature = "config-files", derive(Serialize, Deserialize))]
 pub struct Volume(pub Scalar);
 
 impl Volume {
@@ -208,14 +205,13 @@ impl Div<Scalar> for Volume {
 
 /// Density (kg/m³)
 #[derive(Component, Debug, Default, Clone, Copy, PartialEq, Reflect)]
-#[cfg_attr(feature = "config-files", derive(Serialize, Deserialize))]
 pub struct Density(pub Scalar);
 
 impl Density {
     pub const ZERO: Self = Density(0.0);
 
     pub fn new(kilograms: Mass, volume: Volume) -> Self {
-        Density(kilograms.0 / volume.0)
+        Density(kilograms.value() / volume.cubic_meters())
     }
 
     pub fn kilograms_per_cubic_meter(&self) -> f32 {
@@ -261,7 +257,6 @@ impl Div<Scalar> for Density {
 
 /// Molar mass (kg/mol) of a substance.
 #[derive(Component, Debug, Default, Clone, Copy, PartialEq, Reflect)]
-#[cfg_attr(feature = "config-files", derive(Serialize, Deserialize))]
 pub struct MolarMass(pub Scalar);
 
 impl MolarMass {
@@ -284,4 +279,12 @@ impl Div<Scalar> for MolarMass {
     fn div(self, rhs: Scalar) -> Self::Output {
         MolarMass(self.0 / rhs)
     }
+}
+
+/// A 3d volume.
+/// TODO: Use this as the basis for the balloon mesh, volume and drag
+/// calculations, and the physics collider.
+#[derive(Component, Debug, Default, Clone, Copy, PartialEq, Reflect)]
+pub struct BoundingVolume {
+    pub radius: f32,
 }

@@ -1,13 +1,11 @@
 //! Properties, attributes and functions related to the balloon.
 
 use avian3d::{math::PI, prelude::*};
-use bevy::{prelude::*, math::primitives::Sphere};
-#[cfg(feature = "config-files")]
-use serde::{Deserialize, Serialize};
+use bevy::prelude::*;
 
 use super::{
     SimulatedBody,
-    ideal_gas::{GasSpecies, IdealGasBundle},
+    ideal_gas::{GasSpecies, IdealGasBundle, IdealGas},
     properties::*,
 };
 
@@ -15,8 +13,6 @@ pub struct BalloonPlugin;
 
 impl Plugin for BalloonPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(Startup, spawn_balloon);
-
         // Register types for reflection
         app.register_type::<Balloon>();
         app.register_type::<BalloonMaterial>();
@@ -30,7 +26,6 @@ pub struct BalloonBundle {
 }
 
 #[derive(Debug, Clone, PartialEq, Reflect)]
-#[cfg_attr(feature = "config-files", derive(Serialize, Deserialize))]
 pub struct BalloonMaterial {
     pub name: String,
     pub max_temperature: f32, // temperature (K) where the given material fails
@@ -63,10 +58,10 @@ impl Default for BalloonMaterial {
     }
 }
 
-/// Balloon properties. The balloon always conforms to the surface of a
-/// collider. It does not have its own rigid body.
+/// Balloon properties. The balloon is the surface of a [`BoundingVolume`] that can
+/// be stretched around a [`GasSpecies`] based on the pressure inside.
 #[derive(Component, Reflect)]
-#[cfg_attr(feature = "config-files", derive(Serialize, Deserialize))]
+#[require(BoundingVolume)]
 pub struct Balloon {
     /// Balloon material type
     pub skin_material: BalloonMaterial,
@@ -85,39 +80,3 @@ impl Default for Balloon {
         }
     }
 }
-
-fn spawn_balloon(
-    mut commands: Commands,
-    mut meshes: ResMut<Assets<Mesh>>,
-    mut materials: ResMut<Assets<StandardMaterial>>,
-) {
-    let radius = 0.3;
-    let shape = Sphere::new(radius);
-    commands.spawn(
-        Name::new("Balloon"),
-        SimulatedBody,
-        BalloonBundle {
-            balloon: Balloon::default(),
-            gas: IdealGasBundle::new(
-                shape,
-                GasSpecies::helium(),
-                Temperature::STANDARD,
-                Pressure::STANDARD,
-            ),
-            mesh: meshes.add(sphere),
-        },
-        RigidBody::Dynamic,
-    );
-}
-
-// The balloon is stretched around the volume of the gas inside of it.
-// This system updates the balloon's volume and radius based on the gas
-// pressure.
-// fn update_balloon_mesh(
-//     asset_server: Res<AssetServer>,
-//     mut query: Query<(&mut Mesh3d, &mut Shape, &Volume), With<Balloon>>,
-// ) {
-//     for (mut mesh, mut shape, volume) in query.iter_mut() {
-//         shape.radius = sphere_radius_from_volume(*volume);
-//     }
-// }

@@ -2,10 +2,9 @@
 
 use avian3d::prelude::*;
 use bevy::prelude::*;
-#[cfg(feature = "config-files")]
-use serde::{Deserialize, Serialize};
 
-use crate::simulator::properties::*;
+use super::{Pressure, Temperature, Volume, Density, MolarMass};
+use super::properties::{AVOGADRO_CONSTANT, BOLTZMANN_CONSTANT};
 
 pub const R: f32 = BOLTZMANN_CONSTANT * AVOGADRO_CONSTANT; // [J/K-mol] Ideal gas constant
 
@@ -15,16 +14,21 @@ impl Plugin for IdealGasPlugin {
     fn build(&self, app: &mut App) {
         app.register_type::<GasSpecies>();
         // app.add_systems(Update, (
-        //     // update_ideal_gas_volume_from_pressure,
+        //     // update_ideal_gas_pressure_from_volume,
         //     // update_ideal_gas_density_from_volume,
         // ));
     }
 }
 
+#[derive(Bundle)]
+pub struct IdealGasBundle {
+    pub gas: IdealGas,
+    pub species: GasSpecies,
+}
+
 /// Molecular species of a gas.
 /// TODO: load species from a file
 #[derive(Component, Debug, Clone, PartialEq, Reflect)]
-#[cfg_attr(feature = "config-files", derive(Serialize, Deserialize))]
 pub struct GasSpecies {
     pub name: String,
     pub abbreviation: String,
@@ -67,8 +71,10 @@ impl GasSpecies {
     }
 }
 
-/// A finite amount of a particular ideal gas. 
-#[derive(Component, Debug)]
+/// A finite amount of an ideal gas. Mass properties depend on the
+/// [`GasSpecies`]. A gas will expand to fill its [`BoundingVolume`].
+#[derive(Component, Debug, Clone, PartialEq)]
+#[require(GasSpecies)]
 pub struct IdealGas {
     pub temperature: Temperature,
     pub pressure: Pressure,
@@ -84,7 +90,7 @@ pub fn ideal_gas_volume(
     species: &GasSpecies,
 ) -> Volume {
     Volume(
-        (mass.0 / species.molar_mass.kilograms_per_mole())
+        (mass.value() / species.molar_mass.kilograms_per_mole())
             * R * temperature.kelvin()
             / pressure.pascal(),
     )

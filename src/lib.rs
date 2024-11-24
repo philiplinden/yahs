@@ -1,8 +1,14 @@
+
 mod app3d;
-mod controls;
 mod simulator;
 
 use bevy::{asset::AssetMetaCheck, prelude::*};
+
+/// Re-export for convenience
+pub use crate::app3d::{
+    {ScenePlugin, InterfacePlugins},
+    controls::{KeyBindingsConfig, CameraControls, DebugControls, TimeControls}
+};
 
 pub struct YahsPlugin;
 
@@ -35,13 +41,13 @@ impl Plugin for YahsPlugin {
         // Add the simulator plugins that don't deal with graphics.
         app.add_plugins((
             simulator::SimulatorPlugins,
-            controls::ControlsPlugin,
         ));
 
         // Add the 3D application plugins.
         app.add_plugins((
             app3d::ScenePlugin,
             app3d::InterfacePlugins,
+            app3d::ControlsPlugin,
         ));
     }
 }

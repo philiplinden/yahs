@@ -5,9 +5,8 @@
 //! - https://www.translatorscafe.com/unit-converter/en-US/calculator/altitude
 //! - https://www.grc.nasa.gov/WWW/K-12/airplane/atmosmet.html
 
-use bevy::prelude::*;
 use avian3d::prelude::Position;
-use thiserror;
+use bevy::prelude::*;
 
 use super::{
     ideal_gas::{ideal_gas_density, GasSpecies},
@@ -63,8 +62,12 @@ impl Atmosphere {
 
 #[derive(Debug, thiserror::Error)]
 enum AtmosphereError {
-    #[error("Altitude {0} m is outside of the accepted range! Must be {min}-{max} m", min = 0., max = 80_000.)]
-    OutOfBounds(f32)
+    #[error(
+        "Altitude {0} m is outside of the accepted range! Must be {min}-{max} m",
+        min = Atmosphere::MIN_ALTITUDE,
+        max = Atmosphere::MAX_ALTITUDE
+    )]
+    OutOfBounds(f32),
 }
 
 /// If any of the simulated bodies are out of bounds, set the app state to anomaly

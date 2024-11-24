@@ -1,7 +1,7 @@
 use bevy::{app::PluginGroupBuilder, prelude::*};
-use iyes_perf_ui::prelude::*;
+// use iyes_perf_ui::prelude::*;
 
-use crate::controls::KeyBindingsConfig;
+use crate::app3d::controls::KeyBindingsConfig;
 use crate::simulator::SimState;
 
 use super::*;
@@ -14,7 +14,7 @@ impl PluginGroup for InterfacePlugins {
         PluginGroupBuilder::start::<Self>()
             .add(CoreUiPlugin)
             .add(PausePlayPlugin)
-            .add(monitors::MonitorsPlugin)
+            // .add(monitors::MonitorsPlugin)
     }
 }
 
@@ -25,7 +25,7 @@ pub struct CoreUiPlugin;
 impl Plugin for CoreUiPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugins((
-            PerfUiPlugin,
+            // PerfUiPlugin,
             #[cfg(feature = "dev")]
             dev_tools::plugin,
         ));

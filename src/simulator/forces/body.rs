@@ -2,7 +2,6 @@
 
 use avian3d::prelude::*;
 use bevy::prelude::*;
-use bevy_trait_query::{self, RegisterExt};
 
 use super::{Atmosphere, Density, Force, ForceUpdateOrder, Mass, SimulatedBody, Volume};
 use crate::simulator::properties::{EARTH_RADIUS_M, STANDARD_G};
@@ -13,9 +12,6 @@ impl Plugin for BodyForcesPlugin {
     fn build(&self, app: &mut App) {
         app.register_type::<Weight>();
         app.register_type::<Buoyancy>();
-
-        app.register_component_as::<dyn Force, Weight>();
-        app.register_component_as::<dyn Force, Buoyancy>();
 
         app.add_systems(
             Update,
@@ -73,7 +69,7 @@ fn update_weight_parameters(
     mut bodies: Query<(&mut Weight, &Position, &Mass), With<SimulatedBody>>,
 ) {
     for (mut weight, position, mass) in bodies.iter_mut() {
-        weight.update(position.0, mass.kg());
+        weight.update(position.0, mass.value());
     }
 }
 
