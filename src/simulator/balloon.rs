@@ -7,6 +7,7 @@ use super::{
     SimulatedBody,
     SimulationUpdateOrder,
     ideal_gas::IdealGas,
+    properties::sphere_radius_from_volume,
 };
 
 pub struct BalloonPlugin;
@@ -74,6 +75,7 @@ impl Default for BalloonMaterial {
 
 fn update_balloon_from_gas(mut query: Query<(&mut Mesh3d, &IdealGas)>) {
     for (mut mesh, gas) in query.iter_mut() {
-        // mesh.volume = gas.volume();
+        // let new_radius = sphere_radius_from_volume(gas.volume().m3());
+        // mesh.0.scale = Vec3::new(new_radius, new_radius, new_radius);
     }
 }
