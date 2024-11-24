@@ -2,6 +2,7 @@
 
 use avian3d::{math::PI, prelude::*};
 use bevy::prelude::*;
+use bevy_trait_query::{self, RegisterExt};
 
 use super::{Atmosphere, Density, ForceUpdateOrder, Force, SimulatedBody};
 
@@ -10,6 +11,8 @@ pub struct AeroForcesPlugin;
 impl Plugin for AeroForcesPlugin {
     fn build(&self, app: &mut App) {
         app.register_type::<Drag>();
+        app.register_component_as::<dyn Force, Drag>();
+
         app.add_systems(Update, update_drag_parameters.in_set(ForceUpdateOrder::Prepare));
     }
 }

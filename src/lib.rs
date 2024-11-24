@@ -7,7 +7,6 @@ use bevy::{asset::AssetMetaCheck, prelude::*};
 /// Re-export for convenience
 pub use crate::app3d::{
     {ScenePlugin, InterfacePlugins},
-    controls::{KeyBindingsConfig, CameraControls, DebugControls, TimeControls}
 };
 
 pub struct YahsPlugin;

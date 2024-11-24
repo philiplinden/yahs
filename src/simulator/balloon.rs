@@ -1,6 +1,6 @@
 //! Properties, attributes and functions related to the balloon.
 
-use avian3d::{math::PI, prelude::*};
+use avian3d::math::PI;
 use bevy::prelude::*;
 
 use super::{

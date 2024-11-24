@@ -42,7 +42,7 @@ update them or remove them.
 
 - [x] `avian3d` -> branch `bevy-0.15`
 - [ ] ~~`bevy_heavy`~~ remove for now
-- [ ] ~~`bevy-trait-query`~~ remove for now
+- [x] `bevy-trait-query` -> branch `bevy-0.15-rc`
 - [ ] ~~`bevy_common_assets`~~ remove for now
 - [ ] ~~`bevy_panorbit_camera`~~ remove for now
 - [ ] ~~`iyes_perf_ui`~~ remove for now
