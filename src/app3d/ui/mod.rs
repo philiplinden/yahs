@@ -4,4 +4,4 @@ mod core;
 #[cfg(feature = "dev")]
 mod dev_tools;
 
-pub use core::InterfacePlugins;
+pub use core::InterfacePlugin;

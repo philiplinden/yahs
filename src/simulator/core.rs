@@ -39,6 +39,17 @@ impl Plugin for CorePhysicsPlugin {
             OnExit(SimState::Running),
             |mut time: ResMut<Time<Physics>>| time.as_mut().pause(),
         );
+        app.configure_sets(
+            Update,
+            (
+                SimulationUpdateOrder::First,
+                SimulationUpdateOrder::IdealGas,
+                SimulationUpdateOrder::MeshVolumes,
+                SimulationUpdateOrder::Forces,
+                SimulationUpdateOrder::Last,
+            ).chain()
+                .before(PhysicsSet::Prepare),
+        );
     }
 }
 
@@ -48,4 +59,13 @@ pub enum SimState {
     Running,
     Stopped,
     Anomaly,
+}
+
+#[derive(SystemSet, Debug, Clone, PartialEq, Eq, Hash)]
+pub enum SimulationUpdateOrder {
+    First,
+    IdealGas,
+    MeshVolumes,
+    Forces,
+    Last,
 }

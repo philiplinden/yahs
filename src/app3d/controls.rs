@@ -8,6 +8,7 @@ impl Plugin for ControlsPlugin {
     }
 }
 
+#[allow(dead_code)]
 #[derive(Resource, Default)]
 pub struct KeyBindingsConfig {
     pub camera_controls: CameraControls,

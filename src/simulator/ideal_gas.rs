@@ -1,10 +1,10 @@
 //! Ideal gas equations.
-
+#![allow(dead_code)]
 use avian3d::prelude::*;
 use bevy::prelude::*;
 
-use super::{Pressure, Temperature, Volume, Density, MolarMass};
 use super::properties::{AVOGADRO_CONSTANT, BOLTZMANN_CONSTANT};
+use super::{Atmosphere, Density, MolarMass, Pressure, SimulationUpdateOrder, Temperature, Volume};
 
 pub const R: f32 = BOLTZMANN_CONSTANT * AVOGADRO_CONSTANT; // [J/K-mol] Ideal gas constant
 
@@ -13,22 +13,15 @@ pub struct IdealGasPlugin;
 impl Plugin for IdealGasPlugin {
     fn build(&self, app: &mut App) {
         app.register_type::<GasSpecies>();
-        // app.add_systems(Update, (
-        //     // update_ideal_gas_pressure_from_volume,
-        //     // update_ideal_gas_density_from_volume,
-        // ));
+        app.add_systems(
+            Update,
+            update_ideal_gas_from_atmosphere.in_set(SimulationUpdateOrder::IdealGas),
+        );
     }
 }
 
-#[derive(Bundle)]
-pub struct IdealGasBundle {
-    pub gas: IdealGas,
-    pub species: GasSpecies,
-}
-
 /// Molecular species of a gas.
-/// TODO: load species from a file
-#[derive(Component, Debug, Clone, PartialEq, Reflect)]
+#[derive(Debug, Clone, PartialEq, Reflect)]
 pub struct GasSpecies {
     pub name: String,
     pub abbreviation: String,
@@ -71,14 +64,72 @@ impl GasSpecies {
     }
 }
 
-/// A finite amount of an ideal gas. Mass properties depend on the
-/// [`GasSpecies`]. A gas will expand to fill its [`BoundingVolume`].
+/// Properties of an ideal gas. For properties per unit mass, set the mass to 1.
 #[derive(Component, Debug, Clone, PartialEq)]
-#[require(GasSpecies)]
 pub struct IdealGas {
     pub temperature: Temperature,
     pub pressure: Pressure,
+    pub density: Density,
     pub mass: Mass,
+    pub species: GasSpecies,
+}
+
+impl Default for IdealGas {
+    fn default() -> Self {
+        let species = GasSpecies::default();
+        let temperature = Temperature::default();
+        let pressure = Pressure::default();
+        let density = ideal_gas_density(temperature, pressure, &species);
+        let mass = Mass::new(1.0);
+        IdealGas {
+            temperature,
+            pressure,
+            density,
+            species,
+            mass,
+        }
+    }
+}
+
+impl IdealGas {
+    pub fn new(species: GasSpecies) -> Self {
+        let temperature = Temperature::default();
+        let pressure = Pressure::default();
+        let mass = Mass::new(1.0);
+        let density = ideal_gas_density(temperature, pressure, &species);
+        IdealGas {
+            temperature,
+            pressure,
+            density,
+            species,
+            mass,
+        }
+    }
+
+    pub fn with_temperature(mut self, temperature: Temperature) -> Self {
+        self.temperature = temperature;
+        self.update_density();
+        self
+    }
+
+    pub fn with_pressure(mut self, pressure: Pressure) -> Self {
+        self.pressure = pressure;
+        self.update_density();
+        self
+    }
+
+    pub fn with_mass(mut self, mass: Mass) -> Self {
+        self.mass = mass;
+        self
+    }
+
+    fn update_density(&mut self) {
+        self.density = ideal_gas_density(self.temperature, self.pressure, &self.species);
+    }
+
+    pub fn volume(&self) -> Volume {
+        ideal_gas_volume(self.temperature, self.pressure, self.mass, &self.species)
+    }
 }
 
 /// Volume (m³) of an ideal gas from its temperature (K), pressure (Pa),
@@ -90,8 +141,7 @@ pub fn ideal_gas_volume(
     species: &GasSpecies,
 ) -> Volume {
     Volume(
-        (mass.value() / species.molar_mass.kilograms_per_mole())
-            * R * temperature.kelvin()
+        (mass.value() / species.molar_mass.kilograms_per_mole()) * R * temperature.kelvin()
             / pressure.pascal(),
     )
 }
@@ -103,7 +153,9 @@ pub fn ideal_gas_density(
     pressure: Pressure,
     species: &GasSpecies,
 ) -> Density {
-    Density(species.molar_mass.kilograms_per_mole() * pressure.pascal() / (R * temperature.kelvin()))
+    Density(
+        species.molar_mass.kilograms_per_mole() * pressure.pascal() / (R * temperature.kelvin()),
+    )
 }
 
 #[allow(dead_code)]
@@ -112,4 +164,14 @@ pub fn ideal_gas_density(
 /// conditions.
 pub fn gage_pressure(pressure: Pressure, ambient_pressure: Pressure) -> Pressure {
     pressure - ambient_pressure
+}
+
+fn update_ideal_gas_from_atmosphere(
+    mut query: Query<(&mut IdealGas, &Position)>,
+    atmosphere: Res<Atmosphere>,
+) {
+    for (mut gas, position) in query.iter_mut() {
+        gas.pressure = atmosphere.pressure(position.0);
+        gas.temperature = atmosphere.temperature(position.0);
+    }
 }

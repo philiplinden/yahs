@@ -8,9 +8,9 @@ pub mod payload;
 pub mod properties;
 
 // Re-export the properties module at the top level.
-pub use core::{SimulatorPlugins, SimState, SimulatedBody};
-pub use atmosphere::Atmosphere;
+pub use core::{SimulatorPlugins, SimState, SimulatedBody, SimulationUpdateOrder};
 pub use properties::{Density, Pressure, Temperature, Volume, MolarMass};
-pub use balloon::{Balloon, BalloonBundle};
+pub use atmosphere::Atmosphere;
 pub use forces::{Weight, Buoyancy, Drag};
-pub use ideal_gas::{GasSpecies, IdealGas, IdealGasBundle};
+pub use balloon::{Balloon, BalloonBundle, BalloonMaterial};
+pub use ideal_gas::{GasSpecies, IdealGas};

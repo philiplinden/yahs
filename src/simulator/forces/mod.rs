@@ -8,11 +8,11 @@ use bevy_trait_query;
 
 // Re-expert common forces
 #[allow(unused_imports)]
-pub use body::{Weight, Buoyancy};
-#[allow(unused_imports)]
 pub use aero::Drag;
+#[allow(unused_imports)]
+pub use body::{Buoyancy, Weight};
 
-use super::{Atmosphere, Density, Volume, SimulatedBody};
+use super::{Atmosphere, Density, SimulatedBody, SimulationUpdateOrder, Volume};
 pub struct ForcesPlugin;
 
 impl Plugin for ForcesPlugin {
@@ -25,11 +25,11 @@ impl Plugin for ForcesPlugin {
             Update,
             (
                 ForceUpdateOrder::First,
-                ForceUpdateOrder::Prepare.after(ForceUpdateOrder::First),
-                ForceUpdateOrder::Apply
-                    .after(ForceUpdateOrder::Prepare)
-                    .before(PhysicsStepSet::First),
-            ),
+                ForceUpdateOrder::Prepare,
+                ForceUpdateOrder::Apply,
+            )
+                .chain()
+                .in_set(SimulationUpdateOrder::Forces),
         );
         app.add_systems(
             Update,
@@ -45,7 +45,7 @@ impl Plugin for ForcesPlugin {
 }
 
 #[derive(SystemSet, Debug, Clone, PartialEq, Eq, Hash)]
-enum ForceUpdateOrder {
+pub enum ForceUpdateOrder {
     First,
     Prepare,
     Apply,

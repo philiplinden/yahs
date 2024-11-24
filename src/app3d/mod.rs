@@ -1,8 +1,23 @@
 mod scene;
+mod camera;
 mod ui;
 pub mod controls;
 
-// Re-export the plugins so they can be added to the app with `app.add_plugins`.
-pub use scene::ScenePlugin;
-pub use ui::InterfacePlugins;
-pub use controls::ControlsPlugin;
+use scene::ScenePlugin;
+use ui::InterfacePlugin;
+use controls::ControlsPlugin;
+use camera::CameraPlugin;
+
+use bevy::app::{PluginGroup, PluginGroupBuilder};
+
+pub struct App3dPlugins;
+
+impl PluginGroup for App3dPlugins {
+    fn build(self) -> PluginGroupBuilder {
+        PluginGroupBuilder::start::<Self>()
+            .add(InterfacePlugin)
+            .add(ControlsPlugin)
+            .add(ScenePlugin)
+            .add(CameraPlugin)
+    }
+}

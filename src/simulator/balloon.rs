@@ -1,12 +1,12 @@
 //! Properties, attributes and functions related to the balloon.
 
-use avian3d::math::PI;
+use avian3d::{math::PI, prelude::Position};
 use bevy::prelude::*;
 
 use super::{
     SimulatedBody,
-    ideal_gas::{GasSpecies, IdealGasBundle, IdealGas},
-    properties::*,
+    SimulationUpdateOrder,
+    ideal_gas::IdealGas,
 };
 
 pub struct BalloonPlugin;
@@ -16,16 +16,28 @@ impl Plugin for BalloonPlugin {
         // Register types for reflection
         app.register_type::<Balloon>();
         app.register_type::<BalloonMaterial>();
+
+        app.add_systems(
+            Update,
+            update_balloon_from_gas.in_set(SimulationUpdateOrder::MeshVolumes),
+        );
     }
 }
 
+#[derive(Component, Debug, Clone, PartialEq, Reflect)]
+pub struct Balloon;
+
+/// The balloon is the surface of a [`Primitive3d`] that can be stretched
+/// radially [`GasSpecies`] based on the pressure of the gas it contains.
 #[derive(Bundle)]
 pub struct BalloonBundle {
-    pub balloon: Balloon,
-    pub gas: IdealGasBundle,
+    pub material_properties: BalloonMaterial,
+    pub gas: IdealGas,
+    pub mesh: Mesh3d,
+    pub material: MeshMaterial3d<StandardMaterial>,
 }
 
-#[derive(Debug, Clone, PartialEq, Reflect)]
+#[derive(Component, Debug, Clone, PartialEq, Reflect)]
 pub struct BalloonMaterial {
     pub name: String,
     pub max_temperature: f32, // temperature (K) where the given material fails
@@ -38,6 +50,7 @@ pub struct BalloonMaterial {
     pub elasticity: f32,           // Youngs Modulus aka Modulus of Elasticity (Pa)
     pub max_strain: f32,           // elongation at failure (decimal, unitless) 1 = original size
     pub max_stress: f32,           // tangential stress at failure (Pa)
+    pub thickness: f32,             // thickness of the material (m)
 }
 
 impl Default for BalloonMaterial {
@@ -54,29 +67,13 @@ impl Default for BalloonMaterial {
             elasticity: 0.01e9,         // Example Young's Modulus in Pa
             max_strain: 0.8,            // Example max strain (unitless)
             max_stress: 0.5e6,          // Example max stress in Pa
+            thickness: 0.0001,
         }
     }
 }
 
-/// Balloon properties. The balloon is the surface of a [`BoundingVolume`] that can
-/// be stretched around a [`GasSpecies`] based on the pressure inside.
-#[derive(Component, Reflect)]
-#[require(BoundingVolume)]
-pub struct Balloon {
-    /// Balloon material type
-    pub skin_material: BalloonMaterial,
-    /// Thickness of balloon membrane in meters. For use in calculating stress.
-    pub unstretched_thickness: f32,
-    /// surface area of balloon without stretch (m²). For use in calculating stress.
-    pub unstretched_area: f32,
-}
-
-impl Default for Balloon {
-    fn default() -> Self {
-        Balloon {
-            skin_material: BalloonMaterial::default(),
-            unstretched_thickness: 0.001,
-            unstretched_area: 4.0 * PI,
-        }
+fn update_balloon_from_gas(mut query: Query<(&mut Mesh3d, &IdealGas)>) {
+    for (mut mesh, gas) in query.iter_mut() {
+        // mesh.volume = gas.volume();
     }
 }

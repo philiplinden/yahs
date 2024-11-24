@@ -280,11 +280,3 @@ impl Div<Scalar> for MolarMass {
         MolarMass(self.0 / rhs)
     }
 }
-
-/// A 3d volume.
-/// TODO: Use this as the basis for the balloon mesh, volume and drag
-/// calculations, and the physics collider.
-#[derive(Component, Debug, Default, Clone, Copy, PartialEq, Reflect)]
-pub struct BoundingVolume {
-    pub radius: f32,
-}
