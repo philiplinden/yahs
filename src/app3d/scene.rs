@@ -46,23 +46,26 @@ pub fn spawn_balloon(
         metallic: 1.0,
         ..default()
     });
-    let shape = meshes.add(Sphere::default().mesh().ico(5).unwrap());
+    let sphere = Sphere::default();
+    let shape = meshes.add(sphere.mesh().ico(5).unwrap());
     let species = GasSpecies::helium();
     commands.spawn((
         Name::new("Balloon"),
         SimulatedBody,
-        Balloon,
         BalloonBundle {
-            material_properties: BalloonMaterial::default(),
-            mesh: Mesh3d(shape),
+            balloon: Balloon {
+                material_properties: BalloonMaterial::default(),
+                shape: sphere,
+            },
             gas: IdealGas::new(species),
         },
         RigidBody::Dynamic,
-        ColliderConstructor::TrimeshFromMesh,
+        Collider::sphere(sphere.radius),
         Transform {
             translation: Vec3::new(0.0, 10.0, 0.0),
             ..default()
         },
         MeshMaterial3d(debug_material),
+        Mesh3d(shape),
     ));
 }

@@ -26,15 +26,17 @@ impl Plugin for BalloonPlugin {
 }
 
 #[derive(Component, Debug, Clone, PartialEq, Reflect)]
-pub struct Balloon;
+pub struct Balloon {
+    pub material_properties: BalloonMaterial,
+    pub shape: Sphere,
+}
 
 /// The balloon is the surface of a [`Primitive3d`] that can be stretched
 /// radially [`GasSpecies`] based on the pressure of the gas it contains.
 #[derive(Bundle)]
 pub struct BalloonBundle {
-    pub material_properties: BalloonMaterial,
+    pub balloon: Balloon,
     pub gas: IdealGas,
-    pub mesh: Mesh3d,
 }
 
 #[derive(Component, Debug, Clone, PartialEq, Reflect)]
@@ -72,9 +74,11 @@ impl Default for BalloonMaterial {
     }
 }
 
-fn update_balloon_from_gas(mut query: Query<(&mut Mesh3d, &IdealGas)>) {
-    for (mut mesh, gas) in query.iter_mut() {
-        // let new_radius = sphere_radius_from_volume(gas.volume().m3());
-        // mesh.0.scale = Vec3::new(new_radius, new_radius, new_radius);
+fn update_balloon_from_gas(
+    mut query: Query<(&mut Balloon, &IdealGas)>,
+) {
+    for (mut balloon, gas) in query.iter_mut() {
+        let new_radius = sphere_radius_from_volume(gas.volume().m3());
+        balloon.shape.radius = new_radius;
     }
 }
