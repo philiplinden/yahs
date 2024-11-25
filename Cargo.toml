@@ -21,6 +21,7 @@ dev = [
     # library.
     "bevy/dynamic_linking",
     "bevy/bevy_dev_tools",
+    "bevy/sysinfo_plugin",
 ]
 dev_native = [
     "dev",
@@ -32,7 +33,7 @@ dev_native = [
 bevy = "0.15.0-rc.3"
 avian3d = { git = "https://github.com/Jondolf/avian.git", branch = "bevy-0.15", features = ["debug-plugin"] }
 bevy-trait-query = { git = "https://github.com/JoJoJet/bevy-trait-query.git", branch = "bevy-0.15-rc" }
-thiserror = "2.0.3"
+iyes_perf_ui = { git = "https://github.com/JohnathanFL/iyes_perf_ui.git", branch = "main" }
 
 # -----------------------------------------------------------------------------
 # Some Bevy optimizations

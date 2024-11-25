@@ -29,22 +29,9 @@ fn simple_scene(
     commands.spawn((
         Name::new("Ground"),
         RigidBody::Static,
-        Collider::cuboid(ground_size.x, ground_size.y, ground_size.z),
         Mesh3d(plane.clone()),
         MeshMaterial3d(plane_material.clone()),
-    ));
-
-    // ceiling
-    commands.spawn((
-        Name::new("Ceiling"),
-        RigidBody::Static,
-        Collider::cuboid(ground_size.x, ground_size.y, ground_size.z),
-        Mesh3d(plane.clone()),
-        MeshMaterial3d(plane_material.clone()),
-        Transform {
-            translation: Vec3::new(0.0, 40.0, 0.0),
-            ..default()
-        },
+        ColliderConstructor::TrimeshFromMesh,
     ));
 }
 
@@ -68,14 +55,14 @@ pub fn spawn_balloon(
         BalloonBundle {
             material_properties: BalloonMaterial::default(),
             mesh: Mesh3d(shape),
-            material: MeshMaterial3d(debug_material),
             gas: IdealGas::new(species),
         },
         RigidBody::Dynamic,
+        ColliderConstructor::TrimeshFromMesh,
         Transform {
             translation: Vec3::new(0.0, 10.0, 0.0),
             ..default()
         },
+        MeshMaterial3d(debug_material),
     ));
-
 }

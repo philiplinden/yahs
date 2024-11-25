@@ -35,7 +35,6 @@ pub struct BalloonBundle {
     pub material_properties: BalloonMaterial,
     pub gas: IdealGas,
     pub mesh: Mesh3d,
-    pub material: MeshMaterial3d<StandardMaterial>,
 }
 
 #[derive(Component, Debug, Clone, PartialEq, Reflect)]

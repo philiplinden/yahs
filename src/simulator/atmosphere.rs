@@ -60,14 +60,16 @@ impl Atmosphere {
     }
 }
 
-#[derive(Debug, thiserror::Error)]
+#[derive(Debug)]
 enum AtmosphereError {
-    #[error(
-        "Altitude {0} m is outside of the accepted range! Must be {min}-{max} m",
-        min = Atmosphere::MIN_ALTITUDE,
-        max = Atmosphere::MAX_ALTITUDE
-    )]
-    OutOfBounds(f32),
+    // v Fancy stuff from thiserror crate
+    // #[error(
+    //     "Altitude {0} m is outside of the accepted range! Must be {min}-{max} m",
+    //     min = Atmosphere::MIN_ALTITUDE,
+    //     max = Atmosphere::MAX_ALTITUDE
+    // )]
+    // OutOfBounds(f32),
+    OutOfBounds,
 }
 
 /// If any of the simulated bodies are out of bounds, set the app state to anomaly
@@ -95,7 +97,7 @@ fn coesa_temperature(altitude: f32) -> Result<Temperature, AtmosphereError> {
     } else if (25000.0..85000.0).contains(&altitude) {
         Ok(Temperature::from_celsius(-131.21 + 0.00299 * altitude))
     } else {
-        Err(AtmosphereError::OutOfBounds(altitude))
+        Err(AtmosphereError::OutOfBounds)
     }
 }
 
@@ -124,6 +126,6 @@ fn coesa_pressure(altitude: f32) -> Result<Pressure, AtmosphereError> {
                 ),
         ))
     } else {
-        Err(AtmosphereError::OutOfBounds(altitude))
+        Err(AtmosphereError::OutOfBounds)
     }
 }

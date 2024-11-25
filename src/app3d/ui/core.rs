@@ -14,7 +14,7 @@ impl Plugin for InterfacePlugin {
         app.add_plugins((
             CoreUiPlugin,
             PausePlayPlugin,
-            // monitors::MonitorsPlugin,
+            monitors::MonitorsPlugin,
         ));
     }
 }

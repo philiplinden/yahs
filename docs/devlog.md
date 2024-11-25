@@ -1,5 +1,13 @@
 # development log
 
+## 2024-11-24
+
+I found a Bevy 0.15 branch of
+[iyes_perf_ui](https://github.com/IyesGames/iyes_perf_ui/pull/22), yay!
+
+I spent some time today practicing with Events and Observers by adding debug UI
+toggles. Not very productive but practice is practice.
+
 ## 2024-11-23
 
 Now that the basic forces are working, I will add look to adding the other

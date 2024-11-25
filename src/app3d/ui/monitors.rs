@@ -20,6 +20,7 @@ impl Plugin for MonitorsPlugin {
         app.add_systems(Startup, spawn_monitors);
         app.add_systems(Update, update_force_monitor_values);
         app.init_resource::<ForceMonitorResource>();
+        app.add_plugins(PerfUiPlugin);
     }
 }
 
