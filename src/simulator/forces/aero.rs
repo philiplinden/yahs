@@ -1,11 +1,10 @@
 //! Forces applied to rigid bodies due to aerodynamic drag.
 
 use avian3d::{math::PI, prelude::*};
-use parry3d::shape::{ShapeType, Shape, Ball};
 use bevy::prelude::*;
 use bevy_trait_query::{self, RegisterExt};
 
-use super::{Atmosphere, Density, ForceUpdateOrder, Force, SimulatedBody};
+use super::{Atmosphere, Balloon, Density, ForceUpdateOrder, Force, SimulatedBody};
 
 pub struct AeroForcesPlugin;
 
@@ -13,6 +12,7 @@ impl Plugin for AeroForcesPlugin {
     fn build(&self, app: &mut App) {
         app.register_type::<Drag>();
         app.register_component_as::<dyn Force, Drag>();
+
         app.add_systems(Update, update_drag_parameters.in_set(ForceUpdateOrder::Prepare));
     }
 }
@@ -68,15 +68,14 @@ impl Force for Drag {
 
 fn update_drag_parameters(
     atmosphere: Res<Atmosphere>,
-    mut bodies: Query<(&mut Drag, &Position, &LinearVelocity, &Collider), With<SimulatedBody>>,
+    mut bodies: Query<(&mut Drag, &Position, &LinearVelocity, &Balloon)>,
 ) {
-    for (mut drag, position, velocity, collider) in bodies.iter_mut() {
-        let bounding_sphere = collider.shape().compute_bounding_sphere(&position.0.into());
+    for (mut drag, position, velocity, balloon) in bodies.iter_mut() {
         drag.update(
             velocity.0,
             atmosphere.density(position.0),
-            projected_spherical_area(bounding_sphere.radius()),
-            drag_coefficient(&Ball::new(bounding_sphere.radius()), &atmosphere),
+            PI * balloon.shape.diameter(),
+            1.17, // default drag coefficient for a sphere
         );
     }
 }
@@ -91,16 +90,11 @@ pub fn drag(velocity: Vec3, ambient_density: f32, drag_area: f32, drag_coeff: f3
     drag_direction * drag_magnitude
 }
 
-/// Get the projected area (m^2) of a sphere with a given radius (m)
-fn projected_spherical_area(radius: f32) -> f32 {
-    f32::powf(radius, 2.0) * PI
-}
-
-/// Get the drag coefficient for a given shape and ambient conditions.
-fn drag_coefficient(shape: &dyn Shape, _atmosphere: &Atmosphere) -> f32 {
-    match shape.shape_type() {
-        ShapeType::Ball => 1.17,
-        ShapeType::Cuboid => 2.05,
-        _ => 1.0,
-    }
-}
+// Get the drag coefficient for a given shape and ambient conditions.
+// fn drag_coefficient(shape: &dyn Shape, _atmosphere: &Atmosphere) -> f32 {
+//     match shape.shape_type() {
+//         ShapeType::Ball => 1.17,
+//         ShapeType::Cuboid => 2.05,
+//         _ => 1.0,
+//     }
+// }

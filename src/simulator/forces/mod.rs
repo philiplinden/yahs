@@ -8,11 +8,11 @@ use bevy_trait_query;
 
 // Re-expert common forces
 #[allow(unused_imports)]
-pub use body::{Weight, Buoyancy};
-#[allow(unused_imports)]
 pub use aero::Drag;
+#[allow(unused_imports)]
+pub use body::{Buoyancy, Weight};
 
-use super::{Atmosphere, Density, Mass, Volume, SimulatedBody};
+use super::{Atmosphere, Balloon, Density, SimulatedBody, SimulationUpdateOrder, SimState, Volume};
 pub struct ForcesPlugin;
 
 impl Plugin for ForcesPlugin {
@@ -25,11 +25,11 @@ impl Plugin for ForcesPlugin {
             Update,
             (
                 ForceUpdateOrder::First,
-                ForceUpdateOrder::Prepare.after(ForceUpdateOrder::First),
-                ForceUpdateOrder::Apply
-                    .after(ForceUpdateOrder::Prepare)
-                    .before(PhysicsStepSet::First),
-            ),
+                ForceUpdateOrder::Prepare,
+                ForceUpdateOrder::Apply,
+            )
+                .chain()
+                .in_set(SimulationUpdateOrder::Forces),
         );
         app.add_systems(
             Update,
@@ -37,7 +37,9 @@ impl Plugin for ForcesPlugin {
         );
         app.add_systems(
             Update,
-            update_total_external_force.in_set(ForceUpdateOrder::Apply),
+            update_total_external_force
+                .in_set(ForceUpdateOrder::Apply)
+                .run_if(in_state(SimState::Running)),
         );
 
         app.add_plugins((aero::AeroForcesPlugin, body::BodyForcesPlugin));
@@ -45,7 +47,7 @@ impl Plugin for ForcesPlugin {
 }
 
 #[derive(SystemSet, Debug, Clone, PartialEq, Eq, Hash)]
-enum ForceUpdateOrder {
+pub enum ForceUpdateOrder {
     First,
     Prepare,
     Apply,
@@ -60,7 +62,6 @@ pub struct ForceBundle {
     drag: aero::Drag,
 }
 
-/// Add a `ForceBundle` to entities with a `RigidBody` when they are added.
 fn on_simulated_body_added(mut commands: Commands, query: Query<Entity, Added<SimulatedBody>>) {
     for entity in &query {
         commands.entity(entity).insert(ForceBundle::default());
@@ -103,7 +104,11 @@ fn update_total_external_force(
 
             // Iterate over each force vector component and compute its value.
             for force in acting_forces.iter() {
-                net_force += force.force();
+                if force.magnitude().is_nan() {
+                    error!("{} has NaN magnitude!", force.name());
+                } else {
+                    net_force += force.force();
+                }
             }
             physics_force_component.set_force(net_force);
         }

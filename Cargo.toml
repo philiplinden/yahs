@@ -7,6 +7,10 @@ edition = "2021"
 readme = "README.md"
 license-file = "LICENSE"
 
+[[bin]]
+name = "yahs"
+path = "src/main.rs"
+
 [features]
 default = [
     # Default to a native dev build.
@@ -17,35 +21,19 @@ dev = [
     # library.
     "bevy/dynamic_linking",
     "bevy/bevy_dev_tools",
+    "bevy/sysinfo_plugin",
 ]
 dev_native = [
     "dev",
     # Enable system information plugin for native dev builds.
     "bevy/sysinfo_plugin",
-    "iyes_perf_ui/sysinfo",
 ]
-config-files = ["ron", "bevy_common_assets", "serde"]
-inspect = ["bevy-inspector-egui", "bevy_panorbit_camera/bevy_egui"]
 
 [dependencies]
-# core dependencies
-bevy = "0.14.2"
-bevy-trait-query = "0.6.0"
-# physics dependencies
-avian3d = { version = "0.1.2", features = ["debug-plugin"] }
-# ui dependencies
-bevy_panorbit_camera = { version = "0.20.0" }
-bevy-inspector-egui = { version = "0.27.0", features = ["highlight_changes"], optional = true }
-iyes_perf_ui = "0.3.0"
-# file io dependencies
-bevy_common_assets = { version = "0.11.0", features = ["ron"], optional = true }
-ron = { version = "0.8.1", optional = true }
-serde = { version = "1.0", features = ["derive"], optional = true }
-parry3d = { version = "0.17.2", features = ["parallel"] }
-
-[[bin]]
-name = "yahs"
-path = "src/main.rs"
+bevy = "0.15.0-rc.3"
+avian3d = { git = "https://github.com/Jondolf/avian.git", branch = "bevy-0.15", features = ["debug-plugin"] }
+bevy-trait-query = { git = "https://github.com/JoJoJet/bevy-trait-query.git", branch = "bevy-0.15-rc" }
+iyes_perf_ui = { git = "https://github.com/JohnathanFL/iyes_perf_ui.git", branch = "main" }
 
 # -----------------------------------------------------------------------------
 # Some Bevy optimizations
@@ -66,7 +54,7 @@ type_complexity = "allow"
 # Compile with Performance Optimizations:
 # https://bevyengine.org/learn/quick-start/getting-started/setup/#compile-with-performance-optimizations
 
-# Enable a small amount of optimization in the dev profile.
+# Enable a small amount of optimization in the dev profile for our code.
 [profile.dev]
 opt-level = 1
 

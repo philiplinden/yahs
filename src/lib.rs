@@ -1,5 +1,5 @@
+
 mod app3d;
-mod controls;
 mod simulator;
 
 use bevy::{asset::AssetMetaCheck, prelude::*};
@@ -9,7 +9,7 @@ pub struct YahsPlugin;
 impl Plugin for YahsPlugin {
     fn build(&self, app: &mut App) {
         // Add Bevy plugins.
-        app.add_plugins(
+        app.add_plugins((
             DefaultPlugins
                 .set(AssetPlugin {
                     // Wasm builds will check for meta files (that don't exist)
@@ -30,18 +30,8 @@ impl Plugin for YahsPlugin {
                     .into(),
                     ..default()
                 }),
-        );
-
-        // Add the simulator plugins that don't deal with graphics.
-        app.add_plugins((
             simulator::SimulatorPlugins,
-            controls::ControlsPlugin,
-        ));
-
-        // Add the 3D application plugins.
-        app.add_plugins((
-            app3d::ScenePlugin,
-            app3d::InterfacePlugins,
+            app3d::App3dPlugins,
         ));
     }
 }

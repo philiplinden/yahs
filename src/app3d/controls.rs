@@ -8,6 +8,7 @@ impl Plugin for ControlsPlugin {
     }
 }
 
+#[allow(dead_code)]
 #[derive(Resource, Default)]
 pub struct KeyBindingsConfig {
     pub camera_controls: CameraControls,
@@ -25,9 +26,11 @@ pub struct CameraControls {
 
 #[derive(Reflect)]
 pub struct DebugControls {
-    pub toggle_wireframe: KeyCode,
     pub toggle_inspector: KeyCode,
+    pub toggle_wireframe: KeyCode,
+    pub toggle_physics_debug: KeyCode,
     pub toggle_perf_ui: KeyCode,
+    pub toggle_anything_else: KeyCode,
 }
 
 #[derive(Reflect)]
@@ -52,9 +55,11 @@ impl Default for CameraControls {
 impl Default for DebugControls {
     fn default() -> Self {
         Self {
-            toggle_wireframe: KeyCode::KeyW,
-            toggle_inspector: KeyCode::KeyI,
-            toggle_perf_ui: KeyCode::KeyP,
+            toggle_wireframe: KeyCode::F1,
+            toggle_inspector: KeyCode::F2,
+            toggle_physics_debug: KeyCode::F3,
+            toggle_perf_ui: KeyCode::F4,
+            toggle_anything_else: KeyCode::F5,
         }
     }
 }

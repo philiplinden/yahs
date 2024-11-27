@@ -1,16 +1,13 @@
 //! Basic physical properties.
-
 #![allow(dead_code)]
 
 use std::ops::{Add, Div, Mul, Sub};
 
 use avian3d::{
     math::{Scalar, PI},
-    prelude::{ColliderDensity, ColliderMassProperties, PhysicsSet},
+    prelude::Mass,
 };
 use bevy::{prelude::*, reflect::Reflect};
-#[cfg(feature = "config-files")]
-use serde::{Deserialize, Serialize};
 
 pub const BOLTZMANN_CONSTANT: f32 = 1.38e-23_f32; // [J/K]
 pub const AVOGADRO_CONSTANT: f32 = 6.022e+23_f32; // [1/mol]
@@ -29,12 +26,8 @@ fn shell_volume(internal_radius: f32, thickness: f32) -> f32 {
     external_volume - internal_volume
 }
 
-fn sphere_radius_from_volume(volume: f32) -> f32 {
+pub fn sphere_radius_from_volume(volume: f32) -> f32 {
     f32::powf(volume, 1.0 / 3.0) / (4.0 / 3.0) * PI
-}
-
-fn sphere_surface_area(radius: f32) -> f32 {
-    4.0 * PI * f32::powf(radius, 2.0)
 }
 
 pub struct CorePropertiesPlugin;
@@ -45,23 +38,12 @@ impl Plugin for CorePropertiesPlugin {
         app.register_type::<Pressure>();
         app.register_type::<Volume>();
         app.register_type::<Density>();
-        app.register_type::<Mass>();
         app.register_type::<MolarMass>();
-
-        // Ensure that the Avian density matches our computed mass and density
-        // before it starts solving physics.
-        app.add_systems(
-            Update,
-            (sync_avian_mass, sync_avian_density)
-                .chain()
-                .in_set(PhysicsSet::Prepare),
-        );
     }
 }
 
 /// Temperature (K)
-#[derive(Component, Debug, Default, Clone, Copy, PartialEq, Reflect)]
-#[cfg_attr(feature = "config-files", derive(Serialize, Deserialize))]
+#[derive(Component,Debug, Clone, Copy, PartialEq, Reflect)]
 pub struct Temperature(pub Scalar);
 
 impl Temperature {
@@ -81,6 +63,12 @@ impl Temperature {
 
     pub fn celsius(&self) -> f32 {
         self.kelvin() - 273.15
+    }
+}
+
+impl Default for Temperature {
+    fn default() -> Self {
+        Temperature::STANDARD
     }
 }
 
@@ -117,8 +105,7 @@ impl Div<Scalar> for Temperature {
 }
 
 /// Pressure (Pa)
-#[derive(Component, Debug, Default, Clone, Copy, PartialEq, Reflect)]
-#[cfg_attr(feature = "config-files", derive(Serialize, Deserialize))]
+#[derive(Component, Debug, Clone, Copy, PartialEq, Reflect)]
 pub struct Pressure(pub Scalar);
 
 impl Pressure {
@@ -128,16 +115,22 @@ impl Pressure {
         Pressure(pascal)
     }
 
-    pub fn from_kilopascal(kilopascal: f32) -> Self {
-        Pressure(kilopascal * 1000.0)
+    pub fn from_kilopascals(kilopascals: f32) -> Self {
+        Pressure(kilopascals * 1000.0)
     }
 
-    pub fn pascal(&self) -> f32 {
+    pub fn pascals(&self) -> f32 {
         self.0
     }
 
-    pub fn kilopascal(&self) -> f32 {
-        self.pascal() / 1000.0
+    pub fn kilopascals(&self) -> f32 {
+        self.pascals() / 1000.0
+    }
+}
+
+impl Default for Pressure {
+    fn default() -> Self {
+        Pressure::STANDARD
     }
 }
 
@@ -175,7 +168,6 @@ impl Div<Scalar> for Pressure {
 
 /// The volume of a body in cubic meters.
 #[derive(Component, Debug, Default, Clone, Copy, PartialEq, Reflect)]
-#[cfg_attr(feature = "config-files", derive(Serialize, Deserialize))]
 pub struct Volume(pub Scalar);
 
 impl Volume {
@@ -225,14 +217,13 @@ impl Div<Scalar> for Volume {
 
 /// Density (kg/m³)
 #[derive(Component, Debug, Default, Clone, Copy, PartialEq, Reflect)]
-#[cfg_attr(feature = "config-files", derive(Serialize, Deserialize))]
 pub struct Density(pub Scalar);
 
 impl Density {
     pub const ZERO: Self = Density(0.0);
 
     pub fn new(kilograms: Mass, volume: Volume) -> Self {
-        Density(kilograms.0 / volume.0)
+        Density(kilograms.value() / volume.cubic_meters())
     }
 
     pub fn kilograms_per_cubic_meter(&self) -> f32 {
@@ -276,81 +267,8 @@ impl Div<Scalar> for Density {
     }
 }
 
-fn sync_avian_density(mut densities: Query<(&mut ColliderDensity, &Volume, &Mass)>) {
-    for (mut density, volume, mass) in densities.iter_mut() {
-        let our_density = mass.kg() / volume.m3();
-        density.0 = our_density;
-    }
-}
-
-/// Mass (kg)
-#[derive(Component, Debug, Default, Clone, Copy, PartialEq, Reflect)]
-#[cfg_attr(feature = "config-files", derive(Serialize, Deserialize))]
-pub struct Mass(pub Scalar);
-
-impl Mass {
-    pub fn kilograms(&self) -> f32 {
-        self.0
-    }
-
-    pub fn kg(&self) -> f32 {
-        self.0
-    }
-
-    pub fn from_mass_properties(mass_props: ColliderMassProperties) -> Self {
-        Mass(mass_props.mass.0)
-    }
-}
-
-impl Add<Mass> for Mass {
-    type Output = Mass;
-
-    fn add(self, rhs: Mass) -> Self::Output {
-        Mass(self.0 + rhs.0)
-    }
-}
-
-impl Sub<Mass> for Mass {
-    type Output = Mass;
-
-    fn sub(self, rhs: Mass) -> Self::Output {
-        Mass(self.0 - rhs.0)
-    }
-}
-
-impl Mul<Scalar> for Mass {
-    type Output = Mass;
-
-    fn mul(self, rhs: Scalar) -> Self::Output {
-        Mass(self.0 * rhs)
-    }
-}
-
-impl Div<Volume> for Mass {
-    type Output = Density;
-
-    fn div(self, rhs: Volume) -> Self::Output {
-        Density(self.0 / rhs.0)
-    }
-}
-
-impl Div<Scalar> for Mass {
-    type Output = Mass;
-
-    fn div(self, rhs: Scalar) -> Self::Output {
-        Mass(self.0 / rhs)
-    }
-}
-
-fn sync_avian_mass(mut bodies: Query<(&mut ColliderMassProperties, &Mass)>) {
-    for (mut mass_props, mass) in bodies.iter_mut() {
-        mass_props.mass.0 = mass.0;
-    }
-}
-
 /// Molar mass (kg/mol) of a substance.
 #[derive(Component, Debug, Default, Clone, Copy, PartialEq, Reflect)]
-#[cfg_attr(feature = "config-files", derive(Serialize, Deserialize))]
 pub struct MolarMass(pub Scalar);
 
 impl MolarMass {
