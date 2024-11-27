@@ -1,5 +1,9 @@
 # development log
 
+## 2024-11-26
+
+- Added a `GasMonitor` to the UI for displaying the gas properties in real time.
+
 ## 2024-11-24
 
 I found a Bevy 0.15 branch of

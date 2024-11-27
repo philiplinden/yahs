@@ -142,7 +142,7 @@ pub fn ideal_gas_volume(
 ) -> Volume {
     Volume(
         (mass.value() / species.molar_mass.kilograms_per_mole()) * R * temperature.kelvin()
-            / pressure.pascal(),
+            / pressure.pascals(),
     )
 }
 
@@ -154,7 +154,7 @@ pub fn ideal_gas_density(
     species: &GasSpecies,
 ) -> Density {
     Density(
-        species.molar_mass.kilograms_per_mole() * pressure.pascal() / (R * temperature.kelvin()),
+        species.molar_mass.kilograms_per_mole() * pressure.pascals() / (R * temperature.kelvin()),
     )
 }
 

@@ -13,7 +13,7 @@ use bevy::{
     input::common_conditions::input_just_pressed,
     prelude::*,
 };
-use iyes_perf_ui::{prelude::*, entries::PerfUiBundle};
+use iyes_perf_ui::prelude::*;
 
 use crate::app3d::controls::KeyBindingsConfig;
 

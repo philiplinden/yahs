@@ -106,7 +106,7 @@ fn coesa_temperature(altitude: f32) -> Result<Temperature, AtmosphereError> {
 /// Based on the US Standard Atmosphere, 1976. (aka COESA)
 fn coesa_pressure(altitude: f32) -> Result<Pressure, AtmosphereError> {
     if (-57.0..11000.0).contains(&altitude) {
-        Ok(Pressure::from_kilopascal(
+        Ok(Pressure::from_kilopascals(
             101.29
                 * f32::powf(
                     coesa_temperature(altitude).unwrap_or_default().kelvin() / 288.08,
@@ -114,11 +114,11 @@ fn coesa_pressure(altitude: f32) -> Result<Pressure, AtmosphereError> {
                 ),
         ))
     } else if (11000.0..25000.0).contains(&altitude) {
-        Ok(Pressure::from_kilopascal(
+        Ok(Pressure::from_kilopascals(
             22.65 * f32::exp(1.73 - 0.000157 * altitude),
         ))
     } else if (25000.0..85000.0).contains(&altitude) {
-        Ok(Pressure::from_kilopascal(
+        Ok(Pressure::from_kilopascals(
             2.488
                 * f32::powf(
                     coesa_temperature(altitude).unwrap_or_default().kelvin() / 216.6,

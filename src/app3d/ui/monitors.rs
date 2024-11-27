@@ -1,7 +1,7 @@
 //! UI for monitoring the simulation.
 #![allow(unused_imports)]
 use bevy::{
-    ecs::system::lifetimeless::{SQuery, SRes, SystemParam},
+    ecs::system::{SystemParam, lifetimeless::{SQuery, SRes}},
     prelude::*,
 };
 use iyes_perf_ui::{entry::PerfUiEntry, prelude::*, utils::format_pretty_float};
@@ -19,6 +19,7 @@ impl Plugin for MonitorsPlugin {
         app.add_plugins(PerfUiPlugin);
         app.add_perf_ui_simple_entry::<SimStateMonitor>();
         app.add_perf_ui_simple_entry::<ForceMonitor>();
+        app.add_perf_ui_simple_entry::<GasMonitor>();
         app.add_systems(Startup, spawn_monitors);
         app.add_systems(Update, update_force_monitor_values);
         app.init_resource::<ForceMonitorResource>();
@@ -33,6 +34,7 @@ fn spawn_monitors(mut commands: Commands) {
         },
         SimStateMonitor::default(),
         ForceMonitor::default(),
+        GasMonitor::default(),
     ));
 }
 
@@ -210,7 +212,7 @@ impl PerfUiEntry for ForceMonitor {
             f_b.push_str(" N");
             f_d.push_str(" N");
         }
-        format!("Gravity: {:} Buoyancy: {:} Drag: {:}", f_g, f_b, f_d)
+        format!("Gravity:  {}\nBuoyancy: {}\nDrag:     {}", f_g, f_b, f_d)
     }
 
     fn update_value(
@@ -257,13 +259,6 @@ struct GasMonitor {
     pub precision: u8,
     /// Required to ensure the entry appears in the correct place in the Perf UI
     pub sort_key: i32,
-
-    pub volume: f32,
-    pub pressure: f32,
-    pub temperature: f32,
-    pub density: f32,
-    pub mass: f32,
-    pub species: String,
 }
 
 impl Default for GasMonitor {
@@ -276,12 +271,6 @@ impl Default for GasMonitor {
             digits: 5,
             precision: 2,
             sort_key: iyes_perf_ui::utils::next_sort_key(),
-            volume: 0.0,
-            pressure: 0.0,
-            temperature: 0.0,
-            density: 0.0,
-            mass: 0.0,
-            species: String::new(),
         }
     }
 }
@@ -309,29 +298,32 @@ impl PerfUiEntry for GasMonitor {
         let mut temperature = format_pretty_float(self.digits, self.precision, value.2 as f64);
         let mut density = format_pretty_float(self.digits, self.precision, value.3 as f64);
         let mut mass = format_pretty_float(self.digits, self.precision, value.4 as f64);
-        
+        let mut species = value.5.clone();
+
         // (and append units to it)
         if self.display_units {
-            volume.push_str(" m³");
-            pressure.push_str(" Pa");
+            volume.push_str(" m3");
+            pressure.push_str(" kPa");
             temperature.push_str(" K");
-            density.push_str(" kg/m³");
+            density.push_str(" kg/m3");
             mass.push_str(" kg");
+            species.push_str("");
         }
-        format!("Volume: {:} Pressure: {:} Temperature: {:} Density: {:} Mass: {:} Species: {:}", volume, pressure, temperature, density, mass, self.species)
+        format!("{}\n{}\n{}\n{}\n{}\n{}", volume, pressure, temperature, density, mass, species)
     }
 
     fn update_value(
         &self,
         gas: &mut <Self::SystemParam as SystemParam>::Item<'_, '_>,
     ) -> Option<Self::Value> {
+        let instance = gas.get_single().unwrap();
         Some((
-            gas.volume().m3(),
-            gas.pressure().pascal(),
-            gas.temperature().kelvin(),
-            gas.density().kilograms_per_cubic_meter(),
-            gas.mass().kilograms(),
-            gas.species().name(),
+            instance.volume().m3(),
+            instance.pressure.kilopascals(),
+            instance.temperature.kelvin(),
+            instance.density.kilograms_per_cubic_meter(),
+            instance.mass.value(),
+            instance.species.name.clone(),
         ))
     }
 

@@ -109,16 +109,16 @@ impl Pressure {
         Pressure(pascal)
     }
 
-    pub fn from_kilopascal(kilopascal: f32) -> Self {
-        Pressure(kilopascal * 1000.0)
+    pub fn from_kilopascals(kilopascals: f32) -> Self {
+        Pressure(kilopascals * 1000.0)
     }
 
-    pub fn pascal(&self) -> f32 {
+    pub fn pascals(&self) -> f32 {
         self.0
     }
 
-    pub fn kilopascal(&self) -> f32 {
-        self.pascal() / 1000.0
+    pub fn kilopascals(&self) -> f32 {
+        self.pascals() / 1000.0
     }
 }
 
