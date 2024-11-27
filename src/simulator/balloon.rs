@@ -4,10 +4,8 @@ use avian3d::{math::PI, prelude::Position};
 use bevy::prelude::*;
 
 use super::{
-    SimulatedBody,
-    SimulationUpdateOrder,
-    ideal_gas::IdealGas,
-    properties::sphere_radius_from_volume,
+    ideal_gas::IdealGas, properties::sphere_radius_from_volume, SimulatedBody,
+    SimulationUpdateOrder, Volume,
 };
 
 pub struct BalloonPlugin;
@@ -31,12 +29,38 @@ pub struct Balloon {
     pub shape: Sphere,
 }
 
+impl Default for Balloon {
+    fn default() -> Self {
+        Balloon {
+            material_properties: BalloonMaterial::default(),
+            shape: Sphere::default(),
+        }
+    }
+}
+
+impl Balloon {
+    pub fn volume(&self) -> Volume {
+        Volume(self.shape.volume())
+    }
+}
+
 /// The balloon is the surface of a [`Primitive3d`] that can be stretched
 /// radially [`GasSpecies`] based on the pressure of the gas it contains.
 #[derive(Bundle)]
 pub struct BalloonBundle {
     pub balloon: Balloon,
     pub gas: IdealGas,
+}
+
+impl Default for BalloonBundle {
+    fn default() -> Self {
+        let balloon = Balloon::default();
+        let volume = balloon.volume();
+        BalloonBundle {
+            balloon: Balloon::default(),
+            gas: IdealGas::default().with_volume(volume),
+        }
+    }
 }
 
 #[derive(Component, Debug, Clone, PartialEq, Reflect)]
@@ -52,7 +76,7 @@ pub struct BalloonMaterial {
     pub elasticity: f32,           // Youngs Modulus aka Modulus of Elasticity (Pa)
     pub max_strain: f32,           // elongation at failure (decimal, unitless) 1 = original size
     pub max_stress: f32,           // tangential stress at failure (Pa)
-    pub thickness: f32,             // thickness of the material (m)
+    pub thickness: f32,            // thickness of the material (m)
 }
 
 impl Default for BalloonMaterial {
@@ -74,9 +98,7 @@ impl Default for BalloonMaterial {
     }
 }
 
-fn update_balloon_from_gas(
-    mut query: Query<(&mut Balloon, &IdealGas)>,
-) {
+fn update_balloon_from_gas(mut query: Query<(&mut Balloon, &IdealGas)>) {
     for (mut balloon, gas) in query.iter_mut() {
         let new_radius = sphere_radius_from_volume(gas.volume().m3());
         balloon.shape.radius = new_radius;

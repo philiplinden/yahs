@@ -123,6 +123,11 @@ impl IdealGas {
         self
     }
 
+    pub fn with_volume(mut self, volume: Volume) -> Self {
+        self.mass = Mass::new(self.density.kg_per_m3() * volume.m3());
+        self
+    }
+
     fn update_density(&mut self) {
         self.density = ideal_gas_density(self.temperature, self.pressure, &self.species);
     }
@@ -173,5 +178,6 @@ fn update_ideal_gas_from_atmosphere(
     for (mut gas, position) in query.iter_mut() {
         gas.pressure = atmosphere.pressure(position.0);
         gas.temperature = atmosphere.temperature(position.0);
+        gas.update_density();
     }
 }

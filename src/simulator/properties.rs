@@ -43,7 +43,7 @@ impl Plugin for CorePropertiesPlugin {
 }
 
 /// Temperature (K)
-#[derive(Component,Debug, Default, Clone, Copy, PartialEq, Reflect)]
+#[derive(Component,Debug, Clone, Copy, PartialEq, Reflect)]
 pub struct Temperature(pub Scalar);
 
 impl Temperature {
@@ -63,6 +63,12 @@ impl Temperature {
 
     pub fn celsius(&self) -> f32 {
         self.kelvin() - 273.15
+    }
+}
+
+impl Default for Temperature {
+    fn default() -> Self {
+        Temperature::STANDARD
     }
 }
 
@@ -99,7 +105,7 @@ impl Div<Scalar> for Temperature {
 }
 
 /// Pressure (Pa)
-#[derive(Component, Debug, Default, Clone, Copy, PartialEq, Reflect)]
+#[derive(Component, Debug, Clone, Copy, PartialEq, Reflect)]
 pub struct Pressure(pub Scalar);
 
 impl Pressure {
@@ -119,6 +125,12 @@ impl Pressure {
 
     pub fn kilopascals(&self) -> f32 {
         self.pascals() / 1000.0
+    }
+}
+
+impl Default for Pressure {
+    fn default() -> Self {
+        Pressure::STANDARD
     }
 }
 

@@ -7,7 +7,10 @@ pub struct ScenePlugin;
 
 impl Plugin for ScenePlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(Startup, (simple_scene, spawn_balloon));
+        app.add_systems(Startup, (spawn_balloon, simple_scene));
+        // app.add_systems(PostStartup, |mut commands: Commands| {
+        //     commands.set_state(SimState::Running);
+        // });
     }
 }
 
@@ -35,7 +38,7 @@ fn simple_scene(
     ));
 }
 
-pub fn spawn_balloon(
+fn spawn_balloon(
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
@@ -57,7 +60,7 @@ pub fn spawn_balloon(
                 material_properties: BalloonMaterial::default(),
                 shape: sphere,
             },
-            gas: IdealGas::new(species),
+            gas: IdealGas::new(species).with_mass(Mass::new(0.01)),
         },
         RigidBody::Dynamic,
         Collider::sphere(sphere.radius),

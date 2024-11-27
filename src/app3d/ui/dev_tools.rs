@@ -15,7 +15,7 @@ use bevy::{
 };
 use iyes_perf_ui::prelude::*;
 
-use crate::app3d::controls::KeyBindingsConfig;
+use crate::{app3d::controls::KeyBindingsConfig, simulator::SimState};
 
 pub(super) fn plugin(app: &mut App) {
     // Toggle the debug overlay for UI.
@@ -35,6 +35,8 @@ pub(super) fn plugin(app: &mut App) {
     app.add_event::<DespawnPerfUi>();
     app.add_observer(spawn_perf_ui);
     app.add_observer(despawn_perf_ui);
+
+    app.add_systems(Update, log_transitions::<SimState>);
 
     // Wireframe doesn't work on WASM
     #[cfg(not(target_arch = "wasm32"))]

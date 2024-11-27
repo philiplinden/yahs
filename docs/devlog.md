@@ -2,7 +2,87 @@
 
 ## 2024-11-26
 
-- Added a `GasMonitor` to the UI for displaying the gas properties in real time.
+I added a `GasMonitor` to the UI for displaying the gas properties in real time.
+With that in place, I can now notice that the balloon's density is reported as
+NaN, which is probably why buoyancy is not working. I think I found the bug. The
+density was not being updated in the system that updates gas properties from
+the atmosphere. Fixed that, but buoyancy is still pegged at 0. Curious, the
+buoyant system was querying `With<SimulatedBody>`, maybe something is messed up
+with the query because this system is definitely running every frame. A default
+`ForceBundle` is supposed to be added to the balloon when it is added to the
+world, so I'm curious why the buoyancy component is not being added. The
+`Weight` component is being added... Ah, the buoyancy system is also querying
+`Volume` components, weight is not. Maybe the query isn't turning up the bodies
+because the `Volume` component is not being added? With Bevy 0.15 we can enforce
+such a thing with the `#[require(x)]` attribute. Turns out there's no system
+that updates the volume because I wanted to calculate it from the balloon's
+primitive shape. I'll change buoyancy to query the balloon and get its volume
+instead. That fixed the buoyancy system so it runs, but the force results might
+not be correct.
+
+```sh
+INFO yahs::simulator::forces: Weight [0, -5.1347504, 0]
+INFO yahs::simulator::forces: Buoyancy [0, 3888.388, 0]
+INFO yahs::simulator::forces: Drag [NaN, NaN, NaN]
+```
+
+I traced the drag force NaN to the drag area returning nan from
+`balloon.shape.diameter()` at startup before the shape is set up.
+
+```sh
+ INFO yahs::simulator::forces::aero: balloon shape: Sphere { radius: NaN }
+ERROR yahs::simulator::forces: Drag has NaN magnitude!
+ERROR yahs::simulator::forces: Buoyancy has NaN magnitude!
+ INFO yahs::simulator::forces::aero: balloon shape: Sphere { radius: 4.2564797 }
+ INFO yahs::simulator::forces::aero: balloon shape: Sphere { radius: 4.2810054 }
+ INFO yahs::simulator::forces::aero: balloon shape: Sphere { radius: 4.2810054 }
+```
+
+I enforced that the mesh volumes are updated before the forces are calculated,
+but there might be a few frames at the beginning where the Mesh isn't
+initialized yet. Maybe it works a little differently because it's an asset?
+I noticed that the balloon was being spawned after the ground plane, and scene
+setup was not constrained to run in any system set. So the forces probably ran
+before the scene was done loading. I added a few conditions:
+
+- The app starts in the `Loading` state.
+- The scene advances to the `Running` state when it is done setting up the scene.
+- The physics systems only run when the app is in the `Running` state.
+
+Weird, something else is going on. The balloon shape is a real number when it is
+spawned and before the forces run, but when the forces run it is NaN.
+
+```sh
+ INFO bevy_winit::system: Creating new window "🎈" (0v1#4294967296)
+ INFO yahs::app3d::scene: sphere: Sphere { radius: 0.5 }
+ INFO bevy_dev_tools::states: yahs::simulator::core::SimState transition: Some(Loading) => Some(Running)
+ INFO yahs::app3d::scene: sim state: Res(State(Running))
+ INFO yahs::app3d::scene: balloon spawned: 19v1 Balloon { material_properties: BalloonMaterial { name: "Latex", max_temperature: 373.0, density: 920.0, emissivity: 0.9, absorptivity: 0.9, thermal_conductivity: 0.13, specific_heat: 2000.0, poissons_ratio: 0.5, elasticity: 10000000.0, max_strain: 0.8, max_stress: 500000.0, thickness: 0.0001 }, shape: Sphere { radius: 0.5 } } Sphere { radius: 0.5 }
+ INFO yahs::simulator::forces::aero: balloon shape: Sphere { radius: NaN }
+ERROR yahs::simulator::forces: Drag has NaN magnitude!
+ERROR yahs::simulator::forces: Buoyancy has NaN magnitude!
+ WARN avian3d::collision::narrow_phase: 18v1#4294967314 (Ground) and 19v1#4294967315 (Balloon) are overlapping at spawn, which can result in explosive behavior.
+ INFO yahs::app3d::scene: sim state: Res(State(Running))
+ INFO yahs::simulator::forces::aero: balloon shape: Sphere { radius: 4.2564797 }
+ INFO yahs::app3d::scene: sim state: Res(State(Running))
+ INFO yahs::simulator::forces::aero: balloon shape: Sphere { radius: 4.2810054 }
+ INFO yahs::app3d::scene: sim state: Res(State(Running))
+ INFO yahs::simulator::forces::aero: balloon shape: Sphere { radius: 4.2810054 }
+```
+
+I noticed that density is initialized to NaN with the ideal gas and the volume
+of the balloon is derived from the ideal gas volume. The volume is calculated
+before the force, so that explains where this NaN is coming from.
+
+Found it. Ideal gas law has pressure in the denominator of the volume equation.
+Pressure initializes to zero by default, so the volume is NaN. Changing the
+default from zero to the standard atmospheric pressure fixes that issue.
+
+I think the sim was crashing because it kept defaulting to use way too much
+mass in the balloon. I added `with_volume()` to the ideal gas to fix that, so we
+can spawn the balloon with a known volume at the default density.
+
+It works!
 
 ## 2024-11-24
 

@@ -11,14 +11,29 @@ use bevy::prelude::*;
 use super::{
     ideal_gas::{ideal_gas_density, GasSpecies},
     properties::{Density, Pressure, Temperature},
-    SimState, SimulatedBody,
+    SimulationUpdateOrder, SimState, SimulatedBody,
 };
 
 pub struct AtmospherePlugin;
 impl Plugin for AtmospherePlugin {
     fn build(&self, app: &mut App) {
         app.insert_resource(Atmosphere);
-        app.add_systems(Update, fault_if_out_of_bounds);
+        app.add_systems(
+            Update,
+            pause_on_out_of_bounds.in_set(SimulationUpdateOrder::First),
+        );
+    }
+}
+
+fn pause_on_out_of_bounds(
+    positions: Query<&Position, With<SimulatedBody>>,
+    mut state: ResMut<NextState<SimState>>,
+) {
+    for position in positions.iter() {
+        if position.y < Atmosphere::MIN_ALTITUDE || position.y > Atmosphere::MAX_ALTITUDE {
+            error!("Atmosphere out of bounds: {}", position.y);
+            state.set(SimState::Stopped);
+        }
     }
 }
 
@@ -30,24 +45,22 @@ impl Atmosphere {
     pub const MAX_ALTITUDE: f32 = 84999.0; // small margin to avoid panics
     pub const MIN_ALTITUDE: f32 = -56.0; // small margin to avoid panics
 
-    pub fn out_of_bounds(&self, position: Vec3) -> bool {
-        match position.y {
-            y if (y > Atmosphere::MAX_ALTITUDE) => true,
-            y if (y < Atmosphere::MIN_ALTITUDE) => true,
-            _ => false,
-        }
-    }
-
     /// Temperature (K) of the atmosphere at a position.
     pub fn temperature(&self, position: Vec3) -> Temperature {
         // TODO: Look up temperature based on latitude, longitude, not just altitude
-        coesa_temperature(position.y).unwrap() // we should handle this better
+        coesa_temperature(position.y).unwrap_or_else(|e| {
+            error!("Atmosphere temperature out of bounds: {}", e);
+            Temperature::STANDARD
+        }) // we should handle this better
     }
 
     /// Pressure (Pa) of the atmosphere at a position.
     pub fn pressure(&self, position: Vec3) -> Pressure {
         // TODO: Look up pressure based on latitude, longitude, not just altitude
-        coesa_pressure(position.y).unwrap() // we should handle this better
+        coesa_pressure(position.y).unwrap_or_else(|e| {
+            error!("Atmosphere pressure out of bounds: {}", e);
+            Pressure::STANDARD
+        }) // we should handle this better
     }
 
     /// Density (kg/m³) of the atmosphere at a position.
@@ -69,20 +82,13 @@ enum AtmosphereError {
     //     max = Atmosphere::MAX_ALTITUDE
     // )]
     // OutOfBounds(f32),
-    OutOfBounds,
+    #[allow(dead_code)]
+    OutOfBounds(f32),
 }
 
-/// If any of the simulated bodies are out of bounds, set the app state to anomaly
-/// TODO: we should use an event for this
-fn fault_if_out_of_bounds(
-    atmosphere: Res<Atmosphere>,
-    bodies: Query<(Entity, &Position), With<SimulatedBody>>,
-    mut next_state: ResMut<NextState<SimState>>,
-) {
-    for (_, position) in bodies.iter() {
-        if atmosphere.out_of_bounds(position.0) {
-            next_state.set(SimState::Anomaly)
-        };
+impl std::fmt::Display for AtmosphereError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{:?}", self)
     }
 }
 
@@ -97,7 +103,7 @@ fn coesa_temperature(altitude: f32) -> Result<Temperature, AtmosphereError> {
     } else if (25000.0..85000.0).contains(&altitude) {
         Ok(Temperature::from_celsius(-131.21 + 0.00299 * altitude))
     } else {
-        Err(AtmosphereError::OutOfBounds)
+        Err(AtmosphereError::OutOfBounds(altitude))
     }
 }
 
@@ -126,6 +132,6 @@ fn coesa_pressure(altitude: f32) -> Result<Pressure, AtmosphereError> {
                 ),
         ))
     } else {
-        Err(AtmosphereError::OutOfBounds)
+        Err(AtmosphereError::OutOfBounds(altitude))
     }
 }

@@ -4,7 +4,7 @@ use avian3d::{math::PI, prelude::*};
 use bevy::prelude::*;
 use bevy_trait_query::{self, RegisterExt};
 
-use super::{Atmosphere, Density, ForceUpdateOrder, Force, SimulatedBody};
+use super::{Atmosphere, Balloon, Density, ForceUpdateOrder, Force, SimulatedBody};
 
 pub struct AeroForcesPlugin;
 
@@ -68,14 +68,13 @@ impl Force for Drag {
 
 fn update_drag_parameters(
     atmosphere: Res<Atmosphere>,
-    mut bodies: Query<(&mut Drag, &Position, &LinearVelocity, &Collider), With<SimulatedBody>>,
+    mut bodies: Query<(&mut Drag, &Position, &LinearVelocity, &Balloon)>,
 ) {
-    for (mut drag, position, velocity, collider) in bodies.iter_mut() {
-        let bounding_sphere = collider.shape().compute_bounding_sphere(&position.0.into());
+    for (mut drag, position, velocity, balloon) in bodies.iter_mut() {
         drag.update(
             velocity.0,
             atmosphere.density(position.0),
-            projected_spherical_area(bounding_sphere.radius()),
+            PI * balloon.shape.diameter(),
             1.17, // default drag coefficient for a sphere
         );
     }
@@ -89,11 +88,6 @@ pub fn drag(velocity: Vec3, ambient_density: f32, drag_area: f32, drag_coeff: f3
         * velocity.length_squared()
         * drag_area;
     drag_direction * drag_magnitude
-}
-
-/// Get the projected area (m^2) of a sphere with a given radius (m)
-fn projected_spherical_area(radius: f32) -> f32 {
-    f32::powf(radius, 2.0) * PI
 }
 
 // Get the drag coefficient for a given shape and ambient conditions.

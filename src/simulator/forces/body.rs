@@ -1,10 +1,10 @@
 //! Forces applied to rigid bodies due to gravity and buoyancy.
 
-use avian3d::prelude::*;
+use avian3d::{math::PI, prelude::*};
 use bevy::prelude::*;
 use bevy_trait_query::{self, RegisterExt};
 
-use super::{Atmosphere, Density, Force, ForceUpdateOrder, Mass, SimulatedBody, Volume};
+use super::{Atmosphere, Balloon, Density, Force, ForceUpdateOrder, Mass, SimulatedBody, Volume};
 use crate::simulator::properties::{EARTH_RADIUS_M, STANDARD_G};
 
 pub struct BodyForcesPlugin;
@@ -27,6 +27,7 @@ impl Plugin for BodyForcesPlugin {
 /// Downward force (N) vector due to gravity as a function of altitude (m) and
 /// mass (kg). The direction of this force is always world-space down.
 #[derive(Component, Reflect)]
+#[require(Position, Mass)]
 pub struct Weight {
     position: Vec3,
     mass: f32,
@@ -79,6 +80,7 @@ fn update_weight_parameters(
 
 /// Upward force (N) vector due to atmosphere displaced by the given gas volume.
 #[derive(Component, Reflect)]
+#[require(Balloon, Position)]
 pub struct Buoyancy {
     position: Vec3,
     displaced_volume: Volume,
@@ -115,15 +117,16 @@ impl Force for Buoyancy {
 /// Upward force (N) vector due to atmosphere displaced by the given gas volume.
 /// The direction of this force is always world-space up (it opposes gravity).
 pub fn buoyancy(position: Vec3, displaced_volume: Volume, ambient_density: Density) -> Vec3 {
-    Vec3::Y * (displaced_volume.cubic_meters() * ambient_density.kg_per_m3() * g(position))
+    Vec3::Y * (displaced_volume.m3() * ambient_density.kg_per_m3() * g(position))
 }
 
 fn update_buoyant_parameters(
     atmosphere: Res<Atmosphere>,
-    mut bodies: Query<(&mut Buoyancy, &Position, &Volume), With<SimulatedBody>>,
+    mut bodies: Query<(&mut Buoyancy, &Position, &Balloon), With<SimulatedBody>>,
 ) {
-    for (mut buoyancy, position, volume) in bodies.iter_mut() {
-        let density = atmosphere.density(position.0);
-        buoyancy.update(position.0, *volume, density);
+    for (mut buoyancy, position, balloon) in bodies.iter_mut() {
+        let ambient_density = atmosphere.density(position.0);
+        let displaced_volume = balloon.volume();
+        buoyancy.update(position.0, displaced_volume, ambient_density);
     }
 }

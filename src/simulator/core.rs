@@ -48,7 +48,8 @@ impl Plugin for CorePhysicsPlugin {
                 SimulationUpdateOrder::Forces,
                 SimulationUpdateOrder::Last,
             ).chain()
-                .before(PhysicsSet::Prepare),
+                .before(PhysicsSet::Prepare)
+                .run_if(in_state(SimState::Running)),
         );
     }
 }
@@ -56,9 +57,9 @@ impl Plugin for CorePhysicsPlugin {
 #[derive(States, Debug, Default, Clone, Copy, Hash, PartialEq, Eq)]
 pub enum SimState {
     #[default]
+    Loading,
     Running,
     Stopped,
-    Anomaly,
 }
 
 #[derive(SystemSet, Debug, Clone, PartialEq, Eq, Hash)]

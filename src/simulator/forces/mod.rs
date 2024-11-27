@@ -12,7 +12,7 @@ pub use aero::Drag;
 #[allow(unused_imports)]
 pub use body::{Buoyancy, Weight};
 
-use super::{Atmosphere, Density, SimulatedBody, SimulationUpdateOrder, Volume};
+use super::{Atmosphere, Balloon, Density, SimulatedBody, SimulationUpdateOrder, SimState, Volume};
 pub struct ForcesPlugin;
 
 impl Plugin for ForcesPlugin {
@@ -37,7 +37,9 @@ impl Plugin for ForcesPlugin {
         );
         app.add_systems(
             Update,
-            update_total_external_force.in_set(ForceUpdateOrder::Apply),
+            update_total_external_force
+                .in_set(ForceUpdateOrder::Apply)
+                .run_if(in_state(SimState::Running)),
         );
 
         app.add_plugins((aero::AeroForcesPlugin, body::BodyForcesPlugin));
@@ -102,7 +104,11 @@ fn update_total_external_force(
 
             // Iterate over each force vector component and compute its value.
             for force in acting_forces.iter() {
-                net_force += force.force();
+                if force.magnitude().is_nan() {
+                    error!("{} has NaN magnitude!", force.name());
+                } else {
+                    net_force += force.force();
+                }
             }
             physics_force_component.set_force(net_force);
         }

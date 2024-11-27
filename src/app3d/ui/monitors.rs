@@ -10,6 +10,7 @@ use crate::simulator::{
     forces::{Buoyancy, Drag, Force, Weight},
     SimState, SimulatedBody,
     ideal_gas::IdealGas,
+    balloon::Balloon,
 };
 
 pub struct MonitorsPlugin;
@@ -21,8 +22,6 @@ impl Plugin for MonitorsPlugin {
         app.add_perf_ui_simple_entry::<ForceMonitor>();
         app.add_perf_ui_simple_entry::<GasMonitor>();
         app.add_systems(Startup, spawn_monitors);
-        app.add_systems(Update, update_force_monitor_values);
-        app.init_resource::<ForceMonitorResource>();
     }
 }
 
@@ -62,7 +61,7 @@ impl Default for SimStateMonitor {
             label: String::new(),
             display_units: false,
             threshold_highlight: Some(10.0),
-            color_gradient: ColorGradient::new_preset_gyr(0.0, 10.0, 100.0).unwrap(),
+            color_gradient: ColorGradient::new_preset_gyr(0.0, 5.0, 10.0).unwrap(),
             digits: 7,
             precision: 0,
             sort_key: iyes_perf_ui::utils::next_sort_key(),
@@ -88,9 +87,9 @@ impl PerfUiEntry for SimStateMonitor {
 
     fn format_value(&self, value: &Self::Value) -> String {
         match value {
+            SimState::Loading => String::from("Loading"),
             SimState::Running => String::from("Running"),
             SimState::Stopped => String::from("Stopped"),
-            SimState::Anomaly => String::from("ANOMALY")
         }
     }
 
@@ -120,7 +119,7 @@ impl PerfUiEntry for SimStateMonitor {
         match *value {
             SimState::Running => self.color_gradient.get_color_for_value(0.0),
             SimState::Stopped => self.color_gradient.get_color_for_value(10.0),
-            _ => self.color_gradient.get_color_for_value(100.0),
+            _ => self.color_gradient.get_color_for_value(5.0),
         }
     }
 
@@ -129,25 +128,6 @@ impl PerfUiEntry for SimStateMonitor {
         self.threshold_highlight
             .map(|_| value == &SimState::Stopped)
             .unwrap_or(false)
-    }
-}
-
-#[derive(Resource, Reflect, Default)]
-struct ForceMonitorResource {
-    pub weight: Vec3,
-    pub buoyancy: Vec3,
-    pub drag: Vec3,
-}
-
-fn update_force_monitor_values(
-    mut force_resource: ResMut<ForceMonitorResource>,
-    forces: Query<(&Weight, &Buoyancy, &Drag), With<SimulatedBody>>,
-) {
-    for (weight, bouyancy, drag) in forces.iter() {
-        // assume there's only one simulated body for now
-        force_resource.weight = weight.force();
-        force_resource.buoyancy = bouyancy.force();
-        force_resource.drag = drag.force();
     }
 }
 
@@ -179,7 +159,7 @@ impl Default for ForceMonitor {
             threshold_highlight: Some(10.0),
             color_gradient: ColorGradient::new_preset_gyr(0.0, 10.0, 100.0).unwrap(),
             digits: 5,
-            precision: 2,
+            precision: 3,
             sort_key: iyes_perf_ui::utils::next_sort_key(),
         }
     }
@@ -187,7 +167,7 @@ impl Default for ForceMonitor {
 
 impl PerfUiEntry for ForceMonitor {
     type Value = (f32, f32, f32);
-    type SystemParam = SRes<ForceMonitorResource>; // FIXME: use &(dyn Force + 'static) instead
+    type SystemParam = SQuery<(&'static Weight, &'static Buoyancy, &'static Drag), With<SimulatedBody>>;
 
     fn label(&self) -> &str {
         if self.label.is_empty() {
@@ -217,13 +197,16 @@ impl PerfUiEntry for ForceMonitor {
 
     fn update_value(
         &self,
-        force_resource: &mut <Self::SystemParam as SystemParam>::Item<'_, '_>,
+        force_resources: &mut <Self::SystemParam as SystemParam>::Item<'_, '_>,
     ) -> Option<Self::Value> {
-        Some((
-            force_resource.weight.length(),
-            force_resource.buoyancy.length(),
-            force_resource.drag.length(),
-        ))
+        for (weight, buoyancy, drag) in force_resources.iter() {
+            return Some((
+                weight.force().y,
+                buoyancy.force().y,
+                drag.force().y,
+            ))
+        }
+        None
     }
 
     // (optional) We should add a width hint, so that the displayed
@@ -277,7 +260,7 @@ impl Default for GasMonitor {
 
 impl PerfUiEntry for GasMonitor {
     type Value = (f32, f32, f32, f32, f32, String);
-    type SystemParam = SQuery<&'static IdealGas>;
+    type SystemParam = SQuery<(&'static Balloon, &'static IdealGas)>;
 
     fn label(&self) -> &str {
         if self.label.is_empty() {
@@ -309,21 +292,21 @@ impl PerfUiEntry for GasMonitor {
             mass.push_str(" kg");
             species.push_str("");
         }
-        format!("{}\n{}\n{}\n{}\n{}\n{}", volume, pressure, temperature, density, mass, species)
+        format!("{}\n{}\n{}\n{}\n{}\n{}", species, volume, pressure, temperature, density, mass)
     }
 
     fn update_value(
         &self,
-        gas: &mut <Self::SystemParam as SystemParam>::Item<'_, '_>,
+        items: &mut <Self::SystemParam as SystemParam>::Item<'_, '_>,
     ) -> Option<Self::Value> {
-        let instance = gas.get_single().unwrap();
+        let (balloon, gas) = items.get_single().unwrap();
         Some((
-            instance.volume().m3(),
-            instance.pressure.kilopascals(),
-            instance.temperature.kelvin(),
-            instance.density.kilograms_per_cubic_meter(),
-            instance.mass.value(),
-            instance.species.name.clone(),
+            balloon.shape.volume(),
+            gas.pressure.kilopascals(),
+            gas.temperature.kelvin(),
+            gas.density.kilograms_per_cubic_meter(),
+            gas.mass.value(),
+            gas.species.name.clone(),
         ))
     }
 

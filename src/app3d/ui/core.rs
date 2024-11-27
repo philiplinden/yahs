@@ -51,7 +51,7 @@ fn toggle_pause(
         match sim_state.as_ref().get() {
             SimState::Stopped => next_state.set(SimState::Running),
             SimState::Running => next_state.set(SimState::Stopped),
-            _ => ()
+            _ => next_state.set(SimState::Running)
         }
     }
 }
