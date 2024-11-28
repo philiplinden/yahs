@@ -54,12 +54,13 @@ impl Plugin for CorePhysicsPlugin {
     }
 }
 
+#[allow(dead_code)]
 #[derive(States, Debug, Default, Clone, Copy, Hash, PartialEq, Eq)]
 pub enum SimState {
     #[default]
-    Loading,
-    Running,
     Stopped,
+    Running,
+    Faulted,
 }
 
 #[derive(SystemSet, Debug, Clone, PartialEq, Eq, Hash)]

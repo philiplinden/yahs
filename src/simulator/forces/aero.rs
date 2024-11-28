@@ -20,6 +20,7 @@ impl Plugin for AeroForcesPlugin {
 /// Force (N) due to drag as a solid body moves through a fluid.
 #[derive(Component, Reflect)]
 pub struct Drag {
+    position: Vec3,
     flow_velocity: Vec3,
     ambient_density: Density,
     drag_area: f32,
@@ -28,6 +29,7 @@ pub struct Drag {
 impl Default for Drag {
     fn default() -> Self {
         Self {
+            position: Vec3::ZERO,
             flow_velocity: Vec3::ZERO,
             ambient_density: Density::ZERO,
             drag_area: 0.0,
@@ -38,11 +40,13 @@ impl Default for Drag {
 impl Drag {
     pub fn update(
         &mut self,
+        position: Vec3,
         flow_velocity: Vec3,
         ambient_density: Density,
         drag_area: f32,
         drag_coeff: f32,
     ) {
+        self.position = position;
         self.flow_velocity = flow_velocity;
         self.ambient_density = ambient_density;
         self.drag_area = drag_area;
@@ -62,7 +66,10 @@ impl Force for Drag {
         )
     }
     fn point_of_application(&self) -> Vec3 {
-        Vec3::ZERO
+        self.position
+    }
+    fn color(&self) -> Option<Color> {
+        Some(Color::srgb(1.0, 0.0, 0.0))
     }
 }
 
@@ -72,6 +79,7 @@ fn update_drag_parameters(
 ) {
     for (mut drag, position, velocity, balloon) in bodies.iter_mut() {
         drag.update(
+            position.0,
             velocity.0,
             atmosphere.density(position.0),
             PI * balloon.shape.diameter(),
