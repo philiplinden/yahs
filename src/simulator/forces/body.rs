@@ -56,6 +56,9 @@ impl Force for Weight {
     fn point_of_application(&self) -> Vec3 {
         self.position
     }
+    fn color(&self) -> Option<Color> {
+        Some(Color::srgb(0.0, 1.0, 0.0))
+    }
 }
 
 /// Force (N) from gravity at an altitude (m) above mean sea level.
@@ -111,6 +114,9 @@ impl Force for Buoyancy {
     }
     fn point_of_application(&self) -> Vec3 {
         self.position
+    }
+    fn color(&self) -> Option<Color> {
+        Some(Color::srgb(0.0, 0.0, 1.0))
     }
 }
 

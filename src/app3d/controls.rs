@@ -26,11 +26,11 @@ pub struct CameraControls {
 
 #[derive(Reflect)]
 pub struct DebugControls {
-    pub toggle_inspector: KeyCode,
-    pub toggle_wireframe: KeyCode,
-    pub toggle_physics_debug: KeyCode,
-    pub toggle_perf_ui: KeyCode,
-    pub toggle_anything_else: KeyCode,
+    pub toggle_1: KeyCode,
+    pub toggle_2: KeyCode,
+    pub toggle_3: KeyCode,
+    pub toggle_4: KeyCode,
+    pub toggle_5: KeyCode,
 }
 
 #[derive(Reflect)]
@@ -55,11 +55,11 @@ impl Default for CameraControls {
 impl Default for DebugControls {
     fn default() -> Self {
         Self {
-            toggle_wireframe: KeyCode::F1,
-            toggle_inspector: KeyCode::F2,
-            toggle_physics_debug: KeyCode::F3,
-            toggle_perf_ui: KeyCode::F4,
-            toggle_anything_else: KeyCode::F5,
+            toggle_1: KeyCode::F1,
+            toggle_2: KeyCode::F2,
+            toggle_3: KeyCode::F3,
+            toggle_4: KeyCode::F4,
+            toggle_5: KeyCode::F5,
         }
     }
 }

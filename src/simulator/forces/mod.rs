@@ -84,7 +84,15 @@ pub trait Force {
     fn magnitude(&self) -> f32 {
         self.force().length()
     }
-    fn point_of_application(&self) -> Vec3;
+    fn point_of_application(&self) -> Vec3 {
+        Vec3::ZERO
+    }
+    fn torque(&self) -> Vec3 {
+        Vec3::ZERO
+    }
+    fn color(&self) -> Option<Color> {
+        None
+    }
 }
 
 /// Set the `ExternalForce` to the sum of all forces in the `Forces` collection.

@@ -1,5 +1,52 @@
 # development log
 
+## 2024-11-27
+
+Some of my dependencies may now have Bevy 0.15 support.
+
+- [x] avian3d: (Jondolf/avian:main)[https://github.com/Jondolf/avian/tree/main]
+- [ ] bevy_heavy: not supported yet
+- [x] iyes_perf_ui:
+  (JohnathanFL/iyes_perf_ui:main)[https://github.com/JohnathanFL/iyes_perf_ui/tree/main]
+  ([this is open PR from a fork](https://github.com/IyesGames/iyes_perf_ui/pull/22))
+- [x] iyes_progress: `0.13.0-rc.1`
+- [x] bevy-trait-query:
+  [JoJoJet/bevy-trait-query:bevy-0.15-rc](https://github.com/JoJoJet/bevy-trait-query/tree/bevy-0.15-rc)
+  (sort of supported, last updated for `bevy-0.15.0-rc.2`)
+- [ ] bevy-inspector-egui: not supported yet
+
+Here are some recent projects that I might be able to steal from:
+
+- [bevy-motion-matching](https://github.com/kahboon0425/bevy_motion_matching) -
+  angular velocity debug gizmos and egui UI examples for plotting
+- [siege](https://github.com/xenon615/siege) - rope example in Avian3d
+- [bevy-logging](https://bevy-logging.github.io/) - advanced debug logging &
+  tracing example/tutorial
+
+Now that the forces are working and look reasonable, I can start working on the
+flight dynamics. I need to start by adding a way to speed up and slow down the
+simulation time, because a real flight takes hours. Next I need to add plots so
+I can monitor and validate the simulation results for things like altitude,
+temperature, and pressure.
+
+- [ ] Physics time multiplier.
+- [ ] Plotting gas properties.
+- [ ] Plotting balloon kinematics.
+
+Bonus:
+
+- [ ] Add a payload hanging from a tether.
+- [ ] Camera follow the balloon, and maybe a scale or some reference in the
+      background to illustrate the balloon's size and altitude.
+
+Stretch:
+
+- [ ] Calculate drag forces and moments on arbitrary shapes.
+- [ ] Add a wind field.
+
+I figured out how to toggle the physics gizmos at runtime and added force gizmos
+that I made myself.
+
 ## 2024-11-26
 
 I added a `GasMonitor` to the UI for displaying the gas properties in real time.

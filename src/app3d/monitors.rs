@@ -87,9 +87,9 @@ impl PerfUiEntry for SimStateMonitor {
 
     fn format_value(&self, value: &Self::Value) -> String {
         match value {
-            SimState::Loading => String::from("Loading"),
             SimState::Running => String::from("Running"),
             SimState::Stopped => String::from("Stopped"),
+            _ => String::from("Unknown"),
         }
     }
 
@@ -118,8 +118,8 @@ impl PerfUiEntry for SimStateMonitor {
     fn value_color(&self, value: &Self::Value) -> Option<Color> {
         match *value {
             SimState::Running => self.color_gradient.get_color_for_value(0.0),
-            SimState::Stopped => self.color_gradient.get_color_for_value(10.0),
-            _ => self.color_gradient.get_color_for_value(5.0),
+            SimState::Stopped => self.color_gradient.get_color_for_value(5.0),
+            _ => self.color_gradient.get_color_for_value(10.0),
         }
     }
 
