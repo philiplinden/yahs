@@ -6,6 +6,7 @@ pub mod forces;
 pub mod ideal_gas;
 pub mod payload;
 pub mod properties;
+pub mod time;
 
 // Re-export the properties module at the top level.
 pub use core::{SimulatorPlugins, SimState, SimulationUpdateOrder};

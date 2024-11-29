@@ -39,6 +39,10 @@ pub struct DebugControls {
 #[derive(Reflect)]
 pub struct TimeControls {
     pub toggle_pause: KeyCode,
+    pub faster: KeyCode,
+    pub slower: KeyCode,
+    pub reset_speed: KeyCode,
+    pub scale_step: f32,
 }
 
 // ============================ DEFAULT KEYBINDINGS ============================
@@ -74,6 +78,10 @@ impl Default for TimeControls {
     fn default() -> Self {
         Self {
             toggle_pause: KeyCode::Space,
+            faster: KeyCode::ArrowUp,
+            slower: KeyCode::ArrowDown,
+            reset_speed: KeyCode::Backspace,
+            scale_step: 0.1,
         }
     }
 }

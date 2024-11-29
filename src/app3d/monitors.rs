@@ -7,6 +7,7 @@ use bevy::{
     },
     prelude::*,
 };
+use avian3d::prelude::*;
 use iyes_perf_ui::{entry::PerfUiEntry, prelude::*, utils::format_pretty_float};
 
 use crate::simulator::{
@@ -24,6 +25,7 @@ impl Plugin for MonitorsPlugin {
         app.add_perf_ui_simple_entry::<SimStateMonitor>();
         app.add_perf_ui_simple_entry::<ForceMonitor>();
         app.add_perf_ui_simple_entry::<GasMonitor>();
+        app.add_perf_ui_simple_entry::<TimeScaleMonitor>();
         app.add_systems(Startup, spawn_monitors);
     }
 }
@@ -37,6 +39,7 @@ fn spawn_monitors(mut commands: Commands) {
         SimStateMonitor::default(),
         ForceMonitor::default(),
         GasMonitor::default(),
+        TimeScaleMonitor::default(),
     ));
 }
 
@@ -129,7 +132,7 @@ impl PerfUiEntry for SimStateMonitor {
     // (optional) Called every frame to determine if the value should be highlighted
     fn value_highlight(&self, value: &Self::Value) -> bool {
         self.threshold_highlight
-            .map(|_| value == &SimState::Stopped)
+            .map(|_| value == &SimState::Faulted)
             .unwrap_or(false)
     }
 }
@@ -251,7 +254,7 @@ impl Default for GasMonitor {
             threshold_highlight: Some(10.0),
             color_gradient: ColorGradient::new_preset_gyr(0.0, 10.0, 100.0).unwrap(),
             digits: 5,
-            precision: 2,
+            precision: 3,
             sort_key: iyes_perf_ui::utils::next_sort_key(),
         }
     }
@@ -280,7 +283,7 @@ impl PerfUiEntry for GasMonitor {
         let mut temperature = format_pretty_float(self.digits, self.precision, value.2 as f64);
         let mut density = format_pretty_float(self.digits, self.precision, value.3 as f64);
         let mut mass = format_pretty_float(self.digits, self.precision, value.4 as f64);
-        let mut species = value.5.clone();
+        let species = value.5.clone();
 
         // (and append units to it)
         if self.display_units {
@@ -289,7 +292,6 @@ impl PerfUiEntry for GasMonitor {
             temperature.push_str(" K");
             density.push_str(" kg/m3");
             mass.push_str(" kg");
-            species.push_str("");
         }
         format!(
             "{}\n{}\n{}\n{}\n{}\n{}",
@@ -321,6 +323,104 @@ impl PerfUiEntry for GasMonitor {
         let w = iyes_perf_ui::utils::width_hint_pretty_float(self.digits, self.precision);
         if self.display_units {
             w + 5
+        } else {
+            w
+        }
+    }
+}
+
+#[derive(Component)]
+struct TimeScaleMonitor {
+    /// The label text to display, to allow customization
+    pub label: String,
+    /// Should we display units?
+    pub display_units: bool,
+    /// Highlight the value if it goes above this threshold
+    #[allow(dead_code)]
+    pub threshold_highlight: Option<f32>,
+    /// Support color gradients!
+    #[allow(dead_code)]
+    pub color_gradient: ColorGradient,
+    /// Width for formatting the string
+    pub digits: u8,
+    /// Precision for formatting the string
+    pub precision: u8,
+    /// Required to ensure the entry appears in the correct place in the Perf UI
+    pub sort_key: i32,
+}
+
+impl Default for TimeScaleMonitor {
+    fn default() -> Self {
+        let rygyr_gradient = ColorGradient::new().with_stops(vec![
+            (0.01, Color::srgb(1.0, 0.0, 0.0).into()),
+            (0.5, Color::srgb(1.0, 1.0, 0.0).into()),
+            (1.0, Color::srgb(0.0, 1.0, 0.0).into()),
+            (1.5, Color::srgb(1.0, 1.0, 0.0).into()),
+            (10.0, Color::srgb(1.0, 0.0, 0.0).into()),
+        ]);
+        TimeScaleMonitor {
+            label: String::new(),
+            display_units: true,
+            threshold_highlight: Some(10.0),
+            color_gradient: rygyr_gradient,
+            digits: 5,
+            precision: 3,
+            sort_key: iyes_perf_ui::utils::next_sort_key(),
+        }
+    }
+}
+
+impl PerfUiEntry for TimeScaleMonitor {
+    type Value = (f32, f32, f32);
+    type SystemParam = (
+        SRes<Time<Virtual>>,
+        SRes<Time<Physics>>,
+    );
+
+    fn label(&self) -> &str {
+        if self.label.is_empty() {
+            "Time"
+        } else {
+            &self.label
+        }
+    }
+
+    fn sort_key(&self) -> i32 {
+        self.sort_key
+    }
+
+    fn format_value(&self, value: &Self::Value) -> String {
+        let mut virtual_time = format_pretty_float(self.digits, self.precision, value.0 as f64);
+        let mut physics_time = format_pretty_float(self.digits, self.precision, value.1 as f64);
+        let multiplier = format_pretty_float(2, 1, value.2 as f64);
+        // (and append units to it)
+        if self.display_units {
+            virtual_time.push_str(" s");
+            physics_time.push_str(" s");
+        }
+        format!("real: {}\nphysics: {} (x{})", virtual_time, physics_time, multiplier)
+    }
+
+    fn update_value(
+        &self,
+        (virtual_time, physics_time): &mut <Self::SystemParam as SystemParam>::Item<'_, '_>,
+    ) -> Option<Self::Value> {
+        Some((
+            virtual_time.as_ref().elapsed_secs(),
+            physics_time.as_ref().elapsed_secs(),
+            physics_time.as_ref().relative_speed(),
+        ))
+    }
+
+    // (optional) We should add a width hint, so that the displayed
+    // strings in the UI can be correctly aligned.
+    // This value represents the largest length the formatted string
+    // is expected to have.
+    fn width_hint(&self) -> usize {
+        // there is a helper we can use, since we use `format_pretty_float`
+        let w = iyes_perf_ui::utils::width_hint_pretty_float(self.digits, self.precision);
+        if self.display_units {
+            w + 2
         } else {
             w
         }
