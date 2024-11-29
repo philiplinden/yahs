@@ -5,10 +5,6 @@ use bevy::{
     prelude::*,
 };
 
-/// A marker component for entities that are simulated.
-#[derive(Component, Default)]
-pub struct SimulatedBody;
-
 pub struct SimulatorPlugins;
 
 impl PluginGroup for SimulatorPlugins {

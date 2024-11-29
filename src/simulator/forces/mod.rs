@@ -12,7 +12,7 @@ pub use aero::Drag;
 #[allow(unused_imports)]
 pub use body::{Buoyancy, Weight};
 
-use super::{Atmosphere, Balloon, Density, SimulatedBody, SimulationUpdateOrder, SimState, Volume};
+use super::{Atmosphere, Balloon, Density, SimulationUpdateOrder, SimState, Volume};
 pub struct ForcesPlugin;
 
 impl Plugin for ForcesPlugin {
@@ -62,9 +62,12 @@ pub struct ForceBundle {
     drag: aero::Drag,
 }
 
-fn on_simulated_body_added(mut commands: Commands, query: Query<Entity, Added<SimulatedBody>>) {
-    for entity in &query {
-        commands.entity(entity).insert(ForceBundle::default());
+fn on_simulated_body_added(mut commands: Commands, query: Query<(Entity, &RigidBody), Added<RigidBody>>) {
+    for (entity, rigid_body) in &query {
+        let mut this_entity = commands.entity(entity);
+        if rigid_body.is_dynamic() {
+            this_entity.insert(ForceBundle::default());
+        }
     }
 }
 
@@ -102,7 +105,7 @@ pub trait Force {
 /// TODO: preserve the position of the total force vector and apply it at that
 /// point instead of the center of mass.
 fn update_total_external_force(
-    mut body_forces: Query<(&mut ExternalForce, &dyn Force, &RigidBody), With<SimulatedBody>>,
+    mut body_forces: Query<(&mut ExternalForce, &dyn Force, &RigidBody)>,
 ) {
     // Iterate over each entity that has force vector components.
     for (mut physics_force_component, acting_forces, rigid_body) in body_forces.iter_mut() {

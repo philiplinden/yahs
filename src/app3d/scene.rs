@@ -23,7 +23,7 @@ fn simple_scene(
     let ground_size = Vec3::new(50.0, 0.1, 50.0);
     let plane = meshes.add(Plane3d::default().mesh().size(ground_size.x,  ground_size.z).subdivisions(10));
     let plane_material = materials.add(StandardMaterial {
-        base_color: Color::srgb(0.5, 0.5, 0.5),
+        base_color: Color::srgb(0.5, 0.5, 0.0),
         perceptual_roughness: 0.5,
         ..default()
     });
@@ -47,6 +47,7 @@ fn spawn_balloon(
         base_color: Color::srgba(1.0, 0.0, 0.0, 0.5),
         perceptual_roughness: 0.0,
         metallic: 1.0,
+        alpha_mode: AlphaMode::Blend,
         ..default()
     });
     let sphere = Sphere::default();
@@ -54,7 +55,6 @@ fn spawn_balloon(
     let species = GasSpecies::helium();
     commands.spawn((
         Name::new("Balloon"),
-        SimulatedBody,
         BalloonBundle {
             balloon: Balloon {
                 material_properties: BalloonMaterial::default(),

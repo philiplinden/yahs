@@ -18,10 +18,13 @@ pub struct KeyBindingsConfig {
 
 #[derive(Reflect)]
 pub struct CameraControls {
-    pub modifier_pan: Option<KeyCode>,
+    pub cycle_target: KeyCode,
+    pub modifier_pan: KeyCode,
     pub button_pan: MouseButton,
     pub button_orbit: MouseButton,
-    pub toggle_zoom_direction: KeyCode,
+    pub zoom_step: f32,
+    pub max_fov: f32,
+    pub min_fov: f32,
 }
 
 #[derive(Reflect)]
@@ -44,10 +47,13 @@ pub struct TimeControls {
 impl Default for CameraControls {
     fn default() -> Self {
         Self {
-            modifier_pan: Some(KeyCode::ShiftLeft),
+            cycle_target: KeyCode::Tab,
+            modifier_pan: KeyCode::ShiftLeft,
             button_pan: MouseButton::Middle,
             button_orbit: MouseButton::Middle,
-            toggle_zoom_direction: KeyCode::KeyZ,
+            zoom_step: 0.01,
+            max_fov: 1.0,
+            min_fov: 0.01,
         }
     }
 }

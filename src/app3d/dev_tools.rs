@@ -14,7 +14,9 @@ use bevy::{
     prelude::*,
 };
 
-use crate::{app3d::controls::KeyBindingsConfig, simulator::SimState};
+use crate::simulator::SimState;
+
+use super::{controls::KeyBindingsConfig, gizmos::ForceGizmos};
 
 pub struct DevToolsPlugin;
 
@@ -34,8 +36,11 @@ impl Plugin for DevToolsPlugin {
 
     app.init_resource::<DebugState>();
 
-    app.add_systems(Update, log_transitions::<SimState>);
-    app.add_systems(Update, show_physics_gizmos);
+    app.add_systems(Update, (
+        log_transitions::<SimState>,
+        show_force_gizmos,
+        show_physics_gizmos,
+    ));
 
     // Wireframe doesn't work on WASM
     #[cfg(not(target_arch = "wasm32"))]
@@ -103,11 +108,25 @@ fn toggle_debug_ui(
     }
 }
 
+fn show_force_gizmos(
+    debug_state: Res<DebugState>,
+    mut gizmo_store: ResMut<GizmoConfigStore>
+) {
+    if debug_state.is_changed() {
+        let (_, force_config) = gizmo_store.config_mut::<ForceGizmos>();
+        if debug_state.forces {
+            *force_config = ForceGizmos::all();
+        } else {
+            *force_config = ForceGizmos::none();
+        }
+    }
+}
+
 fn show_physics_gizmos(
     debug_state: Res<DebugState>,
     mut gizmo_store: ResMut<GizmoConfigStore>
 ) {
-    if gizmo_store.is_changed() {
+    if debug_state.is_changed() {
         let (_, physics_config) = gizmo_store.config_mut::<PhysicsGizmos>();
         if debug_state.physics {
             *physics_config = PhysicsGizmos::all();

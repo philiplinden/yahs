@@ -1,5 +1,10 @@
 # development log
 
+## 2024-11-28
+
+I tinkered with camera controls and the new `require` attribute. Now the camera
+follows the balloon. I also fixed the toggles for debug gizmos!
+
 ## 2024-11-27
 
 Some of my dependencies may now have Bevy 0.15 support.

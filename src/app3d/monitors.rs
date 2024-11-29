@@ -1,16 +1,19 @@
 //! UI for monitoring the simulation.
 #![allow(unused_imports)]
 use bevy::{
-    ecs::system::{SystemParam, lifetimeless::{SQuery, SRes}},
+    ecs::system::{
+        lifetimeless::{SQuery, SRes},
+        SystemParam,
+    },
     prelude::*,
 };
 use iyes_perf_ui::{entry::PerfUiEntry, prelude::*, utils::format_pretty_float};
 
 use crate::simulator::{
-    forces::{Buoyancy, Drag, Force, Weight},
-    SimState, SimulatedBody,
-    ideal_gas::IdealGas,
     balloon::Balloon,
+    forces::{Buoyancy, Drag, Force, Weight},
+    ideal_gas::IdealGas,
+    SimState,
 };
 
 pub struct MonitorsPlugin;
@@ -167,7 +170,7 @@ impl Default for ForceMonitor {
 
 impl PerfUiEntry for ForceMonitor {
     type Value = (f32, f32, f32);
-    type SystemParam = SQuery<(&'static Weight, &'static Buoyancy, &'static Drag), With<SimulatedBody>>;
+    type SystemParam = SQuery<(&'static Weight, &'static Buoyancy, &'static Drag), With<Balloon>>;
 
     fn label(&self) -> &str {
         if self.label.is_empty() {
@@ -200,11 +203,7 @@ impl PerfUiEntry for ForceMonitor {
         force_resources: &mut <Self::SystemParam as SystemParam>::Item<'_, '_>,
     ) -> Option<Self::Value> {
         for (weight, buoyancy, drag) in force_resources.iter() {
-            return Some((
-                weight.force().y,
-                buoyancy.force().y,
-                drag.force().y,
-            ))
+            return Some((weight.force().y, buoyancy.force().y, drag.force().y));
         }
         None
     }
@@ -292,7 +291,10 @@ impl PerfUiEntry for GasMonitor {
             mass.push_str(" kg");
             species.push_str("");
         }
-        format!("{}\n{}\n{}\n{}\n{}\n{}", species, volume, pressure, temperature, density, mass)
+        format!(
+            "{}\n{}\n{}\n{}\n{}\n{}",
+            species, volume, pressure, temperature, density, mass
+        )
     }
 
     fn update_value(
