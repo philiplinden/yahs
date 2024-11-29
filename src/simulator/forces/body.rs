@@ -4,7 +4,7 @@ use avian3d::{math::PI, prelude::*};
 use bevy::prelude::*;
 use bevy_trait_query::{self, RegisterExt};
 
-use super::{Atmosphere, Balloon, Density, Force, ForceUpdateOrder, Mass, SimulatedBody, Volume};
+use super::{Atmosphere, Balloon, Density, Force, ForceUpdateOrder, Mass, Volume};
 use crate::simulator::properties::{EARTH_RADIUS_M, STANDARD_G};
 
 pub struct BodyForcesPlugin;
@@ -27,7 +27,6 @@ impl Plugin for BodyForcesPlugin {
 /// Downward force (N) vector due to gravity as a function of altitude (m) and
 /// mass (kg). The direction of this force is always world-space down.
 #[derive(Component, Reflect)]
-#[require(Position, Mass)]
 pub struct Weight {
     position: Vec3,
     mass: f32,
@@ -74,7 +73,7 @@ pub fn weight(position: Vec3, mass: f32) -> Vec3 {
 }
 
 fn update_weight_parameters(
-    mut bodies: Query<(&mut Weight, &Position, &Mass), With<SimulatedBody>>,
+    mut bodies: Query<(&mut Weight, &Position, &Mass), With<Balloon>>,
 ) {
     for (mut weight, position, mass) in bodies.iter_mut() {
         weight.update(position.0, mass.value());
@@ -83,7 +82,6 @@ fn update_weight_parameters(
 
 /// Upward force (N) vector due to atmosphere displaced by the given gas volume.
 #[derive(Component, Reflect)]
-#[require(Balloon, Position)]
 pub struct Buoyancy {
     position: Vec3,
     displaced_volume: Volume,
@@ -128,7 +126,7 @@ pub fn buoyancy(position: Vec3, displaced_volume: Volume, ambient_density: Densi
 
 fn update_buoyant_parameters(
     atmosphere: Res<Atmosphere>,
-    mut bodies: Query<(&mut Buoyancy, &Position, &Balloon), With<SimulatedBody>>,
+    mut bodies: Query<(&mut Buoyancy, &Position, &Balloon)>,
 ) {
     for (mut buoyancy, position, balloon) in bodies.iter_mut() {
         let ambient_density = atmosphere.density(position.0);

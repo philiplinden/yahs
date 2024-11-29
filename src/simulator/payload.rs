@@ -12,10 +12,11 @@ impl Plugin for PayloadPlugin {
 }
 
 /// A thing carried by the balloon.
-#[derive(Component)]
+#[derive(Component, Default)]
 pub struct Payload;
 
 
 /// A tether that connects the balloon to the payload.
-#[derive(Component)]
+#[derive(Component, Default)]
+#[require(Payload)]
 pub struct Tether;

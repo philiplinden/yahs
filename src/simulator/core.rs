@@ -5,10 +5,6 @@ use bevy::{
     prelude::*,
 };
 
-/// A marker component for entities that are simulated.
-#[derive(Component, Default)]
-pub struct SimulatedBody;
-
 pub struct SimulatorPlugins;
 
 impl PluginGroup for SimulatorPlugins {
@@ -29,16 +25,9 @@ impl Plugin for CorePhysicsPlugin {
             properties::CorePropertiesPlugin,
             ideal_gas::IdealGasPlugin,
             forces::ForcesPlugin,
+            time::TimeScalePlugin,
         ));
         app.init_state::<SimState>();
-        app.add_systems(
-            OnEnter(SimState::Running),
-            |mut time: ResMut<Time<Physics>>| time.as_mut().unpause(),
-        );
-        app.add_systems(
-            OnExit(SimState::Running),
-            |mut time: ResMut<Time<Physics>>| time.as_mut().pause(),
-        );
         app.configure_sets(
             Update,
             (

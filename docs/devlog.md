@@ -1,5 +1,16 @@
 # development log
 
+## 2024-11-28
+
+I tinkered with camera controls and the new `require` attribute. Now the camera
+follows the balloon. I also fixed the toggles for debug gizmos!
+
+I added controls for changing the physics time multiplier (and a debug ui) and
+it is correctly changing the physics clock's relative speed, but the physics
+breaks when the physics clock's relative speed goes above 1.5. Maybe it has
+something to do with schedules, but more likely the timestep is simply too
+large.
+
 ## 2024-11-27
 
 Some of my dependencies may now have Bevy 0.15 support.

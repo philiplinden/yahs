@@ -4,7 +4,7 @@ use avian3d::{math::PI, prelude::*};
 use bevy::prelude::*;
 use bevy_trait_query::{self, RegisterExt};
 
-use super::{Atmosphere, Balloon, Density, ForceUpdateOrder, Force, SimulatedBody};
+use super::{Atmosphere, Balloon, Density, ForceUpdateOrder, Force};
 
 pub struct AeroForcesPlugin;
 

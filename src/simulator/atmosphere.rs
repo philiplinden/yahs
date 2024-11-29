@@ -11,7 +11,7 @@ use bevy::prelude::*;
 use super::{
     ideal_gas::{ideal_gas_density, GasSpecies},
     properties::{Density, Pressure, Temperature},
-    SimulationUpdateOrder, SimState, SimulatedBody,
+    SimulationUpdateOrder, SimState, Balloon,
 };
 
 pub struct AtmospherePlugin;
@@ -26,7 +26,7 @@ impl Plugin for AtmospherePlugin {
 }
 
 fn pause_on_out_of_bounds(
-    positions: Query<&Position, With<SimulatedBody>>,
+    positions: Query<&Position, With<Balloon>>,
     mut state: ResMut<NextState<SimState>>,
 ) {
     for position in positions.iter() {
