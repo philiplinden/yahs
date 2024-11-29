@@ -1,5 +1,3 @@
-#define IS_2D
-
 #import bevy_core_pipeline::fullscreen_vertex_shader::FullscreenVertexOutput
 #import bevy_render::globals::Globals
 

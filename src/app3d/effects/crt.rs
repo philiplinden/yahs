@@ -1,18 +1,18 @@
 //! Based on [CRT Effect by Jasper](https://www.shadertoy.com/view/4sf3Dr)
 use bevy::{
     core_pipeline::{
-        core_3d::graph::{Core3d, Node3d},
         core_2d::graph::{Core2d, Node2d},
+        core_3d::graph::{Core3d, Node3d},
         fullscreen_vertex_shader::fullscreen_shader_vertex_state,
     },
     ecs::query::QueryItem,
     prelude::*,
     render::{
-        globals::{GlobalsBuffer, GlobalsUniform},
         extract_component::{
             ComponentUniforms, DynamicUniformIndex, ExtractComponent, ExtractComponentPlugin,
             UniformComponentPlugin,
         },
+        globals::{GlobalsBuffer, GlobalsUniform},
         render_graph::{
             NodeRunError, RenderGraphApp, RenderGraphContext, RenderLabel, ViewNode, ViewNodeRunner,
         },
@@ -22,12 +22,13 @@ use bevy::{
         },
         renderer::{RenderContext, RenderDevice},
         texture::BevyDefault,
+        view::RenderLayers,
         view::ViewTarget,
         RenderApp,
     },
 };
 
-use bevy_video_glitch::{VideoGlitchPlugin, VideoGlitchSettings};
+use crate::app3d::camera::MainCamera;
 
 /// This example uses a shader source file from the assets subdirectory
 const SHADER_ASSET_PATH: &str = "shaders/crt.wgsl";
@@ -38,9 +39,7 @@ pub struct CrtPlugin;
 impl Plugin for CrtPlugin {
     fn build(&self, app: &mut App) {
         app.register_type::<CrtSettings>();
-        app.register_type::<VideoGlitchSettings>();
         app.add_plugins((
-            VideoGlitchPlugin,
             // The settings will be a component that lives in the main world but will
             // be extracted to the render world every frame.
             // This makes it possible to control the effect from the main world.
@@ -53,6 +52,7 @@ impl Plugin for CrtPlugin {
             // and writing the data to that buffer every frame.
             UniformComponentPlugin::<CrtSettings>::default(),
         ));
+        app.add_systems(PostStartup, attach_crt_to_camera);
 
         // We need to get the render app from the main app
         let Some(render_app) = app.get_sub_app_mut(RenderApp) else {
@@ -75,8 +75,7 @@ impl Plugin for CrtPlugin {
             // matching the [`ViewQuery`]
             .add_render_graph_node::<ViewNodeRunner<CrtNode>>(
                 // Specify the label of the graph, in this case we want the graph for 3d
-                Core3d,
-                // It also needs the label of the node
+                Core3d, // It also needs the label of the node
                 CrtLabel,
             )
             .add_render_graph_edges(
@@ -91,8 +90,7 @@ impl Plugin for CrtPlugin {
             )
             .add_render_graph_node::<ViewNodeRunner<CrtNode>>(
                 // Specify the label of the graph, in this case we want the graph for 2d
-                Core2d,
-                // It also needs the label of the node
+                Core2d, // It also needs the label of the node
                 CrtLabel,
             )
             .add_render_graph_edges(
@@ -325,9 +323,17 @@ pub struct CrtSettings {
 impl Default for CrtSettings {
     fn default() -> Self {
         Self {
-            scanline_intensity: 0.0,
+            scanline_intensity: 2.0,
             bend_radius: 5.0,
-            _webgl2_padding: Vec3::ZERO
+            _webgl2_padding: Vec3::ZERO,
+        }
+    }
+}
+
+pub fn attach_crt_to_camera(mut commands: Commands, camera: Query<Entity, With<MainCamera>>) {
+    if let Ok(camera_entity) = camera.get_single() {
+        if let Some(mut entity) = commands.get_entity(camera_entity) {
+            entity.insert((CrtSettings::default(), RenderLayers::layer(1)));
         }
     }
 }

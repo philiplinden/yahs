@@ -1,10 +1,13 @@
 use bevy::prelude::*;
 
+use crate::simulator::{SimState, time::TimeScaleOptions};
+
 pub struct ControlsPlugin;
 
 impl Plugin for ControlsPlugin {
     fn build(&self, app: &mut App) {
         app.init_resource::<KeyBindingsConfig>();
+        app.add_plugins((PausePlayPlugin, ChangeTimeScalePlugin));
     }
 }
 
@@ -83,5 +86,54 @@ impl Default for TimeControls {
             reset_speed: KeyCode::Backspace,
             scale_step: 0.1,
         }
+    }
+}
+
+// ============================ CONTROL SYSTEMS ================================
+
+struct PausePlayPlugin;
+
+impl Plugin for PausePlayPlugin {
+    fn build(&self, app: &mut App) {
+        app.add_systems(Update, toggle_pause);
+    }
+}
+
+fn toggle_pause(
+    sim_state: Res<State<SimState>>,
+    mut next_state: ResMut<NextState<SimState>>,
+    key_input: Res<ButtonInput<KeyCode>>,
+    key_bindings: Res<KeyBindingsConfig>,
+) {
+    if key_input.just_pressed(key_bindings.time_controls.toggle_pause) {
+        match sim_state.as_ref().get() {
+            SimState::Stopped => next_state.set(SimState::Running),
+            SimState::Running => next_state.set(SimState::Stopped),
+            _ => next_state.set(SimState::Running)
+        }
+    }
+}
+
+struct ChangeTimeScalePlugin;
+
+impl Plugin for ChangeTimeScalePlugin {
+    fn build(&self, app: &mut App) {
+        app.add_systems(PreUpdate, modify_time_scale);
+    }
+}
+
+fn modify_time_scale(
+    mut time_options: ResMut<TimeScaleOptions>,
+    key_input: Res<ButtonInput<KeyCode>>,
+    key_bindings: Res<KeyBindingsConfig>,
+) {
+    if key_input.just_pressed(key_bindings.time_controls.faster) {
+        time_options.multiplier += key_bindings.time_controls.scale_step;
+    }
+    if key_input.just_pressed(key_bindings.time_controls.slower) {
+        time_options.multiplier -= key_bindings.time_controls.scale_step;
+    }
+    if key_input.just_pressed(key_bindings.time_controls.reset_speed) {
+        time_options.multiplier = 1.0;
     }
 }

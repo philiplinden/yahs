@@ -7,6 +7,9 @@ retro radar display. That sounds like a fun distraction. I borrowed some code
 and shader assets from
 [philiplinden/bevy-jam-5](https://github.com/philiplinden/bevy-jam-5).
 
+I got the app to compile and run with the CRT shader. The screen is bent as
+expected, but nothing appears in the frame. I'm not sure why.
+
 ## 2024-11-28
 
 I tinkered with camera controls and the new `require` attribute. Now the camera
