@@ -1,5 +1,12 @@
 # development log
 
+## 2024-11-29
+
+I should lean into the wireframe aesthetic and make this whole thing look like a
+retro radar display. That sounds like a fun distraction. I borrowed some code
+and shader assets from
+[philiplinden/bevy-jam-5](https://github.com/philiplinden/bevy-jam-5).
+
 ## 2024-11-28
 
 I tinkered with camera controls and the new `require` attribute. Now the camera
