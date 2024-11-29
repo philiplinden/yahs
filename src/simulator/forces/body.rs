@@ -27,6 +27,7 @@ impl Plugin for BodyForcesPlugin {
 /// Downward force (N) vector due to gravity as a function of altitude (m) and
 /// mass (kg). The direction of this force is always world-space down.
 #[derive(Component, Reflect)]
+#[require(Mass, Position)]
 pub struct Weight {
     position: Vec3,
     mass: f32,
@@ -82,6 +83,7 @@ fn update_weight_parameters(
 
 /// Upward force (N) vector due to atmosphere displaced by the given gas volume.
 #[derive(Component, Reflect)]
+#[require(Volume, Position)]    
 pub struct Buoyancy {
     position: Vec3,
     displaced_volume: Volume,

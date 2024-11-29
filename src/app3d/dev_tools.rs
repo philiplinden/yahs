@@ -13,6 +13,7 @@ use bevy::{
     input::common_conditions::input_just_pressed,
     prelude::*,
 };
+use iyes_perf_ui::{PerfUiSet, prelude::*};
 
 use crate::simulator::{SimState, forces::Force};
 use super::controls::KeyBindingsConfig;
@@ -38,13 +39,12 @@ impl Plugin for DevToolsPlugin {
 
     app.add_systems(Update, (
         log_transitions::<SimState>,
+        // show_performance_stats,
         show_force_gizmos,
         show_physics_gizmos,
     ));
 
-    // Wireframe doesn't work on WASM
-    #[cfg(not(target_arch = "wasm32"))]
-    app.add_systems(Update, toggle_debug_ui);
+    app.add_systems(Update, toggle_debug_ui.before(PerfUiSet::Setup));
     // #[cfg(feature = "inspect")]
     // {
     //     use bevy_inspector_egui::quick::WorldInspectorPlugin;
@@ -55,6 +55,7 @@ impl Plugin for DevToolsPlugin {
 
 #[derive(Debug, Resource)]
 struct DebugState {
+    performance: bool,
     wireframe: bool,
     forces: bool,
     physics: bool,
@@ -63,6 +64,7 @@ struct DebugState {
 impl Default for DebugState {
     fn default() -> Self {
         Self {
+            performance: true,
             wireframe: false,
             forces: true,
             physics: false,
@@ -71,6 +73,10 @@ impl Default for DebugState {
 }
 
 impl DebugState {
+    fn toggle_performance(&mut self) {
+        self.performance = !self.performance;
+        warn!("performance debug: {}", self.performance);
+    }
     fn toggle_wireframe(&mut self) {
         self.wireframe = !self.wireframe;
         warn!("wireframe debug: {}", self.wireframe);
@@ -85,10 +91,6 @@ impl DebugState {
     }
 }
 
-#[allow(dead_code)]
-#[derive(Component, Default)]
-struct DebugUi;
-
 #[cfg(not(target_arch = "wasm32"))]
 fn toggle_debug_ui(
     mut wireframe_config: ResMut<WireframeConfig>,
@@ -97,14 +99,54 @@ fn toggle_debug_ui(
     key_bindings: Res<KeyBindingsConfig>,
 ) {
     if key_input.just_pressed(key_bindings.debug_controls.toggle_1) {
+        debug_state.toggle_performance();
+    }
+    if key_input.just_pressed(key_bindings.debug_controls.toggle_2) {
+        // Wireframe doesn't work on WASM
+        #[cfg(not(target_arch = "wasm32"))]
         debug_state.toggle_wireframe();
         wireframe_config.global = !wireframe_config.global;
     }
-    if key_input.just_pressed(key_bindings.debug_controls.toggle_2) {
+    if key_input.just_pressed(key_bindings.debug_controls.toggle_3) {
         debug_state.toggle_forces();
     }
-    if key_input.just_pressed(key_bindings.debug_controls.toggle_3) {
+    if key_input.just_pressed(key_bindings.debug_controls.toggle_4) {
         debug_state.toggle_physics();
+    }
+}
+
+#[derive(Component, Default)]
+struct PerformanceDebugUi;
+
+fn show_performance_stats(
+    mut commands: Commands,
+    debug_state: Res<DebugState>,
+    ui_root: Query<Entity, With<PerformanceDebugUi>>,
+) {
+    if debug_state.is_changed() {
+        if debug_state.performance {
+            match ui_root.get_single() {
+                // If one exists, despawn it and render a new one
+                Ok(entity) => commands.entity(entity).despawn_descendants(),
+                // If none exists, spawn a new one
+                Err(_) => (),
+            }
+            commands.spawn((
+                PerformanceDebugUi,
+                PerfUiRoot {
+                    position: PerfUiPosition::TopLeft,
+                    ..default()
+                },
+                PerfUiEntryFPS::default(),
+                PerfUiEntryFixedTimeStep::default(),
+                PerfUiEntryFixedOverstep::default(),
+
+            ));
+        } else {
+            if let Ok(entity) = ui_root.get_single() {
+                commands.entity(entity).despawn_descendants();
+            }
+        }
     }
 }
 

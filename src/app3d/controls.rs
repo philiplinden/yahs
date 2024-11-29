@@ -45,6 +45,7 @@ pub struct TimeControls {
     pub faster: KeyCode,
     pub slower: KeyCode,
     pub reset_speed: KeyCode,
+    pub toggle_real_time: KeyCode,
     pub scale_step: f32,
 }
 
@@ -84,6 +85,7 @@ impl Default for TimeControls {
             faster: KeyCode::ArrowUp,
             slower: KeyCode::ArrowDown,
             reset_speed: KeyCode::Backspace,
+            toggle_real_time: KeyCode::KeyR,
             scale_step: 0.1,
         }
     }
@@ -134,6 +136,9 @@ fn modify_time_scale(
         time_options.multiplier -= key_bindings.time_controls.scale_step;
     }
     if key_input.just_pressed(key_bindings.time_controls.reset_speed) {
-        time_options.multiplier = 1.0;
+        time_options.reset();
+    }
+    if key_input.just_pressed(key_bindings.time_controls.toggle_real_time) {
+        time_options.toggle_real_time();
     }
 }
