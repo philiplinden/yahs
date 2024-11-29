@@ -21,7 +21,7 @@ impl Plugin for CameraPlugin {
 
 #[derive(Component, Default)]
 #[require(Camera3d, PerspectiveProjection)]
-struct MainCamera;
+pub struct MainCamera;
 
 /// A resource that stores the currently selected camera target.
 #[derive(Resource)]
