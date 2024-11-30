@@ -31,7 +31,7 @@ dev_native = [
 
 [dependencies]
 bevy = "0.15.0"
-avian3d = { git = "https://github.com/Jondolf/avian.git", branch = "bevy-0.15", features = ["debug-plugin"] }
+avian3d = { git = "https://github.com/Jondolf/avian.git", branch = "main", features = ["debug-plugin"] }
 bevy-trait-query = { git = "https://github.com/JoJoJet/bevy-trait-query.git", branch = "bevy-0.15-rc" }
 iyes_perf_ui = { git = "https://github.com/JohnathanFL/iyes_perf_ui.git", branch = "main" }
 

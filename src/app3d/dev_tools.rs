@@ -125,11 +125,8 @@ fn show_performance_stats(
 ) {
     if debug_state.is_changed() {
         if debug_state.performance {
-            match ui_root.get_single() {
-                // If one exists, despawn it and render a new one
-                Ok(entity) => commands.entity(entity).despawn_descendants(),
-                // If none exists, spawn a new one
-                Err(_) => (),
+            if let Ok(entity) = ui_root.get_single() {
+                commands.entity(entity).despawn_descendants();
             }
             commands.spawn((
                 PerformanceDebugUi,

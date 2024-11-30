@@ -1,5 +1,14 @@
 # development log
 
+## 2024-11-30
+
+One last check for third party crates to see if they've officially updated to
+Bevy 0.15 support. Looks like they haven't but there are branches for it.
+
+- [x] `avian3d` -> branch `main`
+- [x] `bevy-trait-query` -> branch `bevy-0.15-rc`
+- [x] `iyes_perf_ui` -> branch `main`
+
 ## 2024-11-29
 
 I should lean into the wireframe aesthetic and make this whole thing look like a
@@ -9,6 +18,12 @@ and shader assets from
 
 I got the app to compile and run with the CRT shader. The screen is bent as
 expected, but nothing appears in the frame. I'm not sure why.
+
+I'm getting a lot better at Bevy. It takes much less time to make new
+components, systems, Uis, etc. I'm also getting faster at finding and fixing
+bugs too.
+
+Added togglable performance Ui.
 
 ## 2024-11-28
 
