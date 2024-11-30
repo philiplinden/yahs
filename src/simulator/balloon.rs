@@ -4,7 +4,8 @@ use avian3d::{math::PI, prelude::*};
 use bevy::prelude::*;
 
 use super::{
-    ideal_gas::IdealGas, properties::sphere_radius_from_volume, SimulationUpdateOrder, Volume,
+    ideal_gas::IdealGas, properties::sphere_radius_from_volume,
+    SimulationUpdateOrder, Volume,
 };
 
 pub struct BalloonPlugin;
@@ -23,7 +24,7 @@ impl Plugin for BalloonPlugin {
 }
 
 #[derive(Component, Debug, Clone, PartialEq, Reflect)]
-#[require(IdealGas, RigidBody, Mesh3d)]
+#[require(IdealGas, RigidBody(|| RigidBody::Dynamic))]
 pub struct Balloon {
     pub material_properties: BalloonMaterial,
     pub shape: Sphere,

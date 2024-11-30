@@ -1,5 +1,30 @@
 # development log
 
+## 2024-11-30
+
+One last check for third party crates to see if they've officially updated to
+Bevy 0.15 support. Looks like they haven't but there are branches for it.
+
+- [x] `avian3d` -> branch `main`
+- [x] `bevy-trait-query` -> branch `bevy-0.15-rc`
+- [x] `iyes_perf_ui` -> branch `main`
+
+## 2024-11-29
+
+I should lean into the wireframe aesthetic and make this whole thing look like a
+retro radar display. That sounds like a fun distraction. I borrowed some code
+and shader assets from
+[philiplinden/bevy-jam-5](https://github.com/philiplinden/bevy-jam-5).
+
+I got the app to compile and run with the CRT shader. The screen is bent as
+expected, but nothing appears in the frame. I'm not sure why.
+
+I'm getting a lot better at Bevy. It takes much less time to make new
+components, systems, Uis, etc. I'm also getting faster at finding and fixing
+bugs too.
+
+Added togglable performance Ui.
+
 ## 2024-11-28
 
 I tinkered with camera controls and the new `require` attribute. Now the camera

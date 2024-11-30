@@ -49,7 +49,7 @@ impl GasSpecies {
 
 impl Default for GasSpecies {
     fn default() -> Self {
-        GasSpecies::air()
+        GasSpecies::helium()
     }
 }
 
@@ -65,7 +65,7 @@ impl GasSpecies {
 }
 
 /// Properties of an ideal gas. For properties per unit mass, set the mass to 1.
-#[derive(Component, Debug, Clone, PartialEq)]
+#[derive(Component, Debug, Clone, PartialEq, Reflect)]
 pub struct IdealGas {
     pub temperature: Temperature,
     pub pressure: Pressure,
@@ -128,12 +128,16 @@ impl IdealGas {
         self
     }
 
-    fn update_density(&mut self) {
-        self.density = ideal_gas_density(self.temperature, self.pressure, &self.species);
+    pub fn set_volume(&mut self, volume: Volume) {
+        self.mass = Mass::new(self.density.kg_per_m3() * volume.m3());
     }
 
     pub fn volume(&self) -> Volume {
         ideal_gas_volume(self.temperature, self.pressure, self.mass, &self.species)
+    }
+
+    fn update_density(&mut self) {
+        self.density = ideal_gas_density(self.temperature, self.pressure, &self.species);
     }
 }
 
