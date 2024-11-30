@@ -8,12 +8,10 @@ use bevy::{
     dev_tools::states::log_transitions,
     diagnostic::{
         EntityCountDiagnosticsPlugin, FrameTimeDiagnosticsPlugin,
-        SystemInformationDiagnosticsPlugin,
     },
     input::common_conditions::input_just_pressed,
     prelude::*,
 };
-use iyes_perf_ui::{PerfUiSet, prelude::*};
 
 use crate::simulator::{SimState, forces::Force};
 use super::controls::KeyBindingsConfig;
@@ -44,7 +42,7 @@ impl Plugin for DevToolsPlugin {
         show_physics_gizmos,
     ));
 
-    app.add_systems(Update, toggle_debug_ui.before(PerfUiSet::Setup));
+    app.add_systems(Update, toggle_debug_ui);
     // #[cfg(feature = "inspect")]
     // {
     //     use bevy_inspector_egui::quick::WorldInspectorPlugin;
@@ -91,7 +89,6 @@ impl DebugState {
     }
 }
 
-#[cfg(not(target_arch = "wasm32"))]
 fn toggle_debug_ui(
     mut wireframe_config: ResMut<WireframeConfig>,
     mut debug_state: ResMut<DebugState>,
@@ -112,38 +109,6 @@ fn toggle_debug_ui(
     }
     if key_input.just_pressed(key_bindings.debug_controls.toggle_4) {
         debug_state.toggle_physics();
-    }
-}
-
-#[derive(Component, Default)]
-struct PerformanceDebugUi;
-
-fn show_performance_stats(
-    mut commands: Commands,
-    debug_state: Res<DebugState>,
-    ui_root: Query<Entity, With<PerformanceDebugUi>>,
-) {
-    if debug_state.is_changed() {
-        if debug_state.performance {
-            if let Ok(entity) = ui_root.get_single() {
-                commands.entity(entity).despawn_descendants();
-            }
-            commands.spawn((
-                PerformanceDebugUi,
-                PerfUiRoot {
-                    position: PerfUiPosition::TopLeft,
-                    ..default()
-                },
-                PerfUiEntryFPS::default(),
-                PerfUiEntryFixedTimeStep::default(),
-                PerfUiEntryFixedOverstep::default(),
-
-            ));
-        } else {
-            if let Ok(entity) = ui_root.get_single() {
-                commands.entity(entity).despawn_descendants();
-            }
-        }
     }
 }
 

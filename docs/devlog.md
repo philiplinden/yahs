@@ -9,6 +9,11 @@ Bevy 0.15 support. Looks like they haven't but there are branches for it.
 - [x] `bevy-trait-query` -> branch `bevy-0.15-rc`
 - [x] `iyes_perf_ui` -> branch `main`
 
+I'm hoping to slim down the dependencies for the project to shorten compile
+times. I'm a little annoyed with the `iyes_perf_ui` crate. It is a great tool
+but there is a ton of boilerplate code to set up the Ui. I think the built-in
+text crate will be enough for what I'm doing and will simplify things.
+
 ## 2024-11-29
 
 I should lean into the wireframe aesthetic and make this whole thing look like a
