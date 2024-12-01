@@ -1,8 +1,8 @@
 # yet another HAB simulator
 
-A high altitude balloon flight simulator based on
-[tkschuler/EarthSHAB](https://github.com/tkschuler/EarthSHAB) and
-[brickworks/mfc-apps](https://github.com/Brickworks/mfc-apps), built on Rust.
+A high altitude balloon flight simulator built in
+[Bevy](https://bevyengine.org/) with Rust, inspired by
+[tkschuler/EarthSHAB](https://github.com/tkschuler/EarthSHAB).
 
 [devlog](docs/devlog.md)
 

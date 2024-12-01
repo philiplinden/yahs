@@ -5,7 +5,7 @@ use bevy::prelude::*;
 
 use super::{
     ideal_gas::IdealGas, properties::sphere_radius_from_volume,
-    SimulationUpdateOrder, Volume,
+    SimulationUpdateOrder, Volume, Weight, Drag, Buoyancy,
 };
 
 pub struct BalloonPlugin;
@@ -24,7 +24,7 @@ impl Plugin for BalloonPlugin {
 }
 
 #[derive(Component, Debug, Clone, PartialEq, Reflect)]
-#[require(IdealGas, RigidBody(|| RigidBody::Dynamic))]
+#[require(IdealGas, RigidBody(|| RigidBody::Dynamic), Weight, Drag, Buoyancy)]
 pub struct Balloon {
     pub material_properties: BalloonMaterial,
     pub shape: Sphere,

@@ -19,20 +19,27 @@ impl PluginGroup for App3dPlugins {
     fn build(self) -> PluginGroupBuilder {
         PluginGroupBuilder::start::<Self>()
             .add(UiPlugin)
-            .add(ControlsPlugin)
-            .add(ScenePlugin)
-            .add(CameraPlugin)
+            .add(RenderedObjectsPlugin)
     }
 }
 
 /// A plugin group that includes all interface-related plugins
-pub struct UiPlugin;
+struct UiPlugin;
 
 impl Plugin for UiPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugins((
+            ControlsPlugin,
             #[cfg(feature = "dev")]
             DevToolsPlugin,
         ));
+    }
+}
+
+struct RenderedObjectsPlugin;
+
+impl Plugin for RenderedObjectsPlugin {
+    fn build(&self, app: &mut App) {
+        app.add_plugins((ScenePlugin, CameraPlugin));
     }
 }
