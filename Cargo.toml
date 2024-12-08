@@ -15,26 +15,59 @@ path = "src/main.rs"
 default = [
     # Default to a native dev build.
     "dev_native",
+    "render",
 ]
 dev = [
     # Improve compile times for dev builds by linking Bevy as a dynamic
     # library.
     "bevy/dynamic_linking",
     "bevy/bevy_dev_tools",
-    "bevy/sysinfo_plugin",
 ]
 dev_native = [
     "dev",
     # Enable system information plugin for native dev builds.
     "bevy/sysinfo_plugin",
 ]
+headless = [
+    # Exclude rendering features
+    # This feature does not include the "render" feature
+    # Thus, rendering-related dependencies are disabled
+]
+render = [
+    # Enable features needed for visuals, windowed operation, and UIs.
+    "bevy/bevy_asset",
+    "bevy/bevy_color",
+    "bevy/bevy_core_pipeline",
+    "bevy/bevy_gizmos",
+    "bevy/ktx2",
+    "bevy/bevy_mesh_picking_backend",
+    "bevy/bevy_pbr",
+    "bevy/bevy_render",
+    "bevy/bevy_picking",
+    "bevy/bevy_text",
+    "bevy/bevy_ui",
+    "bevy/bevy_ui_picking_backend",
+    "bevy/bevy_window",
+    "bevy/bevy_winit",
+    "bevy/default_font",
+    "bevy/tonemapping_luts",
+    "bevy/png",
+    "bevy/webgl2",
+]
+inspect = [
+    "default",
+    "bevy-inspector-egui",
+]
 
 [dependencies]
-bevy = "0.15.0"
+bevy = { version =  "0.15.0", default-features = false, features = [
+    "bevy_asset",
+    "bevy_state",
+    "multi_threaded",
+] }
 avian3d = { git = "https://github.com/Jondolf/avian.git", branch = "main", features = ["debug-plugin"] }
 bevy-trait-query = { git = "https://github.com/JoJoJet/bevy-trait-query.git", branch = "bevy-0.15-rc" }
-iyes_perf_ui = { git = "https://github.com/JohnathanFL/iyes_perf_ui.git", branch = "main" }
-
+bevy-inspector-egui = { version = "0.28", optional = true, features = ["highlight_changes"] }
 # -----------------------------------------------------------------------------
 # Some Bevy optimizations
 # -----------------------------------------------------------------------------

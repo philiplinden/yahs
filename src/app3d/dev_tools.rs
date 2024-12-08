@@ -1,61 +1,136 @@
-//! Development tools for the game. This plugin is only enabled in dev builds.
-use avian3d::debug_render::*;
-#[cfg(not(target_arch = "wasm32"))]
-use bevy::pbr::wireframe::{WireframeConfig, WireframePlugin};
 #[allow(unused_imports)]
 use bevy::{
     color::palettes::basic::*,
-    dev_tools::states::log_transitions,
-    diagnostic::{
-        EntityCountDiagnosticsPlugin, FrameTimeDiagnosticsPlugin,
-        SystemInformationDiagnosticsPlugin,
-    },
+    dev_tools::{states::log_transitions, fps_overlay::{FpsOverlayPlugin, FpsOverlayConfig}},
+    diagnostic::*,
     input::common_conditions::input_just_pressed,
     prelude::*,
+    time::common_conditions::on_timer,
+    
+    text::FontSmoothing,
 };
-use iyes_perf_ui::{PerfUiSet, prelude::*};
+use avian3d::debug_render::*;
 
-use crate::simulator::{SimState, forces::Force};
 use super::controls::KeyBindingsConfig;
+use crate::simulator::{forces::Force, SimState};
+
+// Define all Show and Hide events
+#[derive(Event)]
+struct ShowEngineDebug;
+
+#[derive(Event)]
+struct HideEngineDebug;
+
+#[derive(Event)]
+struct ShowWireframe;
+
+#[derive(Event)]
+struct HideWireframe;
+
+#[derive(Event)]
+struct ShowForceGizmos;
+
+#[derive(Event)]
+struct HideForceGizmos;
+
+#[derive(Event)]
+struct ShowPhysicsGizmos;
+
+#[derive(Event)]
+struct HidePhysicsGizmos;
 
 pub struct DevToolsPlugin;
 
 impl Plugin for DevToolsPlugin {
     fn build(&self, app: &mut App) {
-        // Toggle the debug overlay for UI.
         app.add_plugins((
-        // physics
-        PhysicsDebugPlugin::default(),
-        ForceArrowsPlugin,
-        // performance
-        FrameTimeDiagnosticsPlugin,
-        EntityCountDiagnosticsPlugin,
-        // rendering
+            #[cfg(feature = "headless")]
+            (
+                FrameTimeDiagnosticsPlugin,
+                EntityCountDiagnosticsPlugin,
+                LogDiagnosticsPlugin::default(),
+            ),
+            #[cfg(feature = "render")]
+            RenderedDevToolsPlugin,
+        ));
+
+        app.add_systems(Update, log_transitions::<SimState>);
+    }
+}
+
+struct RenderedDevToolsPlugin;
+
+impl Plugin for RenderedDevToolsPlugin {
+    fn build(&self, app: &mut App) {
+        app.add_plugins((
+            PhysicsDebugPlugin::default(),
+            ForceArrowsPlugin,
+            #[cfg(not(target_arch = "wasm32"))]
+            bevy::pbr::wireframe::WireframePlugin,
+            FpsOverlayPlugin {
+                config: FpsOverlayConfig {
+                    text_config: TextFont {
+                        // Here we define size of our overlay
+                        font_size: 14.0,
+                        // If we want, we can use a custom font
+                        font: default(),
+                        // We could also disable font smoothing,
+                        font_smoothing: FontSmoothing::default(),
+                    },
+                    // We can also change color of the overlay
+                    text_color: Color::srgb(0.0, 1.0, 0.0),
+                    enabled: false,
+                },
+            },
+        ));
+
+        app.init_resource::<DebugState>();
+
+        // Register all events
+        app.add_event::<ShowEngineDebug>();
+        app.add_event::<HideEngineDebug>();
+        app.add_event::<ShowForceGizmos>();
+        app.add_event::<HideForceGizmos>();
+        app.add_event::<ShowPhysicsGizmos>();
+        app.add_event::<HidePhysicsGizmos>();
+
+        app.add_systems(Startup, init_debug_ui);
+        app.add_systems(Update, trigger_debug_ui);
+
+        // Register handler functions as observers
+        app.add_observer(show_engine_debug);
+        app.add_observer(show_force_gizmos);
+        app.add_observer(show_physics_gizmos);
         #[cfg(not(target_arch = "wasm32"))]
-        WireframePlugin,
-    ));
+        {
+            app.add_event::<ShowWireframe>();
+            app.add_event::<HideWireframe>();
+            app.add_observer(show_wireframe);
+            app.add_observer(hide_wireframe);
+        }
+        
+        app.add_observer(hide_engine_debug);
+        app.add_observer(hide_force_gizmos);
+        app.add_observer(hide_physics_gizmos);
 
-    app.init_resource::<DebugState>();
-
-    app.add_systems(Update, (
-        log_transitions::<SimState>,
-        // show_performance_stats,
-        show_force_gizmos,
-        show_physics_gizmos,
-    ));
-
-    app.add_systems(Update, toggle_debug_ui.before(PerfUiSet::Setup));
-    // #[cfg(feature = "inspect")]
-    // {
-    //     use bevy_inspector_egui::quick::WorldInspectorPlugin;
-    //     app.add_plugins(WorldInspectorPlugin::new());
-    // }
+        #[cfg(feature = "inspect")]
+        {
+            use bevy_inspector_egui::quick;
+            app.add_plugins((
+                quick::FilterQueryInspectorPlugin::default(),
+                quick::ResourceInspectorPlugin::default(),
+                quick::StateInspectorPlugin::default(),
+                quick::WorldInspectorPlugin::default(),
+                quick::AssetInspectorPlugin::<Mesh3d>::default(),
+                quick::AssetInspectorPlugin::<StandardMaterial>::default(),
+            ));
+        }
     }
 }
 
 #[derive(Debug, Resource)]
 struct DebugState {
-    performance: bool,
+    engine: bool,
     wireframe: bool,
     forces: bool,
     physics: bool,
@@ -64,7 +139,7 @@ struct DebugState {
 impl Default for DebugState {
     fn default() -> Self {
         Self {
-            performance: true,
+            engine: true,
             wireframe: false,
             forces: true,
             physics: false,
@@ -73,106 +148,153 @@ impl Default for DebugState {
 }
 
 impl DebugState {
-    fn toggle_performance(&mut self) {
-        self.performance = !self.performance;
-        warn!("performance debug: {}", self.performance);
+    fn toggle_engine(&mut self) {
+        self.engine = !self.engine;
     }
     fn toggle_wireframe(&mut self) {
         self.wireframe = !self.wireframe;
-        warn!("wireframe debug: {}", self.wireframe);
     }
     fn toggle_forces(&mut self) {
         self.forces = !self.forces;
-        warn!("forces debug: {}", self.forces);
     }
     fn toggle_physics(&mut self) {
         self.physics = !self.physics;
-        warn!("physics debug: {}", self.physics);
     }
 }
 
-#[cfg(not(target_arch = "wasm32"))]
-fn toggle_debug_ui(
-    mut wireframe_config: ResMut<WireframeConfig>,
+fn init_debug_ui(mut commands: Commands, debug_state: Res<DebugState>) {
+    info!("initializing debug ui");
+    if debug_state.engine {
+        commands.trigger(ShowEngineDebug);
+    }
+    #[cfg(not(target_arch = "wasm32"))]
+    if debug_state.wireframe {
+        commands.trigger(ShowWireframe);
+    }
+    if debug_state.forces {
+        commands.trigger(ShowForceGizmos);
+    }
+    if debug_state.physics {
+        commands.trigger(ShowPhysicsGizmos);
+    }
+}
+
+fn trigger_debug_ui(
+    mut commands: Commands,
     mut debug_state: ResMut<DebugState>,
     key_input: Res<ButtonInput<KeyCode>>,
     key_bindings: Res<KeyBindingsConfig>,
 ) {
     if key_input.just_pressed(key_bindings.debug_controls.toggle_1) {
-        debug_state.toggle_performance();
+        debug_state.toggle_engine();
+        if debug_state.engine {
+            commands.trigger(ShowEngineDebug);
+        } else {
+            commands.trigger(HideEngineDebug);
+        }
     }
+    #[cfg(not(target_arch = "wasm32"))]
     if key_input.just_pressed(key_bindings.debug_controls.toggle_2) {
-        // Wireframe doesn't work on WASM
-        #[cfg(not(target_arch = "wasm32"))]
         debug_state.toggle_wireframe();
-        wireframe_config.global = !wireframe_config.global;
+        // Wireframe doesn't work on WASM
+        if debug_state.wireframe {
+            commands.trigger(ShowWireframe);
+        } else {
+            commands.trigger(HideWireframe);
+        }
     }
     if key_input.just_pressed(key_bindings.debug_controls.toggle_3) {
         debug_state.toggle_forces();
+        if debug_state.forces {
+            commands.trigger(ShowForceGizmos);
+        } else {
+            commands.trigger(HideForceGizmos);
+        }
     }
     if key_input.just_pressed(key_bindings.debug_controls.toggle_4) {
         debug_state.toggle_physics();
+        if debug_state.physics {
+            commands.trigger(ShowPhysicsGizmos);
+        } else {
+            commands.trigger(HidePhysicsGizmos);
+        }
     }
 }
 
-#[derive(Component, Default)]
-struct PerformanceDebugUi;
-
-fn show_performance_stats(
-    mut commands: Commands,
-    debug_state: Res<DebugState>,
-    ui_root: Query<Entity, With<PerformanceDebugUi>>,
+fn show_engine_debug(
+    _trigger: Trigger<ShowEngineDebug>,
+    mut store: ResMut<DiagnosticsStore>,
+    mut overlay_config: ResMut<FpsOverlayConfig>,
 ) {
-    if debug_state.is_changed() {
-        if debug_state.performance {
-            if let Ok(entity) = ui_root.get_single() {
-                commands.entity(entity).despawn_descendants();
-            }
-            commands.spawn((
-                PerformanceDebugUi,
-                PerfUiRoot {
-                    position: PerfUiPosition::TopLeft,
-                    ..default()
-                },
-                PerfUiEntryFPS::default(),
-                PerfUiEntryFixedTimeStep::default(),
-                PerfUiEntryFixedOverstep::default(),
-
-            ));
-        } else {
-            if let Ok(entity) = ui_root.get_single() {
-                commands.entity(entity).despawn_descendants();
-            }
-        }
+    for diag in store.iter_mut() {
+        info!("showing diagnostic {}", diag.path());
+        diag.is_enabled = true;
     }
+    overlay_config.enabled = true;
+}
+
+fn hide_engine_debug(
+    _trigger: Trigger<HideEngineDebug>,
+    mut store: ResMut<DiagnosticsStore>,
+    mut overlay_config: ResMut<FpsOverlayConfig>,
+) {
+    for diag in store.iter_mut() {
+        info!("hiding diagnostic {}", diag.path());
+        diag.is_enabled = false;
+    }
+    overlay_config.enabled = false;
+}
+
+fn show_wireframe(
+    _trigger: Trigger<ShowWireframe>,
+    mut wireframe_config: ResMut<bevy::pbr::wireframe::WireframeConfig>,
+) {
+    info!("showing wireframe");
+    wireframe_config.global = true;
+}
+
+fn hide_wireframe(
+    _trigger: Trigger<HideWireframe>,
+    mut wireframe_config: ResMut<bevy::pbr::wireframe::WireframeConfig>,
+) {
+    info!("hiding wireframe");
+    wireframe_config.global = false;
 }
 
 fn show_force_gizmos(
-    debug_state: Res<DebugState>,
-    mut gizmo_store: ResMut<GizmoConfigStore>
+    _trigger: Trigger<ShowForceGizmos>,
+    mut store: ResMut<GizmoConfigStore>,
 ) {
-    if debug_state.is_changed() {
-        let (_, force_config) = gizmo_store.config_mut::<ForceGizmos>();
-        if debug_state.forces {
-            *force_config = ForceGizmos::all();
-        } else {
-            *force_config = ForceGizmos::none();
-        }
-    }
+    info!("showing force gizmos");
+    let (_, force_config) = store.config_mut::<ForceGizmos>();
+    *force_config = ForceGizmos::all();
+}
+
+fn hide_force_gizmos(
+    _trigger: Trigger<HideForceGizmos>,
+    mut store: ResMut<GizmoConfigStore>,
+) {
+    info!("hiding force gizmos");
+    let (_, force_config) = store.config_mut::<ForceGizmos>();
+    *force_config = ForceGizmos::none();
 }
 
 fn show_physics_gizmos(
-    debug_state: Res<DebugState>,
-    mut gizmo_store: ResMut<GizmoConfigStore>
+    _trigger: Trigger<ShowPhysicsGizmos>,
+    mut store: ResMut<GizmoConfigStore>,
 ) {
-    if debug_state.is_changed() {
-        let (_, physics_config) = gizmo_store.config_mut::<PhysicsGizmos>();
-        if debug_state.physics {
-            *physics_config = PhysicsGizmos::all();
-        } else {
-            *physics_config = PhysicsGizmos::none();
-        }
-    }
+    info!("showing physics gizmos");
+    let (_, physics_config) = store.config_mut::<PhysicsGizmos>();
+    *physics_config = PhysicsGizmos::all();
+}
+
+fn hide_physics_gizmos(
+    _trigger: Trigger<HidePhysicsGizmos>,
+    mut store: ResMut<GizmoConfigStore>,
+) {
+    info!("hiding physics gizmos");
+    let (_, physics_config) = store.config_mut::<PhysicsGizmos>();
+    *physics_config = PhysicsGizmos::none();
 }
 
 const ARROW_SCALE: f32 = 0.1;
@@ -185,18 +307,13 @@ impl Plugin for ForceArrowsPlugin {
         app.register_type::<ForceGizmos>();
         app.add_systems(
             PostUpdate,
-            force_arrows.run_if(
-                |store: Res<GizmoConfigStore>| {
-                    store.config::<ForceGizmos>().0.enabled
-                }),
+            force_arrows
+                .run_if(|store: Res<GizmoConfigStore>| store.config::<ForceGizmos>().0.enabled),
         );
     }
 }
 
-fn force_arrows(
-    query: Query<&dyn Force>,
-    mut gizmos: Gizmos,
-) {
+fn force_arrows(query: Query<&dyn Force>, mut gizmos: Gizmos) {
     for forces in query.iter() {
         for force in forces.iter() {
             let start = force.point_of_application();
@@ -244,7 +361,7 @@ impl ForceGizmos {
         }
     }
 
-    /// Creates a [`ForceGizmos`] configuration with debug rendering enabled but all options turned off.
+    /// Creates a [`ForceGizmos`] configuration with all rendering options disabled.
     pub fn none() -> Self {
         Self {
             arrow_scale: None,

@@ -21,13 +21,17 @@ pub struct KeyBindingsConfig {
 
 #[derive(Reflect)]
 pub struct CameraControls {
-    pub cycle_target: KeyCode,
-    pub modifier_pan: KeyCode,
-    pub button_pan: MouseButton,
-    pub button_orbit: MouseButton,
-    pub zoom_step: f32,
-    pub max_fov: f32,
-    pub min_fov: f32,
+    pub hold_look: MouseButton,
+    pub tap_cycle_target: KeyCode,
+    pub tap_clear_target: KeyCode,
+    pub tap_focus_target: KeyCode,
+    pub tap_forward: KeyCode,
+    pub tap_back: KeyCode,
+    pub tap_left: KeyCode,
+    pub tap_right: KeyCode,
+    pub tap_up: KeyCode,
+    pub tap_down: KeyCode,
+    pub tap_run: KeyCode,
 }
 
 #[derive(Reflect)]
@@ -55,13 +59,17 @@ pub struct TimeControls {
 impl Default for CameraControls {
     fn default() -> Self {
         Self {
-            cycle_target: KeyCode::Tab,
-            modifier_pan: KeyCode::ShiftLeft,
-            button_pan: MouseButton::Middle,
-            button_orbit: MouseButton::Middle,
-            zoom_step: 0.01,
-            max_fov: 1.0,
-            min_fov: 0.01,
+            hold_look: MouseButton::Right,
+            tap_cycle_target: KeyCode::Tab,
+            tap_clear_target: KeyCode::KeyT,
+            tap_focus_target: KeyCode::KeyF,
+            tap_forward: KeyCode::KeyW,
+            tap_back: KeyCode::KeyS,
+            tap_left: KeyCode::KeyA,
+            tap_right: KeyCode::KeyD,
+            tap_up: KeyCode::KeyE,
+            tap_down: KeyCode::KeyQ,
+            tap_run: KeyCode::ShiftLeft,
         }
     }
 }

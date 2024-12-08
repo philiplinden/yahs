@@ -8,6 +8,38 @@ Bevy 0.15 support. Looks like they haven't but there are branches for it.
 - [x] `avian3d` -> branch `main`
 - [x] `bevy-trait-query` -> branch `bevy-0.15-rc`
 - [x] `iyes_perf_ui` -> branch `main`
+- [x] `bevy_egui` -> version `0.31`
+- [x] `bevy_inspector_egui` -> version `0.28`
+
+I'm hoping to slim down the dependencies for the project to shorten compile
+times. I'm a little annoyed with the `iyes_perf_ui` crate. It is a great tool
+but there is a ton of boilerplate code to set up the Ui. I think the built-in
+text crate will be enough for what I'm doing and will simplify things.
+
+Now, there are still a few things I am interested in doing soon:
+
+- [ ] Add a payload hanging from a tether.
+- [ ] Add a skybox or some reference in the background to illustrate the
+      balloon's size and altitude.
+- [ ] Style the UI like a retro radar display.
+- [ ] Sort out the time scale multiplier (the physics becomes unstable when it
+  goes above 1.5).
+- [ ] Add plots for altitude, pressure, temperature, volume, and density.
+
+I did a little work to group the rendering plugins into a separate plugin group
+from the headless plugins. I don't know why I decided to do that, but it will
+come in handy when I want to compile for wasm or terminal operation.
+
+Things I added:
+
+- [x] Rendering plugins in separate plugin group. `headless` runs without gfx.
+- [x] Lighting based on Bevy's example.
+- [x] Camera controller based on Bevy's `camera_controller` example.
+- [x] Observer/trigger-based debug UI toggles. Only some of them are working.
+- [x] Added targeting controls to the camera.
+
+I spent a few hours trying to get the skybox working but I couldn't get it to
+load.
 
 ## 2024-11-29
 

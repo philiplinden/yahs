@@ -33,10 +33,6 @@ impl Plugin for ForcesPlugin {
         );
         app.add_systems(
             Update,
-            on_simulated_body_added.in_set(ForceUpdateOrder::First),
-        );
-        app.add_systems(
-            Update,
             update_total_external_force
                 .in_set(ForceUpdateOrder::Apply)
                 .run_if(in_state(SimState::Running)),
@@ -51,6 +47,8 @@ pub enum ForceUpdateOrder {
     First,
     Prepare,
     Apply,
+    #[allow(dead_code)]
+    Last,
 }
 
 /// A bundle of force components to be added to entities with a `RigidBody`. The
@@ -60,15 +58,6 @@ pub struct ForceBundle {
     weight: body::Weight,
     buoyancy: body::Buoyancy,
     drag: aero::Drag,
-}
-
-fn on_simulated_body_added(mut commands: Commands, query: Query<(Entity, &RigidBody), Added<RigidBody>>) {
-    for (entity, rigid_body) in &query {
-        let mut this_entity = commands.entity(entity);
-        if rigid_body.is_dynamic() {
-            this_entity.insert(ForceBundle::default());
-        }
-    }
 }
 
 /// This trait is used to identify a force vector component. All forces are
