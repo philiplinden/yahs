@@ -2,7 +2,7 @@ use avian3d::prelude::*;
 use bevy::prelude::*;
 use std::f32::consts::PI;
 
-use crate::simulator::*;
+use yahs_simulator::prelude::*;
 
 pub struct ScenePlugin;
 

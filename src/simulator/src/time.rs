@@ -1,7 +1,7 @@
 use avian3d::prelude::*;
 use bevy::prelude::*;
 
-use super::SimState;
+use crate::core::SimState;
 
 pub struct TimeScalePlugin;
 

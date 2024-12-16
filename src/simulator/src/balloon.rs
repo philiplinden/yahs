@@ -3,9 +3,11 @@
 use avian3d::{math::PI, prelude::*};
 use bevy::prelude::*;
 
-use super::{
-    ideal_gas::IdealGas, properties::sphere_radius_from_volume,
-    SimulationUpdateOrder, Volume, Weight, Drag, Buoyancy,
+use crate::{
+    ideal_gas::IdealGas,
+    properties::{sphere_radius_from_volume, Volume},
+    core::SimulationUpdateOrder,
+    forces::{Weight, Drag, Buoyancy},
 };
 
 pub struct BalloonPlugin;

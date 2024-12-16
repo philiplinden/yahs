@@ -1,63 +1,25 @@
 [package]
-name = "yahs"
-description = "Yet Another HAB Simulator"
+name = "yahs-simulator"
 version = "0.4.0"
-authors = ["Philip Linden <lindenphilipj@gmail.com>"]
-readme = "README.md"
-license = "MIT or Apache-2.0"
+description = "High Altitude Balloon simulation plugin for Bevy"
 edition = "2021"
+authors = { workspace = true }
+license = { workspace = true }
 
-default-run = "yahs"
-
-# When importing this crate as a dependency, use the simulator library as "yahs"
-[lib]
-name = "yahs"
-path = "src/simulator/src/lib.rs"
-
-# When running this project as a CLI, use the CLI binary as "yahs"
-[[bin]]
-name = "yahs"
-path = "src/cli/src/main.rs"
-
-# Include the GUI binary as "yahs-ui"
-[[bin]]
-name = "yahs-ui"
-path = "src/ui/src/main.rs"
-
-# These are the dependencies for the project when building it from the root
 [dependencies]
-yahs-simulator = { path = "src/simulator" }
-yahs-ui = { path = "src/ui" }
-yahs-cli = { path = "src/cli" }
-bevy = { workspace = true }
+bevy = { workspace = true, default-features = false, features = [
+    "bevy_state",
+    "multi_threaded",
+] }
 avian3d = { workspace = true }
 bevy-trait-query = { workspace = true }
 
 [features]
-default = ["dev"]
-dev = ["yahs-ui/dev", "yahs-cli/dev", "yahs-simulator/dev"]
-inspect = ["yahs-ui/inspect"]
-
-[workspace.package]
-authors = ["Philip Linden <lindenphilipj@gmail.com>"]
-edition = "2021"
-license = "MIT or Apache-2.0"
-
-[workspace]
-resolver = "2" # Important for Bevy
-members = [
-    "src/yahs-simulator",
-    "src/yahs-ui",
-    "src/yahs-cli"
+default = []
+dev = [
+    "bevy/dynamic_linking",
+    "bevy/bevy_dev_tools",
 ]
-
-[workspace.dependencies]
-# Shared dependencies with fixed versions
-bevy = { version = "0.15.0", default-features = false, features = [
-    "bevy_asset", "bevy_state", "multi_threaded"
-] }
-avian3d = { git = "https://github.com/Jondolf/avian.git", branch = "main" }
-bevy-trait-query = "0.7.0"
 
 # -----------------------------------------------------------------------------
 # Some Bevy optimizations

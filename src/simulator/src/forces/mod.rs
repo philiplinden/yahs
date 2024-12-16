@@ -12,7 +12,12 @@ pub use aero::Drag;
 #[allow(unused_imports)]
 pub use body::{Buoyancy, Weight};
 
-use super::{Atmosphere, Balloon, Density, SimulationUpdateOrder, SimState, Volume};
+use crate::{
+    atmosphere::Atmosphere,
+    balloon::Balloon,
+    core::{SimulationUpdateOrder, SimState},
+    properties::{Density, Volume},
+};
 pub struct ForcesPlugin;
 
 impl Plugin for ForcesPlugin {
