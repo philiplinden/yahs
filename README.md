@@ -37,27 +37,14 @@ Running this package as a standalone application compiles all of the crates
 and runs the CLI by default:
 
 ```bash
-cargo run --workspace
+cargo run
 ```
 
 Force the standalone application to run the GUI instead of the CLI:
 
 ```bash
-cargo run --workspace --bin yahs-ui
+cargo run --bin yahs-ui
 ```
-
-Or install the standalone application to your system:
-
-```bash
-# as a CLI
-$ cargo install --path "src/cli" --release
-$ yahs --help
-
-# as a GUI
-$ cargo install --path "src/ui" --release
-$ yahs-ui
-```
-
 
 ## License
 

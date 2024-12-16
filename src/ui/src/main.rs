@@ -3,8 +3,9 @@
 
 mod camera;
 pub mod controls;
-mod dev_tools;
 mod scene;
+#[cfg(feature = "dev")]
+mod dev_tools;
 
 use camera::CameraPlugin;
 use controls::ControlsPlugin;
