@@ -1,5 +1,12 @@
 # development log
 
+## 2024-12-15
+
+- Added [mdbook](https://github.com/rust-lang/mdBook) to the project.
+- Added a CLI to the project so I can run things from the terminal without
+  getting caught up in the graphics.
+- Organized the project into separate crates for the simulator, UI, and CLI.
+
 ## 2024-11-30
 
 One last check for third party crates to see if they've officially updated to
@@ -36,7 +43,7 @@ Things I added:
 - [x] Lighting based on Bevy's example.
 - [x] Camera controller based on Bevy's `camera_controller` example.
 - [x] Observer/trigger-based debug UI toggles. Only some of them are working.
-- [x] Added targeting controls to the camera.
+- [x] Added targeting controls to the camera. Could be better.
 
 I spent a few hours trying to get the skybox working but I couldn't get it to
 load.

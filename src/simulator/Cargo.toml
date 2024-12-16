@@ -1,0 +1,21 @@
+[package]
+name = "yahs-simulator"
+version = "0.4.0"
+description = "High Altitude Balloon simulation plugin for Bevy"
+edition = "2021"
+authors = { workspace = true }
+license = { workspace = true }
+
+[dependencies]
+bevy = { workspace = true, default-features = false, features = [
+    "bevy_state",
+    "multi_threaded",
+] }
+avian3d = { workspace = true }
+bevy-trait-query = { workspace = true }
+
+[features]
+default = []
+dev = [
+    "bevy/dynamic_linking",
+]

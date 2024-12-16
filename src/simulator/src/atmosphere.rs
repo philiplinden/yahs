@@ -8,10 +8,11 @@
 use avian3d::prelude::Position;
 use bevy::prelude::*;
 
-use super::{
+use crate::{
     ideal_gas::{ideal_gas_density, GasSpecies},
     properties::{Density, Pressure, Temperature},
-    SimulationUpdateOrder, SimState, Balloon,
+    core::{SimulationUpdateOrder, SimState},
+    balloon::Balloon,
 };
 
 pub struct AtmospherePlugin;

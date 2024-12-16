@@ -6,6 +6,46 @@ A high altitude balloon flight simulator built in
 
 [devlog](docs/devlog.md)
 
+## Usage
+
+### As a library
+
+Add `yahs` to your `Cargo.toml`:
+
+```toml
+[dependencies]
+yahs = "0.4.0"
+```
+
+Then, add the `SimulatorPlugins` to your Bevy app:
+
+```rust
+use yahs::prelude::SimulatorPlugins;
+
+fn main() {
+    App::new().add_plugins(SimulatorPlugins);
+}
+```
+
+Then you can use all of the components and systems from the
+[`yahs-simulator`](./src/simulator/README.md) crate.
+
+
+### As an application
+
+Running this package as a standalone application compiles all of the crates
+and runs the CLI by default:
+
+```bash
+cargo run
+```
+
+Force the standalone application to run the GUI instead of the CLI:
+
+```bash
+cargo run --bin yahs-ui
+```
+
 ## License
 
 Except where noted (below and/or in individual files), all code in this

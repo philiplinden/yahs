@@ -1,73 +1,64 @@
 [package]
 name = "yahs"
 description = "Yet Another HAB Simulator"
-authors = ["Philip Linden <lindenphilipj@gmail.com>"]
 version = "0.4.0"
-edition = "2021"
+authors = ["Philip Linden <lindenphilipj@gmail.com>"]
 readme = "README.md"
-license-file = "LICENSE"
+license = "MIT or Apache-2.0"
+edition = "2021"
 
+default-run = "yahs"
+
+# When importing this crate as a dependency, use the simulator library as "yahs"
+[lib]
+name = "yahs"
+path = "src/simulator/src/lib.rs"
+
+# When running this project as a CLI, use the CLI binary as "yahs"
 [[bin]]
 name = "yahs"
-path = "src/main.rs"
+path = "src/cli/src/main.rs"
+
+# These are the dependencies when building the CLI from the project root
+[dependencies]
+# Simulator dependencies
+yahs-simulator = { path = "src/simulator" }
+bevy = { workspace = true }
+avian3d = { workspace = true }
+bevy-trait-query = { workspace = true }
+
+# CLI dependencies
+yahs-cli = { path = "src/cli" }
+bevy_ratatui = "0.7.0"
+ratatui = "0.29"
+color-eyre = "0.6.3"
+crossterm = "0.28.1"
 
 [features]
-default = [
-    # Default to a native dev build.
-    "dev_native",
-    "render",
-]
-dev = [
-    # Improve compile times for dev builds by linking Bevy as a dynamic
-    # library.
-    "bevy/dynamic_linking",
-    "bevy/bevy_dev_tools",
-]
-dev_native = [
-    "dev",
-    # Enable system information plugin for native dev builds.
-    "bevy/sysinfo_plugin",
-]
-headless = [
-    # Exclude rendering features
-    # This feature does not include the "render" feature
-    # Thus, rendering-related dependencies are disabled
-]
-render = [
-    # Enable features needed for visuals, windowed operation, and UIs.
-    "bevy/bevy_asset",
-    "bevy/bevy_color",
-    "bevy/bevy_core_pipeline",
-    "bevy/bevy_gizmos",
-    "bevy/ktx2",
-    "bevy/bevy_mesh_picking_backend",
-    "bevy/bevy_pbr",
-    "bevy/bevy_render",
-    "bevy/bevy_picking",
-    "bevy/bevy_text",
-    "bevy/bevy_ui",
-    "bevy/bevy_ui_picking_backend",
-    "bevy/bevy_window",
-    "bevy/bevy_winit",
-    "bevy/default_font",
-    "bevy/tonemapping_luts",
-    "bevy/png",
-    "bevy/webgl2",
-]
-inspect = [
-    "default",
-    "bevy-inspector-egui",
+default = ["dev"]
+dev = ["yahs-cli/dev", "yahs-simulator/dev"]
+
+[workspace.package]
+authors = ["Philip Linden <lindenphilipj@gmail.com>"]
+edition = "2021"
+license = "MIT or Apache-2.0"
+
+[workspace]
+resolver = "2" # Important for Bevy
+members = [
+    "src/simulator",
+    "src/cli",
+    "src/ui"
 ]
 
-[dependencies]
-bevy = { version =  "0.15.0", default-features = false, features = [
-    "bevy_asset",
-    "bevy_state",
-    "multi_threaded",
+[workspace.dependencies]
+# Shared dependencies with fixed versions
+bevy = { version = "0.15.0", default-features = false, features = [
+    "bevy_state", "multi_threaded"
 ] }
-avian3d = { git = "https://github.com/Jondolf/avian.git", branch = "main", features = ["debug-plugin"] }
-bevy-trait-query = { git = "https://github.com/JoJoJet/bevy-trait-query.git", branch = "bevy-0.15-rc" }
-bevy-inspector-egui = { version = "0.28", optional = true, features = ["highlight_changes"] }
+avian3d = { git = "https://github.com/Jondolf/avian.git", branch = "main" }
+bevy-trait-query = "0.7.0"
+
 # -----------------------------------------------------------------------------
 # Some Bevy optimizations
 # -----------------------------------------------------------------------------
@@ -83,7 +74,6 @@ too_many_arguments = "allow"
 # Queries that access many components may trigger this lint.
 type_complexity = "allow"
 
-
 # Compile with Performance Optimizations:
 # https://bevyengine.org/learn/quick-start/getting-started/setup/#compile-with-performance-optimizations
 
@@ -94,6 +84,7 @@ opt-level = 1
 # Enable a large amount of optimization in the dev profile for dependencies.
 [profile.dev.package."*"]
 opt-level = 3
+debug = false
 
 # The default profile is optimized for Wasm builds because that's what [Trunk
 # reads](https://github.com/trunk-rs/trunk/issues/605). Optimize for size in the
@@ -102,9 +93,6 @@ opt-level = 3
 # Compile the entire crate as one unit. Slows compile times, marginal
 # improvements.
 codegen-units = 1
-# Do a second optimization pass over the entire program, including
-# dependencies. Slows compile times, marginal improvements.
-lto = "thin"
 # Optimize with size in mind (also try "z", sometimes it is better).
 # Slightly slows compile times, great improvements to file size and runtime
 # performance.

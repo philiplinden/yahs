@@ -4,8 +4,12 @@ use avian3d::{math::PI, prelude::*};
 use bevy::prelude::*;
 use bevy_trait_query::{self, RegisterExt};
 
-use super::{Atmosphere, Balloon, Density, Force, ForceUpdateOrder, Mass, Volume};
-use crate::simulator::properties::{EARTH_RADIUS_M, STANDARD_G};
+use crate::{
+    atmosphere::Atmosphere,
+    balloon::Balloon,
+    forces::{Density, Force, ForceUpdateOrder, Mass, Volume},
+    properties::{EARTH_RADIUS_M, STANDARD_G},
+};
 
 pub struct BodyForcesPlugin;
 

@@ -3,8 +3,13 @@
 use avian3d::prelude::*;
 use bevy::prelude::*;
 
-use super::properties::{AVOGADRO_CONSTANT, BOLTZMANN_CONSTANT};
-use super::{Atmosphere, Density, MolarMass, Pressure, SimulationUpdateOrder, Temperature, Volume};
+use crate::{
+    atmosphere::Atmosphere,
+    core::SimulationUpdateOrder,
+    properties::{
+        Density, MolarMass, Pressure, Temperature, Volume, AVOGADRO_CONSTANT, BOLTZMANN_CONSTANT,
+    },
+};
 
 pub const R: f32 = BOLTZMANN_CONSTANT * AVOGADRO_CONSTANT; // [J/K-mol] Ideal gas constant
 

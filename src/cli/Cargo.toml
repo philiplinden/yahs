@@ -1,0 +1,28 @@
+[package]
+name = "yahs-cli"
+version = "0.4.0"
+description = "CLI for the YAHS simulator"
+edition = "2021"
+authors = { workspace = true }
+license = { workspace = true }
+
+[[bin]]
+name = "yahs-cli"
+path = "src/main.rs"
+
+[dependencies]
+yahs-simulator = { path = "../simulator" }
+bevy = { workspace = true, features = [
+    "bevy_state",
+    "multi_threaded",
+] }
+bevy_ratatui = "0.7"
+ratatui = "0.29"
+crossterm = "0.28.1"
+color-eyre = "0.6.3"
+
+[features]
+default = []
+dev = [
+    "bevy/dynamic_linking",
+]

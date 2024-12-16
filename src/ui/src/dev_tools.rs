@@ -12,7 +12,7 @@ use bevy::{
 use avian3d::debug_render::*;
 
 use super::controls::KeyBindingsConfig;
-use crate::simulator::{forces::Force, SimState};
+use yahs_simulator::prelude::{Force, SimState};
 
 // Define all Show and Hide events
 #[derive(Event)]
@@ -44,13 +44,8 @@ pub struct DevToolsPlugin;
 impl Plugin for DevToolsPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugins((
-            #[cfg(feature = "headless")]
-            (
-                FrameTimeDiagnosticsPlugin,
-                EntityCountDiagnosticsPlugin,
-                LogDiagnosticsPlugin::default(),
-            ),
-            #[cfg(feature = "render")]
+            FrameTimeDiagnosticsPlugin,
+            EntityCountDiagnosticsPlugin,
             RenderedDevToolsPlugin,
         ));
 

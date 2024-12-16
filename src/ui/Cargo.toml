@@ -1,0 +1,43 @@
+[package]
+name = "yahs-ui"
+version = "0.4.0"
+description = "UI for the YAHS simulator"
+edition = "2021"
+authors = { workspace = true }
+license = { workspace = true }
+
+[[bin]]
+name = "yahs-ui"
+path = "src/main.rs"
+
+[dependencies]
+yahs-simulator = { path = "../simulator" }
+bevy = { workspace = true, default-features = false, features = [
+    "bevy_asset",
+    "bevy_core_pipeline",
+    "bevy_pbr",
+    "bevy_render",
+    "bevy_text",
+    "bevy_ui",
+    "bevy_window",
+    "bevy_winit",
+    "bevy_gizmos",
+    "default_font",
+    "png",
+    "tonemapping_luts",
+    "webgl2",
+] }
+avian3d = { workspace = true }
+bevy-inspector-egui = { version = "0.28", optional = true, features = [
+    "highlight_changes",
+] }
+
+[features]
+default = []
+dev = [
+    "avian3d/debug-plugin",
+    "bevy/bevy_dev_tools",
+    "bevy/dynamic_linking",
+    "yahs-simulator/dev",
+]
+inspect = ["bevy-inspector-egui"]
