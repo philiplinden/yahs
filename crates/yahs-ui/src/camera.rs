@@ -6,7 +6,7 @@ use bevy::{
 use std::f32::consts::PI;
 
 use super::controls::{CameraControls, KeyBindingsConfig};
-use yahs_simulator::prelude::Balloon;
+use yahs::prelude::Balloon;
 
 pub struct CameraPlugin;
 

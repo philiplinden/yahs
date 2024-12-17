@@ -12,23 +12,23 @@ default-run = "yahs"
 # When importing this crate as a dependency, use the simulator library as "yahs"
 [lib]
 name = "yahs"
-path = "src/simulator/src/lib.rs"
+path = "crates/yahs/src/lib.rs"
 
 # When running this project as a CLI, use the CLI binary as "yahs"
 [[bin]]
 name = "yahs"
-path = "src/cli/src/main.rs"
+path = "crates/yahs-cli/src/main.rs"
 
 # These are the dependencies when building the CLI from the project root
 [dependencies]
 # Simulator dependencies
-yahs-simulator = { path = "src/simulator" }
+yahs = { path = "crates/yahs" }
 bevy = { workspace = true }
 avian3d = { workspace = true }
 bevy-trait-query = { workspace = true }
 
 # CLI dependencies
-yahs-cli = { path = "src/cli" }
+yahs-cli = { path = "crates/yahs-cli" }
 bevy_ratatui = "0.7.0"
 ratatui = "0.29"
 color-eyre = "0.6.3"
@@ -36,7 +36,7 @@ crossterm = "0.28.1"
 
 [features]
 default = ["dev"]
-dev = ["yahs-cli/dev", "yahs-simulator/dev"]
+dev = ["yahs-cli/dev", "yahs/dev"]
 
 [workspace.package]
 authors = ["Philip Linden <lindenphilipj@gmail.com>"]
@@ -46,9 +46,9 @@ license = "MIT or Apache-2.0"
 [workspace]
 resolver = "2" # Important for Bevy
 members = [
-    "src/simulator",
-    "src/cli",
-    "src/ui"
+    "crates/yahs",
+    "crates/yahs-cli",
+    "crates/yahs-ui"
 ]
 
 [workspace.dependencies]
@@ -92,7 +92,8 @@ debug = false
 [profile.release]
 # Compile the entire crate as one unit. Slows compile times, marginal
 # improvements.
-codegen-units = 1
+# codegen-units = 1
+
 # Optimize with size in mind (also try "z", sometimes it is better).
 # Slightly slows compile times, great improvements to file size and runtime
 # performance.

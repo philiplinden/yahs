@@ -1,6 +1,6 @@
 use bevy::{color::palettes::basic::*, prelude::*};
 
-use crate::simulator::forces::Force;
+use yahs::forces::Force;
 
 const ARROW_SCALE: f32 = 0.1;
 
