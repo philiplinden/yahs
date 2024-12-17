@@ -11,7 +11,7 @@ name = "yahs-cli"
 path = "src/main.rs"
 
 [dependencies]
-yahs-simulator = { path = "../simulator" }
+yahs = { path = "../yahs" }
 bevy = { workspace = true, features = [
     "bevy_state",
     "multi_threaded",

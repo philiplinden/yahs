@@ -8,11 +8,52 @@ simulation.
 
 This project is split into three parts:
 
-- [yahs-sim](https://github.com/philiplinden/yahs-sim) is the main simulation
-  crate. It is a Bevy plugin that can be added to any Bevy project.
-- [yahs-ui](https://github.com/philiplinden/yahs-ui) is a simple UI for the
-  simulation. It is not required but it is useful for visualizing the
+- [yahs](crates/yahs/README.md) is the main simulation crate. It is a Bevy
+  plugin that can be added to any Bevy project.
+- [yahs-ui](crates/yahs-ui/README.md) is a simple UI for the simulation. It is
+  not required but it is useful for visualizing the simulation and for
   simulation and for debugging.
-- [yahs-cli](https://github.com/philiplinden/yahs-cli) is a command line tool
-  for running the simulation. It is useful for testing out the simulation
-  without having to deal with the UI.
+- [yahs-cli](crates/yahs-cli/README.md) is a command line tool for running the
+  simulation. It is useful for testing out the simulation without having to deal
+  with the UI or for running the simulation in a headless mode.
+
+
+## Usage
+
+### As a library
+
+Add `yahs` to your `Cargo.toml`:
+
+```toml
+[dependencies]
+yahs = "0.4.0"
+```
+
+Then, add the `SimulatorPlugins` to your Bevy app:
+
+```rust
+use yahs::prelude::SimulatorPlugins;
+
+fn main() {
+    App::new().add_plugins(SimulatorPlugins);
+}
+```
+
+Then you can use all of the components and systems from the
+[`yahs`](./crates/yahs/README.md) crate.
+
+
+### As an application
+
+Running this package as a standalone application compiles all of the crates
+and runs the CLI by default:
+
+```bash
+cargo run
+```
+
+Force the standalone application to run the GUI instead of the CLI:
+
+```bash
+cargo run --bin yahs-ui
+```

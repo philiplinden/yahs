@@ -11,7 +11,7 @@ name = "yahs-ui"
 path = "src/main.rs"
 
 [dependencies]
-yahs-simulator = { path = "../simulator" }
+yahs = { path = "../yahs" }
 bevy = { workspace = true, default-features = false, features = [
     "bevy_asset",
     "bevy_core_pipeline",
@@ -38,6 +38,6 @@ dev = [
     "avian3d/debug-plugin",
     "bevy/bevy_dev_tools",
     "bevy/dynamic_linking",
-    "yahs-simulator/dev",
+    "yahs/dev",
 ]
 inspect = ["bevy-inspector-egui"]

@@ -19,7 +19,7 @@ use bevy::{
     asset::AssetMetaCheck,
 };
 
-use yahs_simulator::prelude::SimulatorPlugins;
+use yahs::prelude::SimulatorPlugins;
 
 fn main() {
     App::new()

@@ -1,55 +1,20 @@
-[package]
+[workspace]
+resolver = "2" # Important for Bevy
+members = [
+    "crates/yahs",
+    "crates/yahs-cli",
+    "crates/yahs-ui"
+]
+
+[workspace.package]
 name = "yahs"
 description = "Yet Another HAB Simulator"
 version = "0.4.0"
 authors = ["Philip Linden <lindenphilipj@gmail.com>"]
 readme = "README.md"
-license = "MIT or Apache-2.0"
-edition = "2021"
-
-default-run = "yahs"
-
-# When importing this crate as a dependency, use the simulator library as "yahs"
-[lib]
-name = "yahs"
-path = "src/simulator/src/lib.rs"
-
-# When running this project as a CLI, use the CLI binary as "yahs"
-[[bin]]
-name = "yahs"
-path = "src/cli/src/main.rs"
-
-# These are the dependencies when building the CLI from the project root
-[dependencies]
-# Simulator dependencies
-yahs-simulator = { path = "src/simulator" }
-bevy = { workspace = true }
-avian3d = { workspace = true }
-bevy-trait-query = { workspace = true }
-
-# CLI dependencies
-yahs-cli = { path = "src/cli" }
-bevy_ratatui = "0.7.0"
-ratatui = "0.29"
-color-eyre = "0.6.3"
-crossterm = "0.28.1"
-
-[features]
-default = ["dev"]
-dev = ["yahs-cli/dev", "yahs-simulator/dev"]
-
-[workspace.package]
-authors = ["Philip Linden <lindenphilipj@gmail.com>"]
 edition = "2021"
 license = "MIT or Apache-2.0"
-
-[workspace]
-resolver = "2" # Important for Bevy
-members = [
-    "src/simulator",
-    "src/cli",
-    "src/ui"
-]
+license-file = "LICENSE-APACHE"
 
 [workspace.dependencies]
 # Shared dependencies with fixed versions
@@ -58,21 +23,6 @@ bevy = { version = "0.15.0", default-features = false, features = [
 ] }
 avian3d = { git = "https://github.com/Jondolf/avian.git", branch = "main" }
 bevy-trait-query = "0.7.0"
-
-# -----------------------------------------------------------------------------
-# Some Bevy optimizations
-# -----------------------------------------------------------------------------
-
-# Idiomatic Bevy code often triggers these lints, and the CI workflow treats
-# them as errors. In some cases they may still signal poor code quality however,
-# so consider commenting out these lines.
-[lints.clippy]
-# Bevy supplies arguments to systems via dependency injection, so it's
-# natural for systems to request more than 7 arguments -- which triggers
-# this lint.
-too_many_arguments = "allow"
-# Queries that access many components may trigger this lint.
-type_complexity = "allow"
 
 # Compile with Performance Optimizations:
 # https://bevyengine.org/learn/quick-start/getting-started/setup/#compile-with-performance-optimizations
@@ -92,7 +42,8 @@ debug = false
 [profile.release]
 # Compile the entire crate as one unit. Slows compile times, marginal
 # improvements.
-codegen-units = 1
+# codegen-units = 1
+
 # Optimize with size in mind (also try "z", sometimes it is better).
 # Slightly slows compile times, great improvements to file size and runtime
 # performance.

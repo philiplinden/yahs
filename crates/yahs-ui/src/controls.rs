@@ -1,6 +1,6 @@
 use bevy::prelude::*;
 
-use yahs_simulator::prelude::{SimState, TimeScaleOptions};
+use yahs::prelude::{SimState, TimeScaleOptions};
 
 pub struct ControlsPlugin;
 
