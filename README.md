@@ -2,7 +2,8 @@
 
 A high altitude balloon flight simulator built in
 [Bevy](https://bevyengine.org/) with Rust, inspired by
-[tkschuler/EarthSHAB](https://github.com/tkschuler/EarthSHAB).
+[tkschuler/EarthSHAB](https://github.com/tkschuler/EarthSHAB) and
+[mfc-apps](https://github.com/Brickworks/mfc-apps).
 
 [devlog](docs/devlog.md)
 
@@ -28,7 +29,7 @@ fn main() {
 ```
 
 Then you can use all of the components and systems from the
-[`yahs-simulator`](./src/simulator/README.md) crate.
+[`yahs`](./crates/yahs/README.md) crate.
 
 
 ### As an application

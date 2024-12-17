@@ -1,5 +1,24 @@
 # development log
 
+## 2024-12-16
+
+I'm leaning into the use case of running this as the "outside world" interface
+for a software-in-the-loop simulation. I think there are a few things I need to
+figure out before that is possible:
+
+- Host the simulation as a server or otherwise "free running" environment.
+- Connect a client application that can send commands and receive telemetry or
+  data from sensors, where the telemetry is created by the server and supplied
+  to the client over normal network protocols that it would expect from actual
+  hardware.
+- The server and client applications should be able to run in a headless mode,
+  or otherwise without a UI.
+
+It would be ideal if this was not required---I'd like to be able to run a
+completely virtual vehicle along with a software-in-the-loop simulation. In a
+sense this is the same as running a completely passive vehicle in the sim while
+also allowing for an active vehicle too.
+
 ## 2024-12-15
 
 - Added [mdbook](https://github.com/rust-lang/mdBook) to the project.
