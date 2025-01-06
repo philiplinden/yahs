@@ -35,7 +35,7 @@ fn spawn_balloon(
                 material_properties: BalloonMaterial::default(),
                 shape: sphere,
             },
-            gas: IdealGas::new(species).with_mass(Mass::new(0.01)),
+            gas: IdealGas::new(species).with_mass(Mass(0.01)),
         },
         RigidBody::Dynamic,
         Collider::sphere(sphere.radius),

@@ -223,7 +223,7 @@ impl Density {
     pub const ZERO: Self = Density(0.0);
 
     pub fn new(kilograms: Mass, volume: Volume) -> Self {
-        Density(kilograms.value() / volume.cubic_meters())
+        Density(kilograms.0 / volume.cubic_meters())
     }
 
     pub fn kilograms_per_cubic_meter(&self) -> f32 {

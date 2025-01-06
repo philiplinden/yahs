@@ -35,16 +35,17 @@ Then you can use all of the components and systems from the
 ### As an application
 
 Running this package as a standalone application compiles all of the crates
-and runs the CLI by default:
+and runs the default interface:
 
 ```bash
 cargo run
 ```
 
-Force the standalone application to run the GUI instead of the CLI:
+You can force the standalone application to run a particular interface too:
 
 ```bash
 cargo run --bin yahs-ui
+cargo run --bin yahs-cli
 ```
 
 ## License

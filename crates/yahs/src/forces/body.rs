@@ -81,7 +81,7 @@ fn update_weight_parameters(
     mut bodies: Query<(&mut Weight, &Position, &Mass), With<Balloon>>,
 ) {
     for (mut weight, position, mass) in bodies.iter_mut() {
-        weight.update(position.0, mass.value());
+        weight.update(position.0, mass.0);
     }
 }
 

@@ -85,7 +85,7 @@ impl Default for IdealGas {
         let temperature = Temperature::default();
         let pressure = Pressure::default();
         let density = ideal_gas_density(temperature, pressure, &species);
-        let mass = Mass::new(1.0);
+        let mass = Mass(1.0);
         IdealGas {
             temperature,
             pressure,
@@ -100,7 +100,7 @@ impl IdealGas {
     pub fn new(species: GasSpecies) -> Self {
         let temperature = Temperature::default();
         let pressure = Pressure::default();
-        let mass = Mass::new(1.0);
+        let mass = Mass(1.0);
         let density = ideal_gas_density(temperature, pressure, &species);
         IdealGas {
             temperature,
@@ -129,12 +129,12 @@ impl IdealGas {
     }
 
     pub fn with_volume(mut self, volume: Volume) -> Self {
-        self.mass = Mass::new(self.density.kg_per_m3() * volume.m3());
+        self.mass = Mass(self.density.kg_per_m3() * volume.m3());
         self
     }
 
     pub fn set_volume(&mut self, volume: Volume) {
-        self.mass = Mass::new(self.density.kg_per_m3() * volume.m3());
+        self.mass = Mass(self.density.kg_per_m3() * volume.m3());
     }
 
     pub fn volume(&self) -> Volume {
@@ -155,7 +155,7 @@ pub fn ideal_gas_volume(
     species: &GasSpecies,
 ) -> Volume {
     Volume(
-        (mass.value() / species.molar_mass.kilograms_per_mole()) * R * temperature.kelvin()
+        (mass.0 / species.molar_mass.kilograms_per_mole()) * R * temperature.kelvin()
             / pressure.pascals(),
     )
 }
