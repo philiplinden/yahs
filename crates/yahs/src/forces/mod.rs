@@ -4,9 +4,8 @@ pub mod body;
 
 use avian3d::prelude::*;
 use bevy::prelude::*;
-use bevy_trait_query;
 
-// Re-expert common forces
+// Re-export common forces
 #[allow(unused_imports)]
 pub use aero::Drag;
 #[allow(unused_imports)]
@@ -56,20 +55,10 @@ pub enum ForceUpdateOrder {
     Last,
 }
 
-/// A bundle of force components to be added to entities with a `RigidBody`. The
-/// body can only have one of each type of force component.
-#[derive(Bundle, Default)]
-pub struct ForceBundle {
-    weight: body::Weight,
-    buoyancy: body::Buoyancy,
-    drag: aero::Drag,
-}
-
 /// This trait is used to identify a force vector component. All forces are
 /// collected and summed to determine the net force acting on a rigid body. All
 /// forces assume a right-handed Y-up coordinate frame and are reported in
 /// Newtons.
-#[bevy_trait_query::queryable]
 pub trait Force {
     fn name(&self) -> String {
         String::from("Force")
@@ -99,23 +88,16 @@ pub trait Force {
 /// TODO: preserve the position of the total force vector and apply it at that
 /// point instead of the center of mass.
 fn update_total_external_force(
-    mut body_forces: Query<(&mut ExternalForce, &dyn Force, &RigidBody)>,
+    mut body_forces: Query<(&mut ExternalForce, &Weight, &Buoyancy, &Drag), With<Balloon>>,
 ) {
     // Iterate over each entity that has force vector components.
-    for (mut physics_force_component, acting_forces, rigid_body) in body_forces.iter_mut() {
-        // Forces only act on dynamic bodies. Don't bother with other kinds.
-        if rigid_body.is_dynamic() {
-            let mut net_force = Vec3::ZERO; // reset the net force to zero
+    for (mut physics_force_component, weight, buoyancy, drag) in body_forces.iter_mut() {
+        let mut net_force = Vec3::ZERO;
+        
+        net_force += weight.force();
+        net_force += buoyancy.force();
+        net_force += drag.force();
 
-            // Iterate over each force vector component and compute its value.
-            for force in acting_forces.iter() {
-                if force.magnitude().is_nan() {
-                    error!("{} has NaN magnitude!", force.name());
-                } else {
-                    net_force += force.force();
-                }
-            }
-            physics_force_component.set_force(net_force);
-        }
+        physics_force_component.set_force(net_force);
     }
 }

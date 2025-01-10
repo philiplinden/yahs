@@ -17,7 +17,7 @@ impl Plugin for TimeScalePlugin {
     }
 }
 
-const DEFAULT_MULTIPLIER: f32 = 2.0;
+const DEFAULT_MULTIPLIER: f32 = 1.0;
 
 #[derive(Resource)]
 pub struct TimeScaleOptions {
@@ -64,12 +64,10 @@ fn modify_time_scale(mut time: ResMut<Time<Physics>>, options: Res<TimeScaleOpti
     }
 }
 
-fn pause(mut physics_time: ResMut<Time<Physics>>, mut virtual_time: ResMut<Time<Virtual>>) {
+fn pause(mut physics_time: ResMut<Time<Physics>>) {
     physics_time.as_mut().pause();
-    virtual_time.as_mut().pause();
 }
 
-fn unpause(mut physics_time: ResMut<Time<Physics>>, mut virtual_time: ResMut<Time<Virtual>>) {
+fn unpause(mut physics_time: ResMut<Time<Physics>>) {
     physics_time.as_mut().unpause();
-    virtual_time.as_mut().unpause();
 }

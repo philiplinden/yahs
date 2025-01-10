@@ -11,9 +11,6 @@ use camera::CameraPlugin;
 use controls::ControlsPlugin;
 use scene::ScenePlugin;
 
-#[cfg(feature = "dev")]
-use dev_tools::DevToolsPlugin;
-
 use bevy::{
     prelude::*,
     asset::AssetMetaCheck,
@@ -45,7 +42,7 @@ fn main() {
             ScenePlugin,
             CameraPlugin,
             #[cfg(feature = "dev")]
-            DevToolsPlugin,
+            dev_tools::DevToolsPlugin,
         ))
         .run();
 }

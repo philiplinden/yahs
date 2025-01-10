@@ -9,10 +9,6 @@ pub struct ScenePlugin;
 impl Plugin for ScenePlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(Startup, (setup_lighting, spawn_balloon));
-        app.add_systems(Update, animate_light_direction);
-        // app.add_systems(PostStartup, |mut commands: Commands| {
-        //     commands.set_state(SimState::Running);
-        // });
     }
 }
 
@@ -64,13 +60,4 @@ fn setup_lighting(mut commands: Commands) {
         color: Color::srgb_u8(210, 220, 240),
         brightness: 1.0,
     });
-}
-
-fn animate_light_direction(
-    time: Res<Time>,
-    mut query: Query<&mut Transform, With<DirectionalLight>>,
-) {
-    for mut transform in &mut query {
-        transform.rotate_y(time.delta_secs() * 0.5);
-    }
 }

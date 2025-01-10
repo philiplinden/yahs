@@ -33,7 +33,7 @@ bevy-inspector-egui = { version = "0.28", optional = true, features = [
 ] }
 
 [features]
-default = []
+default = ["dev"]
 dev = [
     "avian3d/debug-plugin",
     "bevy/bevy_dev_tools",

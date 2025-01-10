@@ -2,7 +2,6 @@
 
 use avian3d::{math::PI, prelude::*};
 use bevy::prelude::*;
-use bevy_trait_query::{self, RegisterExt};
 
 use crate::{
     atmosphere::Atmosphere,
@@ -18,9 +17,6 @@ impl Plugin for BodyForcesPlugin {
         app.register_type::<Weight>();
         app.register_type::<Buoyancy>();
 
-        app.register_component_as::<dyn Force, Weight>();
-        app.register_component_as::<dyn Force, Buoyancy>();
-
         app.add_systems(
             Update,
             (update_weight_parameters, update_buoyant_parameters).in_set(ForceUpdateOrder::Prepare),
@@ -30,7 +26,7 @@ impl Plugin for BodyForcesPlugin {
 
 /// Downward force (N) vector due to gravity as a function of altitude (m) and
 /// mass (kg). The direction of this force is always world-space down.
-#[derive(Component, Reflect)]
+#[derive(Component, Reflect, Debug)]
 #[require(Mass, Position)]
 pub struct Weight {
     position: Vec3,
@@ -86,8 +82,8 @@ fn update_weight_parameters(
 }
 
 /// Upward force (N) vector due to atmosphere displaced by the given gas volume.
-#[derive(Component, Reflect)]
-#[require(Volume, Position)]    
+#[derive(Component, Reflect, Debug)]
+#[require(Volume, Position)]
 pub struct Buoyancy {
     position: Vec3,
     displaced_volume: Volume,
