@@ -29,34 +29,33 @@ impl Plugin for KinematicsGizmos {
 }
 
 fn force_arrows(weights: Query<&Weight>, buoys: Query<&Buoyancy>, drags: Query<&Drag>, mut gizmos: Gizmos) {
+    let mut arrows = Vec::new();
+
     for weight in weights.iter() {
-        let start = weight.point_of_application();
-        let end = start + weight.force() * ARROW_SCALE;
-        let color = match weight.color() {
-            Some(c) => c,
-                None => RED.into(),
-            };
-        gizmos.arrow(start, end, color).with_tip_length(0.3);
+        arrows.push(new_force_arrow(weight, RED.into()));
     }
+
     for buoyancy in buoys.iter() {
-        let start = buoyancy.point_of_application();
-        let end = start + buoyancy.force() * ARROW_SCALE;
-        
-        let color = match buoyancy.color() {
-            Some(c) => c,
-                None => BLUE.into(),
-            };
-        gizmos.arrow(start, end, color).with_tip_length(0.3);
+        arrows.push(new_force_arrow(buoyancy, BLUE.into()));
     }
+
     for drag in drags.iter() {
-        let start = drag.point_of_application();
-        let end = start + drag.force() * ARROW_SCALE;
-        let color = match drag.color() {
-            Some(c) => c,
-                None => GREEN.into(),
-            };
+        arrows.push(new_force_arrow(drag, GREEN.into()));
+    }
+
+    for (start, end, color) in arrows {
         gizmos.arrow(start, end, color).with_tip_length(0.3);
     }
+}
+
+fn new_force_arrow(force: &dyn Force, default_color: Color) -> (Vec3, Vec3, Color) {
+    let start = force.point_of_application();
+    let end = start + force.force() * ARROW_SCALE;
+    let color = match force.color() {
+        Some(c) => c,
+            None => default_color,
+        };
+    (start, end, color)
 }
 
 fn orientation_indicator(query: Query<&Transform, With<Balloon>>, mut gizmos: Gizmos) {
