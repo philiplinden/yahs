@@ -17,12 +17,9 @@ struct FpsPlugin;
 
 impl Plugin for FpsPlugin {
     fn build(&self, app: &mut App) {
-        app.add_plugins((
-            FrameTimeDiagnosticsPlugin::default(),
-            LogDiagnosticsPlugin::default(),
-        ))
-        .add_systems(Startup, setup_fps_text)
-        .add_systems(Update, update_fps_text);
+        app.add_plugins(FrameTimeDiagnosticsPlugin::default())
+            .add_systems(Startup, setup_fps_text)
+            .add_systems(Update, update_fps_text);
     }
 }
 

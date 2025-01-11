@@ -20,11 +20,11 @@ bevy = { workspace = true, default-features = false, features = [
     "bevy_text",
     "bevy_ui",
     "bevy_window",
+    "bevy_winit",
     "bevy_gizmos",
     "default_font",
     "png",
     "tonemapping_luts",
-    "webgl2",
 ] }
 avian3d = { workspace = true }
 bevy-inspector-egui = { version = "0.28", optional = true, features = [
