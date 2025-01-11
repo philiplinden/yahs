@@ -57,7 +57,7 @@ fn update_hud(
     let delta_time = time.delta_secs();
 
     // Safely handle the query for HUD text
-    if let Some(mut hud_text) = query.iter_mut().next() {
+    if let Ok(mut hud_text) = query.get_single_mut() {
         let mut text = String::new();
 
         // Display physics time
@@ -74,7 +74,7 @@ fn update_hud(
             text.push_str("\n");
         }
 
-        hud_text.sections[0].value = text; // Update the HUD text
+        hud_text.0 = text; // Update the HUD text
     } else {
         // Handle the case where no HUD text entity is found
         error!("No HUD text entity found. Ensure that the HUD is set up correctly.");
