@@ -20,7 +20,11 @@ impl Plugin for IdealGasPlugin {
         app.register_type::<GasSpecies>();
         app.add_systems(
             Update,
-            update_ideal_gas_from_atmosphere.in_set(SimulationUpdateOrder::IdealGas),
+            (
+                update_ideal_gas_from_atmosphere,
+                sync_ideal_gas_with_physics_mass,
+            )
+                .in_set(SimulationUpdateOrder::IdealGas),
         );
     }
 }
@@ -71,6 +75,7 @@ impl GasSpecies {
 
 /// Properties of an ideal gas. For properties per unit mass, set the mass to 1.
 #[derive(Component, Debug, Clone, PartialEq, Reflect)]
+#[require(Mass)]
 pub struct IdealGas {
     pub temperature: Temperature,
     pub pressure: Pressure,
@@ -188,5 +193,20 @@ fn update_ideal_gas_from_atmosphere(
         gas.pressure = atmosphere.pressure(position.0);
         gas.temperature = atmosphere.temperature(position.0);
         gas.update_density();
+    }
+}
+
+/// Sync the ideal gas mass with the physics mass component. Otherwise physics
+/// will not know about the mass of the ideal gas.
+fn sync_ideal_gas_with_physics_mass(
+    mut commands: Commands,
+    entities: Query<(Entity, &IdealGas), Added<IdealGas>>,
+) {
+    for (entity, gas) in entities.iter() {
+        info!(
+            "Syncing ideal gas with physics mass: {:?} -> {:?}",
+            entity, gas.mass.0
+        );
+        commands.entity(entity).insert(Mass(gas.mass.0));
     }
 }

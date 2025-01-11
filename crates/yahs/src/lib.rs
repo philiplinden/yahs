@@ -17,6 +17,6 @@ pub mod prelude {
     pub use crate::balloon::{Balloon, BalloonBundle, BalloonMaterial};
     pub use crate::ideal_gas::{GasSpecies, IdealGas};
     pub use crate::payload::Payload;
-    pub use crate::time::TimeScaleOptions;
+    pub use crate::time::{TimeScaleOptions, StepPhysicsEvent};
     pub use crate::trajectory::Trajectory;
 }

@@ -14,7 +14,7 @@ pub use body::{Buoyancy, Weight};
 use crate::{
     atmosphere::Atmosphere,
     balloon::Balloon,
-    core::{SimulationUpdateOrder, SimState},
+    core::{SimState, SimulationUpdateOrder},
     properties::{Density, Volume},
 };
 pub struct ForcesPlugin;
@@ -37,9 +37,12 @@ impl Plugin for ForcesPlugin {
         );
         app.add_systems(
             Update,
-            update_total_external_force
-                .in_set(ForceUpdateOrder::Apply)
-                .run_if(in_state(SimState::Running)),
+            (
+                add_external_forces_to_new_bodies.in_set(ForceUpdateOrder::First),
+                update_total_external_force
+                    .in_set(ForceUpdateOrder::Apply)
+                    .run_if(in_state(SimState::Running)),
+            ),
         );
 
         app.add_plugins((aero::AeroForcesPlugin, body::BodyForcesPlugin));
@@ -70,9 +73,7 @@ pub trait Force {
     fn magnitude(&self) -> f32 {
         self.force().length()
     }
-    fn point_of_application(&self) -> Vec3 {
-        Vec3::ZERO
-    }
+    fn point_of_application(&self) -> Vec3;
     fn torque(&self) -> Vec3 {
         Vec3::ZERO
     }
@@ -81,23 +82,33 @@ pub trait Force {
     }
 }
 
-/// Set the `ExternalForce` to the sum of all forces in the `Forces` collection.
-/// This effectively applies all the calculated force vectors to the physics
-/// rigid body without regard to where the forces came from.
-///
-/// TODO: preserve the position of the total force vector and apply it at that
-/// point instead of the center of mass.
+/// Whenever a balloon is added to the scene, add the external force component
+/// to it. This component is used to apply the forces to the physics rigid body.
+fn add_external_forces_to_new_bodies(
+    mut commands: Commands,
+    entities: Query<Entity, Added<Balloon>>,
+) {
+    for entity in entities.iter() {
+        let physics_force_component = ExternalForce::new(Vec3::ZERO).with_persistence(false);
+        commands
+            .entity(entity)
+            .insert((RigidBody::Dynamic, physics_force_component));
+    }
+}
+
+/// Collect all the force components and sum them up to get the total force
+/// acting on the rigid body.
 fn update_total_external_force(
     mut body_forces: Query<(&mut ExternalForce, &Weight, &Buoyancy, &Drag), With<Balloon>>,
 ) {
     // Iterate over each entity that has force vector components.
     for (mut physics_force_component, weight, buoyancy, drag) in body_forces.iter_mut() {
         let mut net_force = Vec3::ZERO;
-        
+
         net_force += weight.force();
         net_force += buoyancy.force();
         net_force += drag.force();
 
-        physics_force_component.set_force(net_force);
+        physics_force_component.apply_force(net_force);
     }
 }

@@ -25,6 +25,7 @@ bevy = { workspace = true, default-features = false, features = [
     "default_font",
     "png",
     "tonemapping_luts",
+    "wayland",
 ] }
 avian3d = { workspace = true }
 bevy-inspector-egui = { version = "0.28", optional = true, features = [

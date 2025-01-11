@@ -62,10 +62,16 @@ fn position_reference(mut gizmos: Gizmos) {
     let width = 20.;
     let spacing = 1.0;
     gizmos.grid(
-        Isometry3d::new(Vec3::new(0.0, height / 2. - 10., -1.0), Quat::IDENTITY),
+        Isometry3d::new(Vec3::new(0.0, height / 2., -1.0), Quat::IDENTITY),
         UVec2::new(width as u32, height as u32),
         Vec2::new(spacing, spacing),
-        ColorPalette::LightBase.color(),
+        ColorPalette::MediumBase.color(),
+    );
+    gizmos.grid(
+        Isometry3d::new(Vec3::new(0.0, 0.0, 0.0), Quat::from_rotation_x(std::f32::consts::FRAC_PI_2)),
+        UVec2::new(width as u32, height as u32),
+        Vec2::new(spacing, spacing),
+        ColorPalette::MediumBase.color(),
     );
 }
 
