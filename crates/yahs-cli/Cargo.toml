@@ -12,9 +12,7 @@ path = "src/main.rs"
 
 [dependencies]
 yahs = { path = "../yahs" }
-bevy = { workspace = true, features = [
-    "multi_threaded",
-] }
+bevy = { workspace = true, default-features = false }
 bevy_ratatui = "0.7"
 ratatui = "0.29"
 crossterm = "0.28.1"

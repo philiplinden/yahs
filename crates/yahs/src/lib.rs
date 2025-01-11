@@ -7,6 +7,7 @@ mod ideal_gas;
 mod payload;
 mod properties;
 mod time;
+mod trajectory;
 
 pub mod prelude {
     pub use crate::core::{SimulatorPlugins, SimState, SimulationUpdateOrder};
@@ -17,4 +18,5 @@ pub mod prelude {
     pub use crate::ideal_gas::{GasSpecies, IdealGas};
     pub use crate::payload::Payload;
     pub use crate::time::TimeScaleOptions;
+    pub use crate::trajectory::Trajectory;
 }

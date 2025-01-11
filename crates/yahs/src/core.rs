@@ -1,5 +1,5 @@
 use super::*;
-use avian3d::prelude::*;
+use avian3d::prelude::{PhysicsPlugins, PhysicsSet};
 use bevy::{
     app::{PluginGroup, PluginGroupBuilder},
     prelude::*,

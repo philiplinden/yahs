@@ -4,12 +4,17 @@
 mod camera;
 pub mod controls;
 mod scene;
+mod hud;
+mod colors;
+mod gizmos;
+
 #[cfg(feature = "dev")]
 mod dev_tools;
 
 use camera::CameraPlugin;
 use controls::ControlsPlugin;
 use scene::ScenePlugin;
+use hud::HudPlugin;
 
 use bevy::{
     prelude::*,
@@ -28,7 +33,7 @@ fn main() {
                 })
                 .set(WindowPlugin {
                     primary_window: Window {
-                        title: "🎈".to_string(),
+                        title: "yet another hab simulator 🎈".to_string(),
                         canvas: Some("#bevy".to_string()),
                         fit_canvas_to_parent: true,
                         prevent_default_event_handling: true,
@@ -41,8 +46,10 @@ fn main() {
             ControlsPlugin,
             ScenePlugin,
             CameraPlugin,
+            gizmos::KinematicsGizmos,
+            HudPlugin,
             #[cfg(feature = "dev")]
-            dev_tools::DevToolsPlugin,
+            dev_tools::DevToolsPlugins,
         ))
         .run();
 }
