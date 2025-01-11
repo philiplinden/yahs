@@ -23,41 +23,11 @@ impl Plugin for CameraPlugin {
 #[require(Camera3d, PerspectiveProjection, CameraController)]
 pub struct MainCamera;
 
-fn setup(mut commands: Commands, keybinds: Res<KeyBindingsConfig>) {
+fn setup(mut commands: Commands) {
     commands.spawn((
         Name::new("Main Camera"),
         MainCamera,
         Transform::from_xyz(0.0, 0.0, 10.0),
-    ));
-    let controls = &keybinds.into_inner().camera_controls;
-    commands.spawn((
-        Text::new(format!(
-            "Freecam Controls:
-    {:?} - Focus on target
-    {:?} - Cycle to next target & follow it
-    {:?} - Clear target
-    {:?} Mouse - Click & drag to rotate camera
-    {:?} / {:?} / {:?} / {:?} - Fly forward, backward, left, right
-    {:?} / {:?} - Fly up / down
-    {:?} - Hold to fly faster",
-            controls.tap_focus_target,
-            controls.tap_cycle_target,
-            controls.tap_clear_target,
-            controls.hold_look,
-            controls.tap_forward,
-            controls.tap_back,
-            controls.tap_left,
-            controls.tap_right,
-            controls.tap_up,
-            controls.tap_down,
-            controls.tap_run,
-        )),
-        Node {
-            position_type: PositionType::Absolute,
-            bottom: Val::Px(12.),
-            left: Val::Px(12.),
-            ..default()
-        },
     ));
 }
 
@@ -247,7 +217,7 @@ impl Default for CameraController {
             walk_speed: 10.0,
             run_speed: 30.0,
             scroll_factor: 0.1,
-            friction: 0.1,
+            friction: 0.5,
             pitch: 0.0,
             yaw: 0.0,
             velocity: Vec3::ZERO,

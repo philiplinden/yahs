@@ -32,7 +32,7 @@ impl Default for TimeScaleOptions {
         Self {
             multiplier: DEFAULT_MULTIPLIER,
             real_time: false,
-            max_multiplier: 3.0,
+            max_multiplier: 10.0,
             min_multiplier: 0.1,
         }
     }
@@ -51,23 +51,25 @@ impl TimeScaleOptions {
 
 fn modify_time_scale(mut time: ResMut<Time<Physics>>, options: Res<TimeScaleOptions>) {
     if options.is_changed() {
-        info!("setting relative speed to {}", options.multiplier);
+        let mut multiplier = options.multiplier;
+        // We use this toggle with a bool so we can use the same key to toggle
+        // between real time and previous multiplier.
         if options.real_time {
-            time.as_mut().set_relative_speed(1.0);
+            multiplier = 1.0;
         } else {
-            time.as_mut().set_relative_speed(
-                options
-                    .multiplier
-                    .clamp(options.min_multiplier, options.max_multiplier),
-            );
+            multiplier = multiplier.clamp(options.min_multiplier, options.max_multiplier);
         }
+        info!("setting relative speed to {}", multiplier);
+        time.as_mut().set_relative_speed(multiplier);
     }
 }
 
 fn pause(mut physics_time: ResMut<Time<Physics>>) {
     physics_time.as_mut().pause();
+    info!("pausing physics time");
 }
 
 fn unpause(mut physics_time: ResMut<Time<Physics>>) {
     physics_time.as_mut().unpause();
+    info!("unpausing physics time");
 }
