@@ -6,16 +6,15 @@ use avian3d::prelude::*;
 use bevy::prelude::*;
 
 // Re-export common forces
-#[allow(unused_imports)]
 pub use aero::Drag;
-#[allow(unused_imports)]
 pub use body::{Buoyancy, Weight};
 
 use crate::{
     gas::Atmosphere,
     vehicle::Balloon,
     core::SimState,
-    thermodynamics::{Density, Volume},
+    thermodynamics::Density,
+    shape::Volume,
 };
 pub struct ForcesPlugin;
 
