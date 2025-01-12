@@ -119,7 +119,6 @@ fn update_settings_text(
         text.push_str(&format!("Faster: {:?}\n", key_bindings.time_controls.faster));
         text.push_str(&format!("Slower: {:?}\n", key_bindings.time_controls.slower));
         text.push_str(&format!("Reset Speed: {:?}\n", key_bindings.time_controls.reset_speed));
-        text.push_str(&format!("Toggle Real Time: {:?}\n", key_bindings.time_controls.toggle_real_time));
         text.push_str(&format!("Step Once: {:?}\n", key_bindings.time_controls.step_once));
 
         settings_text.0 = text; // Update the settings text

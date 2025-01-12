@@ -5,6 +5,7 @@ description = "UI for the YAHS simulator"
 edition = "2021"
 authors = { workspace = true }
 license = { workspace = true }
+default-run = "yahs-ui"
 
 [[bin]]
 name = "yahs-ui"

@@ -17,7 +17,8 @@ fn spawn_balloon(
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
 ) {
-    info!("spawning balloon");
+    #[cfg(feature = "log")]
+        info!("spawning balloon");
     let debug_material = materials.add(StandardMaterial {
         base_color: Color::srgb(1.0, 0.0, 0.0),
         ..default()
@@ -43,7 +44,8 @@ fn spawn_balloon(
 }
 
 fn setup_lighting(mut commands: Commands) {
-    info!("spawning sunlight");
+    #[cfg(feature = "log")]
+        info!("spawning sunlight");
     commands.spawn((
         DirectionalLight {
             illuminance: 32000.0,

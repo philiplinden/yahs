@@ -1,4 +1,4 @@
-use bevy::{prelude::*};
+use bevy::prelude::*;
 
 use yahs::prelude::{SimState, TimeScaleOptions, StepPhysicsEvent};
 
@@ -49,7 +49,6 @@ pub struct TimeControls {
     pub faster: KeyCode,
     pub slower: KeyCode,
     pub reset_speed: KeyCode,
-    pub toggle_real_time: KeyCode,
     pub scale_step: f32,
     pub step_once: KeyCode,
 }
@@ -94,7 +93,6 @@ impl Default for TimeControls {
             faster: KeyCode::ArrowUp,
             slower: KeyCode::ArrowDown,
             reset_speed: KeyCode::Backspace,
-            toggle_real_time: KeyCode::KeyR,
             scale_step: 0.1,
             step_once: KeyCode::Tab,
         }
@@ -147,9 +145,6 @@ fn modify_time_scale(
     }
     if key_input.just_pressed(key_bindings.time_controls.reset_speed) {
         time_options.reset();
-    }
-    if key_input.just_pressed(key_bindings.time_controls.toggle_real_time) {
-        time_options.toggle_real_time();
     }
 }
 
