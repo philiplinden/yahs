@@ -12,11 +12,21 @@ path = "src/main.rs"
 
 [dependencies]
 yahs = { path = "../yahs" }
-bevy = { workspace = true, default-features = false }
+bevy = { workspace = true, default-features = false, features = [
+    "bevy_asset",
+    "bevy_state",
+] }
 bevy_ratatui = "0.7"
 ratatui = "0.29"
 crossterm = "0.28.1"
 color-eyre = "0.6.3"
+avian3d = { workspace = true, default-features = false, features = [
+    "f32",
+    "parry-f32",
+    "default-collider",
+    "collider-from-mesh",
+    "parallel"
+] }
 
 [features]
 default = []
