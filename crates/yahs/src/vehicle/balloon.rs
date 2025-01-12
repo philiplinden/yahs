@@ -6,7 +6,6 @@ use bevy::prelude::*;
 use crate::{
     gas::IdealGas,
     thermodynamics::{sphere_radius_from_volume, Volume},
-    core::SimulationUpdateOrder,
     forces::{Weight, Drag, Buoyancy},
 };
 
@@ -20,7 +19,7 @@ impl Plugin for BalloonPlugin {
 
         app.add_systems(
             Update,
-            update_balloon_from_gas.in_set(SimulationUpdateOrder::MeshVolumes),
+            update_balloon_from_gas,
         );
     }
 }

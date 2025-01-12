@@ -11,7 +11,7 @@ use bevy::prelude::*;
 use super::{ideal_gas_density, GasSpecies};
 use crate::{
     thermodynamics::{Density, Pressure, Temperature},
-    core::{SimulationUpdateOrder, SimState},
+    core::SimState,
     vehicle::Balloon,
 };
 
@@ -21,7 +21,7 @@ impl Plugin for AtmospherePlugin {
         app.insert_resource(Atmosphere);
         app.add_systems(
             Update,
-            pause_on_out_of_bounds.in_set(SimulationUpdateOrder::First),
+            pause_on_out_of_bounds,
         );
     }
 }

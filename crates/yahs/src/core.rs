@@ -29,18 +29,6 @@ impl Plugin for CorePhysicsPlugin {
             time::TimeScalePlugin,
         ));
         app.init_state::<SimState>();
-        app.configure_sets(
-            Update,
-            (
-                SimulationUpdateOrder::First,
-                SimulationUpdateOrder::IdealGas,
-                SimulationUpdateOrder::MeshVolumes,
-                SimulationUpdateOrder::Forces,
-                SimulationUpdateOrder::Last,
-            ).chain()
-                .before(PhysicsSet::Prepare)
-                .run_if(in_state(SimState::Running)),
-        );
     }
 }
 
@@ -51,13 +39,4 @@ pub enum SimState {
     Stopped,
     Running,
     Faulted,
-}
-
-#[derive(SystemSet, Debug, Clone, PartialEq, Eq, Hash)]
-pub enum SimulationUpdateOrder {
-    First,
-    IdealGas,
-    MeshVolumes,
-    Forces,
-    Last,
 }

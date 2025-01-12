@@ -14,7 +14,7 @@ pub use body::{Buoyancy, Weight};
 use crate::{
     gas::Atmosphere,
     vehicle::Balloon,
-    core::{SimState, SimulationUpdateOrder},
+    core::SimState,
     thermodynamics::{Density, Volume},
 };
 pub struct ForcesPlugin;

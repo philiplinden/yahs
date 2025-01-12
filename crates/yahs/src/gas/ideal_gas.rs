@@ -5,7 +5,6 @@ use bevy::prelude::*;
 
 use crate::{
     gas::Atmosphere,
-    core::SimulationUpdateOrder,
     thermodynamics::{
         Density, MolarMass, Pressure, Temperature, Volume, AVOGADRO_CONSTANT, BOLTZMANN_CONSTANT,
     },
@@ -24,7 +23,6 @@ impl Plugin for IdealGasPlugin {
                 update_ideal_gas_from_atmosphere,
                 sync_ideal_gas_with_physics_mass,
             )
-                .in_set(SimulationUpdateOrder::IdealGas),
         );
     }
 }

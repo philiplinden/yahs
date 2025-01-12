@@ -8,7 +8,7 @@ mod time;
 mod trajectory;
 mod spawn;
 pub mod prelude {
-    pub use crate::core::{SimulatorPlugins, SimState, SimulationUpdateOrder};
+    pub use crate::core::{SimulatorPlugins, SimState};
     pub use crate::thermodynamics::{Density, Pressure, Temperature, Volume, MolarMass};
     pub use crate::forces::{Weight, Buoyancy, Drag, Force};
     pub use crate::vehicle::{Balloon, BalloonBundle, BalloonMaterial, BalloonPlugin};
