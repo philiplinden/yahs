@@ -1,13 +1,13 @@
 use bevy::prelude::*;
 
-use yahs::prelude::{SimState, TimeScaleOptions};
+use yahs::prelude::{SimState, TimeScaleOptions, StepPhysicsEvent};
 
 pub struct ControlsPlugin;
 
 impl Plugin for ControlsPlugin {
     fn build(&self, app: &mut App) {
         app.init_resource::<KeyBindingsConfig>();
-        app.add_plugins((PausePlayPlugin, ChangeTimeScalePlugin));
+        app.add_plugins((PausePlayPlugin, ChangeTimeScalePlugin, StepPhysicsPlugin));
     }
 }
 
@@ -49,8 +49,8 @@ pub struct TimeControls {
     pub faster: KeyCode,
     pub slower: KeyCode,
     pub reset_speed: KeyCode,
-    pub toggle_real_time: KeyCode,
     pub scale_step: f32,
+    pub step_once: KeyCode,
 }
 
 // ============================ DEFAULT KEYBINDINGS ============================
@@ -93,8 +93,8 @@ impl Default for TimeControls {
             faster: KeyCode::ArrowUp,
             slower: KeyCode::ArrowDown,
             reset_speed: KeyCode::Backspace,
-            toggle_real_time: KeyCode::KeyR,
             scale_step: 0.1,
+            step_once: KeyCode::Tab,
         }
     }
 }
@@ -146,7 +146,22 @@ fn modify_time_scale(
     if key_input.just_pressed(key_bindings.time_controls.reset_speed) {
         time_options.reset();
     }
-    if key_input.just_pressed(key_bindings.time_controls.toggle_real_time) {
-        time_options.toggle_real_time();
+}
+
+struct StepPhysicsPlugin;
+
+impl Plugin for StepPhysicsPlugin {
+    fn build(&self, app: &mut App) {
+        app.add_systems(Update, step_physics);
+    }
+}
+
+fn step_physics(
+    key_input: Res<ButtonInput<KeyCode>>,
+    key_bindings: Res<KeyBindingsConfig>,
+    mut event_writer: EventWriter<StepPhysicsEvent>,
+) {
+    if key_input.just_pressed(key_bindings.time_controls.step_once) {
+        event_writer.send(StepPhysicsEvent(key_bindings.time_controls.scale_step));
     }
 }

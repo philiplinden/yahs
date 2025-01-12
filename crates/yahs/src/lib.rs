@@ -8,7 +8,7 @@ mod payload;
 mod properties;
 mod time;
 mod trajectory;
-
+mod spawn;
 pub mod prelude {
     pub use crate::core::{SimulatorPlugins, SimState, SimulationUpdateOrder};
     pub use crate::properties::{Density, Pressure, Temperature, Volume, MolarMass};
@@ -17,6 +17,7 @@ pub mod prelude {
     pub use crate::balloon::{Balloon, BalloonBundle, BalloonMaterial};
     pub use crate::ideal_gas::{GasSpecies, IdealGas};
     pub use crate::payload::Payload;
-    pub use crate::time::TimeScaleOptions;
+    pub use crate::time::{TimeScaleOptions, StepPhysicsEvent};
     pub use crate::trajectory::Trajectory;
+    pub use crate::spawn::spawn_balloon;
 }

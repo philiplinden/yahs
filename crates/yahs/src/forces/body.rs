@@ -6,7 +6,7 @@ use bevy::prelude::*;
 use crate::{
     atmosphere::Atmosphere,
     balloon::Balloon,
-    forces::{Density, Force, ForceUpdateOrder, Mass, Volume},
+    forces::{Density, Force, Mass, Volume},
     properties::{EARTH_RADIUS_M, STANDARD_G},
 };
 
@@ -18,8 +18,8 @@ impl Plugin for BodyForcesPlugin {
         app.register_type::<Buoyancy>();
 
         app.add_systems(
-            Update,
-            (update_weight_parameters, update_buoyant_parameters).in_set(ForceUpdateOrder::Prepare),
+            FixedUpdate,
+            (update_weight_parameters, update_buoyant_parameters),
         );
     }
 }
@@ -62,22 +62,22 @@ impl Force for Weight {
 }
 
 /// Force (N) from gravity at an altitude (m) above mean sea level.
-fn g(position: Vec3) -> f32 {
+fn gravity(position: Vec3) -> Vec3 {
     let altitude = position.y; // [m]
-    STANDARD_G * (EARTH_RADIUS_M / (EARTH_RADIUS_M + altitude))
+    Vec3::NEG_Y * STANDARD_G * (EARTH_RADIUS_M / (EARTH_RADIUS_M + altitude))
 }
 
 /// Downward force (N) vector due to gravity as a function of altitude (m) and
 /// mass (kg). The direction of this force is always world-space down.
 pub fn weight(position: Vec3, mass: f32) -> Vec3 {
-    Vec3::NEG_Y * g(position) * mass // [N]
+    gravity(position) * mass // [N]
 }
 
-fn update_weight_parameters(
-    mut bodies: Query<(&mut Weight, &Position, &Mass), With<Balloon>>,
-) {
+fn update_weight_parameters(mut bodies: Query<(&mut Weight, &Position, &Mass), With<Balloon>>) {
     for (mut weight, position, mass) in bodies.iter_mut() {
         weight.update(position.0, mass.0);
+        #[cfg(feature = "log")]
+        info!("Updating Weight: Position: {:?}, Mass: {:?}", position.0, mass.0);
     }
 }
 
@@ -123,7 +123,7 @@ impl Force for Buoyancy {
 /// Upward force (N) vector due to atmosphere displaced by the given gas volume.
 /// The direction of this force is always world-space up (it opposes gravity).
 pub fn buoyancy(position: Vec3, displaced_volume: Volume, ambient_density: Density) -> Vec3 {
-    Vec3::Y * (displaced_volume.m3() * ambient_density.kg_per_m3() * g(position))
+    Vec3::Y * (displaced_volume.m3() * ambient_density.kg_per_m3() * gravity(position).length())
 }
 
 fn update_buoyant_parameters(
