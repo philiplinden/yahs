@@ -11,7 +11,10 @@ bevy = { workspace = true }
 avian3d = { workspace = true }
 
 [features]
-default = []
+default = [
+    "dev",
+]
 dev = [
     "bevy/dynamic_linking",
 ]
+log = []

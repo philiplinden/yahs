@@ -6,7 +6,7 @@ use bevy::prelude::*;
 use crate::{
     atmosphere::Atmosphere,
     balloon::Balloon,
-    forces::{Density, Force, ForceUpdateOrder, Mass, Volume},
+    forces::{Density, Force, Mass, Volume},
     properties::{EARTH_RADIUS_M, STANDARD_G},
 };
 
@@ -18,8 +18,8 @@ impl Plugin for BodyForcesPlugin {
         app.register_type::<Buoyancy>();
 
         app.add_systems(
-            Update,
-            (update_weight_parameters, update_buoyant_parameters).in_set(ForceUpdateOrder::Prepare),
+            FixedUpdate,
+            (update_weight_parameters, update_buoyant_parameters),
         );
     }
 }
@@ -76,6 +76,7 @@ pub fn weight(position: Vec3, mass: f32) -> Vec3 {
 fn update_weight_parameters(mut bodies: Query<(&mut Weight, &Position, &Mass), With<Balloon>>) {
     for (mut weight, position, mass) in bodies.iter_mut() {
         weight.update(position.0, mass.0);
+        #[cfg(feature = "log")]
         info!("Updating Weight: Position: {:?}, Mass: {:?}", position.0, mass.0);
     }
 }

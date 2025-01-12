@@ -203,6 +203,7 @@ fn sync_ideal_gas_with_physics_mass(
     entities: Query<(Entity, &IdealGas), Added<IdealGas>>,
 ) {
     for (entity, gas) in entities.iter() {
+        #[cfg(feature = "log")]
         info!(
             "Syncing ideal gas with physics mass: {:?} -> {:?}",
             entity, gas.mass.0

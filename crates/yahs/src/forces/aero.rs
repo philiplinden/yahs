@@ -6,7 +6,7 @@ use bevy::prelude::*;
 use crate::{
     atmosphere::Atmosphere,
     balloon::Balloon,
-    forces::{Density, Force, ForceUpdateOrder},
+    forces::{Density, Force},
 };
 
 pub struct AeroForcesPlugin;
@@ -15,10 +15,8 @@ impl Plugin for AeroForcesPlugin {
     fn build(&self, app: &mut App) {
         app.register_type::<Drag>();
 
-        app.add_systems(
-            Update,
-            update_drag_parameters.in_set(ForceUpdateOrder::Prepare),
-        );
+        // Physics systems should run at fixed rate for stability.
+        app.add_systems(FixedUpdate, update_drag_parameters);
     }
 }
 
@@ -90,6 +88,7 @@ fn update_drag_parameters(
             PI * balloon.shape.diameter(),
             1.17, // default drag coefficient for a sphere
         );
+        #[cfg(feature = "log")]
         info!("Updating Drag: Position: {:?}, Relative Flow Velocity: {:?}, Ambient Density: {:?}, Drag Area: {:?}, Drag Coefficient: {:?}", drag.position, drag.flow_velocity, drag.ambient_density, drag.drag_area, drag.drag_coeff);
     }
 }
