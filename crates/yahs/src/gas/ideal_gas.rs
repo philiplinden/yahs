@@ -4,9 +4,9 @@ use avian3d::prelude::*;
 use bevy::prelude::*;
 
 use crate::{
-    atmosphere::Atmosphere,
+    gas::Atmosphere,
     core::SimulationUpdateOrder,
-    properties::{
+    thermodynamics::{
         Density, MolarMass, Pressure, Temperature, Volume, AVOGADRO_CONSTANT, BOLTZMANN_CONSTANT,
     },
 };

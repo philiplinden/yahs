@@ -4,8 +4,8 @@ use avian3d::{math::PI, prelude::*};
 use bevy::prelude::*;
 
 use crate::{
-    ideal_gas::IdealGas,
-    properties::{sphere_radius_from_volume, Volume},
+    gas::IdealGas,
+    thermodynamics::{sphere_radius_from_volume, Volume},
     core::SimulationUpdateOrder,
     forces::{Weight, Drag, Buoyancy},
 };

@@ -40,5 +40,7 @@ dev = [
     "bevy/bevy_dev_tools",
     "bevy/dynamic_linking",
     "yahs/dev",
+    "log",
 ]
 inspect = ["bevy-inspector-egui"]
+log = []

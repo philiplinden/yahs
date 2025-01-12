@@ -4,10 +4,10 @@ use avian3d::{math::PI, prelude::*};
 use bevy::prelude::*;
 
 use crate::{
-    atmosphere::Atmosphere,
-    balloon::Balloon,
+    gas::Atmosphere,
+    vehicle::Balloon,
     forces::{Density, Force, Mass, Volume},
-    properties::{EARTH_RADIUS_M, STANDARD_G},
+    thermodynamics::{EARTH_RADIUS_M, STANDARD_G},
 };
 
 pub struct BodyForcesPlugin;

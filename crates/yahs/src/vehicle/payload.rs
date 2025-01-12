@@ -3,7 +3,7 @@
 use avian3d::prelude::*;
 use bevy::prelude::*;
 
-use super::forces::{Drag, Force, Weight};
+use crate::forces::{Drag, Force, Weight};
 
 pub struct PayloadPlugin;
 

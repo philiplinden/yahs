@@ -1,8 +1,8 @@
 use bevy::prelude::*;
 use avian3d::prelude::*;
 use crate::{
-    balloon::{BalloonBundle, BalloonMaterial, Balloon},
-    ideal_gas::{GasSpecies, IdealGas},
+    vehicle::{BalloonBundle, BalloonMaterial, Balloon},
+    gas::{GasSpecies, IdealGas},
 };
 
 pub fn spawn_balloon(mut commands: Commands) {

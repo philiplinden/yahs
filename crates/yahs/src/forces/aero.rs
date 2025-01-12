@@ -4,8 +4,8 @@ use avian3d::{math::PI, prelude::*};
 use bevy::prelude::*;
 
 use crate::{
-    atmosphere::Atmosphere,
-    balloon::Balloon,
+    gas::Atmosphere,
+    vehicle::Balloon,
     forces::{Density, Force},
 };
 

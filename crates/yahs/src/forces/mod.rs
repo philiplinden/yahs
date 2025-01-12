@@ -1,6 +1,6 @@
 //! Forces applied to rigid bodies.
-pub mod aero;
-pub mod body;
+mod aero;
+mod body;
 
 use avian3d::prelude::*;
 use bevy::prelude::*;
@@ -12,10 +12,10 @@ pub use aero::Drag;
 pub use body::{Buoyancy, Weight};
 
 use crate::{
-    atmosphere::Atmosphere,
-    balloon::Balloon,
+    gas::Atmosphere,
+    vehicle::Balloon,
     core::{SimState, SimulationUpdateOrder},
-    properties::{Density, Volume},
+    thermodynamics::{Density, Volume},
 };
 pub struct ForcesPlugin;
 
