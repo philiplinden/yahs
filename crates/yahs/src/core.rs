@@ -28,7 +28,7 @@ impl Plugin for CorePhysicsPlugin {
             thermodynamics::ThermodynamicsPlugin,
             gas::IdealGasPlugin,
             forces::ForcesPlugin,
-            shape::ShapeToolsPlugin,
+            geometry::GeometryToolsPlugin,
         ));
         app.init_state::<SimState>();
     }

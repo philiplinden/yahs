@@ -7,7 +7,7 @@ mod thermodynamics;
 mod time;
 mod trajectory;
 mod spawn;
-mod shape;
+mod geometry;
 pub mod prelude {
     pub use crate::core::{SimulatorPlugins, SimState};
     pub use crate::thermodynamics::{Density, Pressure, Temperature};
@@ -19,5 +19,5 @@ pub mod prelude {
     pub use crate::time::{TimeScaleOptions, StepPhysicsEvent};
     pub use crate::trajectory::Trajectory;
     pub use crate::spawn::spawn_balloon;
-    pub use crate::shape::{PrimitiveShape, Volume};
+    pub use crate::geometry::Volume;
 }

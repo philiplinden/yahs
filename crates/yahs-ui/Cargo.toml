@@ -13,7 +13,7 @@ path = "src/main.rs"
 
 [dependencies]
 yahs = { path = "../yahs" }
-bevy = { workspace = true, default-features = false, features = [
+bevy = { workspace = true, features = [
     "bevy_asset",
     "bevy_core_pipeline",
     "bevy_pbr",
@@ -38,7 +38,6 @@ default = ["dev"]
 dev = [
     "avian3d/debug-plugin",
     "bevy/bevy_dev_tools",
-    "bevy/dynamic_linking",
     "yahs/dev",
     "log",
 ]
