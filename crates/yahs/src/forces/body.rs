@@ -77,8 +77,7 @@ pub fn weight(position: Vec3, mass: f32) -> Vec3 {
 fn update_weight_parameters(mut bodies: Query<(&mut Weight, &Position, &Mass), With<Balloon>>) {
     for (mut weight, position, mass) in bodies.iter_mut() {
         weight.update(position.0, mass.0);
-        #[cfg(feature = "log")]
-        info!("Updating Weight: Position: {:?}, Mass: {:?}", position.0, mass.0);
+        debug!("Updating Weight: Position: {:?}, Mass: {:?}", position.0, mass.0);
     }
 }
 

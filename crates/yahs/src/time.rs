@@ -55,8 +55,7 @@ fn modify_time_scale(mut time: ResMut<Time<Physics>>, options: Res<TimeScaleOpti
 
 pub fn pause(mut physics_time: ResMut<Time<Physics>>, mut next_state: ResMut<NextState<SimState>>) {
     physics_time.as_mut().pause();
-    #[cfg(feature = "log")]
-    info!("pausing physics time");
+    debug!("pausing physics time");
     next_state.set(SimState::Stopped);
 }
 
@@ -65,8 +64,7 @@ pub fn unpause(
     mut next_state: ResMut<NextState<SimState>>,
 ) {
     physics_time.as_mut().unpause();
-    #[cfg(feature = "log")]
-    info!("unpausing physics time");
+    debug!("unpausing physics time");
     next_state.set(SimState::Running);
 }
 
@@ -81,8 +79,7 @@ fn step_physics_once_on_event(
     for event in events.read() {
         let t = physics_time.as_mut();
         let delta = std::time::Duration::from_secs_f32(event.0);
-        #[cfg(feature = "log")]
-        info!("stepping physics time by {:?}", delta);
+        debug!("stepping physics time by {:?}", delta);
         t.advance_by(delta);
         next_state.set(SimState::Stopped);
     }

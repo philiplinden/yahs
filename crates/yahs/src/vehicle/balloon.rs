@@ -6,7 +6,7 @@ use bevy::prelude::*;
 use crate::{
     gas::IdealGas,
     forces::{Weight, Drag, Buoyancy},
-    geometry::Volume,
+    geometry::{Volume, sphere_radius_from_volume}
 };
 
 pub struct BalloonPlugin;
@@ -39,6 +39,12 @@ impl Default for Balloon {
             shape: Sphere::new(1.0),
             envelope: Envelope::default(),
         }
+    }
+}
+
+impl Balloon {
+    fn set_volume(&mut self, volume: &Volume) {
+        self.shape.radius = sphere_radius_from_volume(volume.m3());
     }
 }
 
@@ -90,6 +96,6 @@ impl Default for Envelope {
 
 fn update_balloon_from_gas(mut query: Query<(&mut Balloon, &Volume), With<IdealGas>>) {
     for (mut balloon, volume) in query.iter_mut() {
-        // balloon.shape.set_volume(volume.m3());
+        balloon.set_volume(volume);
     }
 }

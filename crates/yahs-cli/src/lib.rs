@@ -1,6 +1,6 @@
 use bevy_console::{reply, ConsoleCommand};
 use clap::{Parser, Subcommand};
-use tracing::{error, info};
+use tracing::info;
 
 #[derive(Parser)]
 #[command(name = "yahs")]

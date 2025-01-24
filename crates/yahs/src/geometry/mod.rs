@@ -2,7 +2,7 @@ mod primitives;
 mod raycast;
 mod volume;
 
-pub use volume::Volume;
+pub use volume::*;
 
 use bevy::prelude::*;
 
