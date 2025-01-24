@@ -14,7 +14,7 @@ use crate::{
     vehicle::Balloon,
     core::SimState,
     thermodynamics::Density,
-    shape::Volume,
+    geometry::Volume,
 };
 pub struct ForcesPlugin;
 

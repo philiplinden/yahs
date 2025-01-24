@@ -19,6 +19,7 @@ use hud::HudPlugin;
 use bevy::{
     prelude::*,
     asset::AssetMetaCheck,
+    log::{LogPlugin, self},
 };
 
 use yahs::prelude::SimulatorPlugins;
@@ -41,6 +42,11 @@ fn main() {
                     }
                     .into(),
                     ..default()
+                })
+                .set(LogPlugin {
+                    level: log::Level::INFO,
+                    filter: "info,capture_bevy_logs=info".to_owned(),
+                    custom_layer: bevy_console::make_layer,
                 }),
             SimulatorPlugins,
             ControlsPlugin,

@@ -28,13 +28,8 @@ fn spawn_balloon(
     let species = GasSpecies::helium();
     commands.spawn((
         Name::new("Balloon"),
-        BalloonBundle {
-            balloon: Balloon {
-                material_properties: BalloonMaterial::default(),
-                shape: sphere,
-            },
-            gas: IdealGas::new(species).with_mass(Mass(0.01)),
-        },
+        Balloon::default(),
+        IdealGas::default(),
         RigidBody::Dynamic,
         Collider::sphere(sphere.radius),
         Transform::from_translation(Vec3::new(0.0, 1.0, 0.0)),

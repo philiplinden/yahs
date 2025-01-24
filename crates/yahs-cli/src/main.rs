@@ -1,22 +1,12 @@
-use bevy::{
-    prelude::*,
-    window::{WindowPlugin, ExitCondition},
-};
-use bevy_ratatui::RatatuiPlugins;
-use yahs::prelude::SimulatorPlugins;
-use yahs_cli::TuiPlugin;
+use clap::Parser;
+use bevy_console::ConsoleCommand;
+use yahs_cli::{Cli, Commands, start_command, get_command, set_command};
 
 fn main() {
-    App::new()
-        .add_plugins((
-            DefaultPlugins.set(WindowPlugin {
-                primary_window: None,
-                close_when_requested: false,
-                exit_condition: ExitCondition::DontExit, // exit in controls.rs
-            }),
-            RatatuiPlugins::default(),
-            SimulatorPlugins,
-            TuiPlugin,
-        ))
-        .run();
+    let cli = Cli::parse();
+    // match &cli.command {
+    //     Commands::Start(cmd) => start_command(ConsoleCommand::new(cmd.clone())),
+    //     Commands::Get(cmd) => get_command(ConsoleCommand::new(cmd.clone())),
+    //     Commands::Set(cmd) => set_command(ConsoleCommand::new(cmd.clone())),
+    // }
 }

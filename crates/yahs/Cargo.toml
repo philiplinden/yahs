@@ -20,4 +20,3 @@ dev = [
     "bevy/dynamic_linking",
     "bevy/bevy_debug_stepping",
 ]
-log = []

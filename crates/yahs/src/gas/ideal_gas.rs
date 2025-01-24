@@ -11,7 +11,7 @@ use bevy::prelude::*;
 
 use crate::{
     gas::Atmosphere,
-    shape::Volume,
+    geometry::Volume,
     thermodynamics::{
         Density, Pressure, Temperature, AVOGADRO_CONSTANT, BOLTZMANN_CONSTANT,
     },

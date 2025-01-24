@@ -9,7 +9,7 @@ use avian3d::{
 };
 use bevy::{prelude::*, reflect::Reflect};
 
-use crate::shape::Volume;
+use crate::geometry::Volume;
 
 pub const BOLTZMANN_CONSTANT: f32 = 1.38e-23_f32; // [J/K]
 pub const AVOGADRO_CONSTANT: f32 = 6.022e+23_f32; // [1/mol]

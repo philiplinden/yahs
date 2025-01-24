@@ -6,8 +6,9 @@ use bevy::prelude::*;
 use crate::{
     gas::Atmosphere,
     vehicle::Balloon,
-    forces::{Density, Force, Mass, Volume},
+    forces::{Density, Force, Mass},
     thermodynamics::{EARTH_RADIUS_M, STANDARD_G},
+    geometry::Volume,
 };
 
 pub struct BodyForcesPlugin;
@@ -132,7 +133,7 @@ fn update_buoyant_parameters(
 ) {
     for (mut buoyancy, position, balloon) in bodies.iter_mut() {
         let ambient_density = atmosphere.density(position.0);
-        let displaced_volume = balloon.volume();
+        let displaced_volume = Volume(balloon.shape.volume());
         buoyancy.update(position.0, displaced_volume, ambient_density);
     }
 }

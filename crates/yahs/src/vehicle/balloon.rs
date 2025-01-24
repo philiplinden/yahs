@@ -6,7 +6,7 @@ use bevy::prelude::*;
 use crate::{
     gas::IdealGas,
     forces::{Weight, Drag, Buoyancy},
-    shape::{PrimitiveShape, Volume},
+    geometry::Volume,
 };
 
 pub struct BalloonPlugin;
@@ -29,14 +29,14 @@ impl Plugin for BalloonPlugin {
 pub struct Balloon {
     // The 3d shape of the balloon constructed from a [`PrimitiveShape`].
     // TODO: Accept other shapes that implement [`Measured3d`]
-    pub shape: PrimitiveShape<Sphere>,
+    pub shape: Sphere,
     pub envelope: Envelope,
 }
 
 impl Default for Balloon {
     fn default() -> Self {
         Balloon {
-            shape: PrimitiveShape::from(Sphere::new(1.0)),
+            shape: Sphere::new(1.0),
             envelope: Envelope::default(),
         }
     }
@@ -90,6 +90,6 @@ impl Default for Envelope {
 
 fn update_balloon_from_gas(mut query: Query<(&mut Balloon, &Volume), With<IdealGas>>) {
     for (mut balloon, volume) in query.iter_mut() {
-        balloon.shape.set_volume(volume.m3());
+        // balloon.shape.set_volume(volume.m3());
     }
 }

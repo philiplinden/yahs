@@ -5,22 +5,10 @@ use bevy::{
     prelude::*,
 };
 
-pub struct DevToolsPlugins;
-
-impl Plugin for DevToolsPlugins {
-    fn build(&self, app: &mut App) {
-        app.add_plugins(FpsPlugin);
-    }
-}
-
-struct FpsPlugin;
-
-impl Plugin for FpsPlugin {
-    fn build(&self, app: &mut App) {
-        app.add_plugins(FrameTimeDiagnosticsPlugin::default())
-            .add_systems(Startup, setup_fps_text)
-            .add_systems(Update, update_fps_text);
-    }
+pub(crate) fn plugin(app: &mut App) {
+    app.add_plugins(FrameTimeDiagnosticsPlugin::default())
+        .add_systems(Startup, setup_fps_text)
+        .add_systems(Update, update_fps_text);
 }
 
 #[derive(Component)]

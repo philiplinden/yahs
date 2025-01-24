@@ -3,7 +3,6 @@ use avian3d::prelude::*;
 use crate::{
     vehicle::Balloon,
     gas::IdealGasBundle,
-    shape::PrimitiveShape,
 };
 
 pub fn spawn_balloon(mut commands: Commands) {

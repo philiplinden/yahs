@@ -13,6 +13,7 @@ path = "src/main.rs"
 
 [dependencies]
 yahs = { path = "../yahs" }
+yahs-cli = { path = "../yahs-cli" }
 bevy = { workspace = true, features = [
     "bevy_asset",
     "bevy_core_pipeline",
@@ -32,6 +33,7 @@ avian3d = { workspace = true }
 bevy-inspector-egui = { version = "0.28", optional = true, features = [
     "highlight_changes",
 ] }
+bevy_console = { workspace = true }
 
 [features]
 default = ["dev"]
@@ -39,7 +41,5 @@ dev = [
     "avian3d/debug-plugin",
     "bevy/bevy_dev_tools",
     "yahs/dev",
-    "log",
 ]
 inspect = ["bevy-inspector-egui"]
-log = []
