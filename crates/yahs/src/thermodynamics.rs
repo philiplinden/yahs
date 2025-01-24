@@ -9,36 +9,22 @@ use avian3d::{
 };
 use bevy::{prelude::*, reflect::Reflect};
 
+use crate::geometry::Volume;
+
 pub const BOLTZMANN_CONSTANT: f32 = 1.38e-23_f32; // [J/K]
 pub const AVOGADRO_CONSTANT: f32 = 6.022e+23_f32; // [1/mol]
 
 pub const STANDARD_G: f32 = 9.80665; // [m/s^2] standard gravitational acceleration
 pub const EARTH_RADIUS_M: f32 = 6371007.2; // [m] mean radius of Earth
 
-fn sphere_volume(radius: f32) -> f32 {
-    (4.0 / 3.0) * PI * f32::powf(radius, 3.0)
-}
+pub struct ThermodynamicsPlugin;
 
-fn shell_volume(internal_radius: f32, thickness: f32) -> f32 {
-    let external_radius = internal_radius + thickness;
-    let internal_volume = sphere_volume(internal_radius);
-    let external_volume = sphere_volume(external_radius);
-    external_volume - internal_volume
-}
-
-pub fn sphere_radius_from_volume(volume: f32) -> f32 {
-    f32::powf(volume, 1.0 / 3.0) / (4.0 / 3.0) * PI
-}
-
-pub struct CorePropertiesPlugin;
-
-impl Plugin for CorePropertiesPlugin {
+impl Plugin for ThermodynamicsPlugin {
     fn build(&self, app: &mut App) {
         app.register_type::<Temperature>();
         app.register_type::<Pressure>();
-        app.register_type::<Volume>();
         app.register_type::<Density>();
-        app.register_type::<MolarMass>();
+        app.add_systems(FixedUpdate, update_density);
     }
 }
 
@@ -166,55 +152,6 @@ impl Div<Scalar> for Pressure {
     }
 }
 
-/// The volume of a body in cubic meters.
-#[derive(Component, Debug, Default, Clone, Copy, PartialEq, Reflect)]
-pub struct Volume(pub Scalar);
-
-impl Volume {
-    /// Zero volume.
-    pub const ZERO: Self = Self(0.0);
-
-    pub fn cubic_meters(&self) -> f32 {
-        self.0
-    }
-
-    pub fn m3(&self) -> f32 {
-        self.0
-    }
-}
-
-impl Add<Volume> for Volume {
-    type Output = Volume;
-
-    fn add(self, rhs: Volume) -> Self::Output {
-        Volume(self.0 + rhs.0)
-    }
-}
-
-impl Sub<Volume> for Volume {
-    type Output = Volume;
-
-    fn sub(self, rhs: Volume) -> Self::Output {
-        Volume(self.0 - rhs.0)
-    }
-}
-
-impl Mul<Scalar> for Volume {
-    type Output = Volume;
-
-    fn mul(self, rhs: Scalar) -> Self::Output {
-        Volume(self.0 * rhs)
-    }
-}
-
-impl Div<Scalar> for Volume {
-    type Output = Volume;
-
-    fn div(self, rhs: Scalar) -> Self::Output {
-        Volume(self.0 / rhs)
-    }
-}
-
 /// Density (kg/m³)
 #[derive(Component, Debug, Default, Clone, Copy, PartialEq, Reflect)]
 pub struct Density(pub Scalar);
@@ -267,28 +204,8 @@ impl Div<Scalar> for Density {
     }
 }
 
-/// Molar mass (kg/mol) of a substance.
-#[derive(Component, Debug, Default, Clone, Copy, PartialEq, Reflect)]
-pub struct MolarMass(pub Scalar);
-
-impl MolarMass {
-    pub fn kilograms_per_mole(&self) -> f32 {
-        self.0
-    }
-}
-
-impl Mul<Scalar> for MolarMass {
-    type Output = MolarMass;
-
-    fn mul(self, rhs: Scalar) -> Self::Output {
-        MolarMass(self.0 * rhs)
-    }
-}
-
-impl Div<Scalar> for MolarMass {
-    type Output = MolarMass;
-
-    fn div(self, rhs: Scalar) -> Self::Output {
-        MolarMass(self.0 / rhs)
+fn update_density(mut query: Query<(&mut Density, &Mass, &Volume)>) {
+    for (mut density, mass, volume) in query.iter_mut() {
+        density.0 = mass.0 / volume.0;
     }
 }

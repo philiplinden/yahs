@@ -2,5 +2,5 @@ mod atmosphere;
 mod ideal_gas;
 
 // re-export
-pub use atmosphere::{Atmosphere, AtmospherePlugin};
-pub use ideal_gas::{GasSpecies, IdealGas, ideal_gas_density, IdealGasPlugin};
+pub use atmosphere::{AtmospherePlugin, Atmosphere};
+pub use ideal_gas::{IdealGasPlugin, MolarMass, GasSpecies, IdealGas, IdealGasBundle, ideal_gas_density};

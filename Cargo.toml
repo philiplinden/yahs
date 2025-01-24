@@ -22,11 +22,12 @@ license-file = "LICENSE-APACHE"
 [workspace.dependencies]
 # Shared dependencies with fixed versions
 bevy = { version = "0.15", default-features = false, features = [
-    "bevy_state", "multi_threaded"
+    "bevy_state",
+    "multi_threaded"
 ] }
-avian3d = { version = "0.2", default-features = false, features = [
-    
-] }
+avian3d = "0.2"
+tracing = "0.1"
+bevy_console = "0.13.1"
 
 # Compile with Performance Optimizations:
 # https://bevyengine.org/learn/quick-start/getting-started/setup/#compile-with-performance-optimizations

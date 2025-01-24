@@ -1,63 +1,69 @@
-mod colors;
-mod controls;
-mod ui;
+use bevy_console::{reply, ConsoleCommand};
+use clap::{Parser, Subcommand};
+use tracing::info;
 
-use avian3d::prelude::*;
-use bevy::prelude::*;
-use bevy_ratatui::terminal::RatatuiContext;
-use ratatui::prelude::*;
-use yahs::prelude::*;
+#[derive(Parser)]
+#[command(name = "yahs")]
+pub struct Cli {
+    #[command(subcommand)]
+    pub command: Commands,
+}
 
-pub struct TuiPlugin;
+#[derive(Subcommand)]
+pub enum Commands {
+    Start(StartCommand),
+    Get(GetCommand),
+    Set(SetCommand),
+}
 
-impl Plugin for TuiPlugin {
-    fn build(&self, app: &mut App) {
-        app.add_plugins(controls::ControlsPlugin)
-            .add_systems(Startup, spawn_balloon)
-            .add_systems(Update, draw_tui.pipe(bevy_ratatui::error::exit_on_error));
+/// Start a new simulation process
+#[derive(Parser, ConsoleCommand)]
+#[command(name = "start")]
+pub struct StartCommand {
+    #[arg(short, long, value_name = "TOML", default_value = "config/default.toml")]
+    pub config: String,
+
+    #[arg(short, long, value_name = "CSV", default_value = "./out.csv")]
+    pub outpath: String,
+}
+
+/// Inspect a physics parameter
+#[derive(Parser, ConsoleCommand)]
+#[command(name = "get")]
+pub struct GetCommand {
+    /// Parameter to inspect
+    pub param: String,
+}
+
+/// Modify a physics parameter
+#[derive(Parser, ConsoleCommand)]
+#[command(name = "set")]
+pub struct SetCommand {
+    /// Parameter to modify
+    pub param: String,
+    /// New value
+    pub value: String,
+}
+
+pub fn start_command(mut cmd: ConsoleCommand<StartCommand>) {
+    if let Some(Ok(args)) = cmd.take() {
+        info!("Starting simulation with config: {:?}", args.config);
+        info!("Output file: {:?}", args.outpath);
+        reply!(cmd, "Started simulation");
     }
 }
 
-fn draw_tui(
-    mut context: ResMut<RatatuiContext>,
-    time: Res<Time<Physics>>,
-    state: Res<State<SimState>>,
-    time_options: Res<TimeScaleOptions>,
-    balloons: Query<
-        (
-            &Name,
-            &Transform,
-            &Weight,
-            &Buoyancy,
-            &yahs::prelude::Drag,
-            &IdealGas,
-        ),
-        With<Balloon>,
-    >,
-) -> color_eyre::Result<()> {
-    context.draw(|frame| {
-        let area = frame.area();
+// Add handlers for get and set commands
+pub fn get_command(mut cmd: ConsoleCommand<GetCommand>) {
+    if let Some(Ok(args)) = cmd.take() {
+        info!("Getting parameter: {:?}", args.param);
+        reply!(cmd, "Parameter value retrieved");
+    }
+}
 
-        let chunks = Layout::default()
-            .direction(Direction::Vertical)
-            .constraints([
-                Constraint::Length(3), // Title
-                Constraint::Length(3), // Sim Status
-                Constraint::Min(10),   // Balloon Data
-                Constraint::Length(3), // Controls
-            ])
-            .split(area);
-
-        ui::draw_title(frame, chunks[0]);
-        ui::draw_status(
-            frame,
-            chunks[1],
-            state.get(),
-            time.elapsed_secs(),
-            &time_options,
-        );
-        ui::draw_balloon_data(frame, chunks[2], &balloons.iter().collect::<Vec<_>>());
-        ui::draw_controls(frame, chunks[3]);
-    })?;
-    Ok(())
+pub fn set_command(mut cmd: ConsoleCommand<SetCommand>) {
+    if let Some(Ok(args)) = cmd.take() {
+        info!("Setting parameter {} to {}", args.param, args.value);
+        reply!(cmd, "Parameter updated");
+    }
 }

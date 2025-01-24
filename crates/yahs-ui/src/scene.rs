@@ -17,8 +17,7 @@ fn spawn_balloon(
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
 ) {
-    #[cfg(feature = "log")]
-        info!("spawning balloon");
+    debug!("spawning balloon");
     let debug_material = materials.add(StandardMaterial {
         base_color: Color::srgb(1.0, 0.0, 0.0),
         ..default()
@@ -28,12 +27,10 @@ fn spawn_balloon(
     let species = GasSpecies::helium();
     commands.spawn((
         Name::new("Balloon"),
-        BalloonBundle {
-            balloon: Balloon {
-                material_properties: BalloonMaterial::default(),
-                shape: sphere,
-            },
-            gas: IdealGas::new(species).with_mass(Mass(0.01)),
+        Balloon::default(),
+        IdealGasBundle {
+            species,
+            ..default()
         },
         RigidBody::Dynamic,
         Collider::sphere(sphere.radius),
@@ -44,8 +41,7 @@ fn spawn_balloon(
 }
 
 fn setup_lighting(mut commands: Commands) {
-    #[cfg(feature = "log")]
-        info!("spawning sunlight");
+    debug!("spawning sunlight");
     commands.spawn((
         DirectionalLight {
             illuminance: 32000.0,

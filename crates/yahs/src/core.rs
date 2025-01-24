@@ -11,6 +11,7 @@ impl PluginGroup for SimulatorPlugins {
     fn build(self) -> PluginGroupBuilder {
         PluginGroupBuilder::start::<Self>()
             .add(CorePhysicsPlugin)
+            .add(time::TimeScalePlugin)
             .add(gas::AtmospherePlugin)
             .add(vehicle::BalloonPlugin)
             .add(vehicle::PayloadPlugin)
@@ -21,12 +22,13 @@ struct CorePhysicsPlugin;
 
 impl Plugin for CorePhysicsPlugin {
     fn build(&self, app: &mut App) {
-        app.add_plugins(PhysicsPlugins::default());
+        // third party plugins
         app.add_plugins((
-            thermodynamics::CorePropertiesPlugin,
+            PhysicsPlugins::default(),
+            thermodynamics::ThermodynamicsPlugin,
             gas::IdealGasPlugin,
             forces::ForcesPlugin,
-            time::TimeScalePlugin,
+            geometry::GeometryToolsPlugin,
         ));
         app.init_state::<SimState>();
     }

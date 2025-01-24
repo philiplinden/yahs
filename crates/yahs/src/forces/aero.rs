@@ -88,8 +88,7 @@ fn update_drag_parameters(
             PI * balloon.shape.diameter(),
             1.17, // default drag coefficient for a sphere
         );
-        #[cfg(feature = "log")]
-        info!("Updating Drag: Position: {:?}, Relative Flow Velocity: {:?}, Ambient Density: {:?}, Drag Area: {:?}, Drag Coefficient: {:?}", drag.position, drag.flow_velocity, drag.ambient_density, drag.drag_area, drag.drag_coeff);
+        debug!("Updating Drag: Position: {:?}, Relative Flow Velocity: {:?}, Ambient Density: {:?}, Drag Area: {:?}, Drag Coefficient: {:?}", drag.position, drag.flow_velocity, drag.ambient_density, drag.drag_area, drag.drag_coeff);
     }
 }
 
