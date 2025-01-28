@@ -9,10 +9,6 @@ use crate::{
     thermodynamics::Density,
 };
 
-pub(super) fn plugin(app: &mut App) {
-    app.add_systems(FixedUpdate, update_buoyant_force);
-}
-
 /// Upward force (N) vector due to atmosphere displaced by the given gas volume.
 /// The direction of this force is always world-space up (it opposes gravity).
 pub fn buoyancy(position: Vec3, displaced_volume: Volume, ambient_density: Density) -> Vec3 {
@@ -24,7 +20,7 @@ pub fn buoyancy(position: Vec3, displaced_volume: Volume, ambient_density: Densi
 #[require(Position, Volume, Forces)]
 pub struct BuoyancyForce;
 
-fn update_buoyant_force(
+pub(super) fn update_buoyancy_force(
     atmosphere: Res<Atmosphere>,
     mut bodies: Query<(&mut Forces, &Position, &Balloon), With<BuoyancyForce>>,
 ) {

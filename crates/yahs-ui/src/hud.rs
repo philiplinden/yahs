@@ -91,7 +91,7 @@ fn update_hud(
             text.push_str(&format!("Velocity: {:?} m/s\n", velocity.0));
             text.push_str(&format!("Density: {:.2} kg/m3\n", density.kg_per_m3()));
             text.push_str(&format!("Volume: {:.2} m3\n", volume.m3()));
-            text.push_str(&format!("Forces: {:?}\n", forces.vectors.iter().map(|f| f.name.clone()).collect::<Vec<_>>()));
+            text.push_str(&format!("Forces: {:.2} N from {:?} forces", forces.net_force().force.length(), forces.vectors.len()));
             text.push_str("\n");
         }
 

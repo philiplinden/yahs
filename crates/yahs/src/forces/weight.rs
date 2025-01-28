@@ -7,11 +7,6 @@ use crate::{
     thermodynamics::{EARTH_RADIUS_M, STANDARD_G},
 };
 
-pub(super) fn plugin(app: &mut App) {
-    app.insert_resource(Gravity(Vec3::ZERO));
-    app.add_systems(FixedUpdate, update_weight_force);
-}
-
 /// Force (N) from gravity at an altitude (m) above mean sea level.
 pub fn gravity(position: Vec3) -> Vec3 {
     let altitude = position.y; // [m]
@@ -29,7 +24,7 @@ pub fn weight(position: Vec3, mass: f32) -> Vec3 {
 pub struct WeightForce;
 
 
-fn update_weight_force(mut bodies: Query<(&mut Forces, &Position, &Mass), With<WeightForce>>) {
+pub(super) fn update_weight_force(mut bodies: Query<(&mut Forces, &Position, &Mass), With<WeightForce>>) {
     for (mut forces, position, mass) in bodies.iter_mut() {
         let force = ForceVector {
             name: "Weight".to_string(),

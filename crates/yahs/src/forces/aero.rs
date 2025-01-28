@@ -10,10 +10,6 @@ use crate::{
     thermodynamics::Density,
 };
 
-pub(super) fn plugin(app: &mut App) {
-    app.add_systems(FixedUpdate, update_drag_force);
-}
-
 /// Force (N) due to drag as a solid body moves through a fluid.
 pub fn drag(velocity: Vec3, ambient_density: f32, drag_area: f32, drag_coeff: f32) -> Vec3 {
     let drag_direction = -velocity.normalize_or_zero(); // oppose the object's velocity
@@ -25,7 +21,7 @@ pub fn drag(velocity: Vec3, ambient_density: f32, drag_area: f32, drag_coeff: f3
 #[require(Position, LinearVelocity, Balloon, Forces)]
 pub struct DragForce;
 
-fn update_drag_force(
+pub(super) fn update_drag_force(
     atmosphere: Res<Atmosphere>,
     mut bodies: Query<(&mut Forces, &Position, &LinearVelocity, &Balloon), With<DragForce>>,
 ) {

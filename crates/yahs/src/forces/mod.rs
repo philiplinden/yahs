@@ -1,7 +1,6 @@
 //! Forces applied to rigid bodies.
 mod aero;
 mod buoyancy;
-mod net;
 mod weight;
 
 use avian3d::{math::Quaternion, prelude::*};
@@ -10,34 +9,41 @@ use bevy::prelude::*;
 use crate::debug;
 
 // Re-export common forces
-pub use buoyancy::{buoyancy, BuoyancyForce};
-pub use weight::{weight, gravity, WeightForce};
 pub use aero::{drag, DragForce};
+pub use buoyancy::{buoyancy, BuoyancyForce};
+pub use weight::{gravity, weight, WeightForce};
 
 pub(crate) fn plugin(app: &mut App) {
-    app.add_plugins((
-        net::plugin,
-        aero::plugin,
-        weight::plugin,
-        buoyancy::plugin,
-    ));
-    app.add_systems(Update, (
-        debug::notify_on_added::<Forces>,
-        debug::notify_on_added::<WeightForce>,
-        debug::notify_on_added::<BuoyancyForce>,
-        debug::notify_on_added::<DragForce>,
-    ));
+    app.insert_resource(Gravity(Vec3::ZERO));
+    app.add_systems(
+        Update,
+        (
+            debug::notify_on_added::<Forces>,
+            debug::notify_on_added::<WeightForce>,
+            debug::notify_on_added::<BuoyancyForce>,
+            debug::notify_on_added::<DragForce>,
+        ),
+    );
+    app.add_systems(FixedUpdate, (
+        weight::update_weight_force,
+        buoyancy::update_buoyancy_force,
+        aero::update_drag_force,
+        update_external_force,
+    ).chain().in_set(PhysicsSet::Prepare));
+    app.add_systems(Last, clear_forces);
 }
 
 /// A collection of force vectors that will be applied to an entity
 #[derive(Component, Debug, Default, Clone, Reflect)]
 pub struct Forces {
-    pub vectors: Vec<ForceVector>
+    pub vectors: Vec<ForceVector>,
 }
 
 impl Forces {
     pub fn new() -> Self {
-        Self { vectors: Vec::new() }
+        Self {
+            vectors: Vec::new(),
+        }
     }
 
     pub fn add(&mut self, force: ForceVector) {
@@ -46,6 +52,15 @@ impl Forces {
 
     pub fn clear(&mut self) {
         self.vectors.clear();
+    }
+
+    pub fn net_force(&self) -> ForceVector {
+        ForceVector {
+            name: "Net Force".to_string(),
+            force: self.vectors.iter().map(|f| f.force).sum(),
+            point: self.vectors.iter().map(|f| f.point).sum(),
+            color: None,
+        }
     }
 }
 
@@ -108,5 +123,21 @@ impl From<ForceVector> for Isometry3d {
             Quat::IDENTITY
         };
         Isometry3d::new(force.point, rotation)
+    }
+}
+
+fn update_external_force(mut query: Query<(&mut ExternalForce, &mut ExternalTorque, &mut Forces)>) {
+    for (mut ext_force, mut ext_torque, forces) in query.iter_mut() {
+        // Clear previous frame's forces
+        ext_force.clear();
+        ext_torque.clear();
+        let net_force = forces.net_force();
+        ext_force.apply_force_at_point(net_force.force, net_force.point, Vec3::ZERO);
+    }
+}
+
+fn clear_forces(mut query: Query<&mut Forces>) {
+    for mut forces in query.iter_mut() {
+        forces.clear();
     }
 }

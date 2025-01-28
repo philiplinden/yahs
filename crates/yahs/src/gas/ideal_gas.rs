@@ -164,7 +164,7 @@ impl DebugGasSpecies {
     }
 
     /// Gas species with a given weight and radius at STP.
-    pub fn debug_stp_with_weight(self, weight: f32, radius: f32) -> Self {
+    pub fn debug_stp_with_weight(weight: f32, radius: f32) -> Self {
         let debug_weight = weight; // [N]
         let debug_radius = radius; // [m]
         let debug_pressure = Atmosphere::standard_pressure().pascals(); // [Pa]
@@ -181,7 +181,7 @@ impl DebugGasSpecies {
     }
 
     /// Gas species with a given buoyancy and radius at STP.
-    pub fn debug_stp_with_buoyancy(self, buoyancy: f32, radius: f32) -> Self {
+    pub fn debug_stp_with_buoyancy(buoyancy: f32, radius: f32) -> Self {
         let debug_radius = radius; // [m]
         let debug_volume = Volume::sphere(debug_radius).m3(); // [m³]
         let air_density_at_stp = Atmosphere::standard_density().kg_per_m3(); // [kg/m³]
@@ -213,6 +213,16 @@ impl Default for DebugGasSpecies {
     fn default() -> Self {
         let debug_mass = 1.0 / STANDARD_G; // [kg]
         DebugGasSpecies::new(debug_mass, 1.0, 1.0, 20.0)
+    }
+}
+
+impl Into<GasSpecies> for DebugGasSpecies {
+    fn into(self) -> GasSpecies {
+        GasSpecies {
+            name: self.name,
+            abbreviation: self.abbreviation,
+            molar_mass: self.molar_mass,
+        }
     }
 }
 
