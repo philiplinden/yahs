@@ -11,8 +11,9 @@ use bevy::{prelude::*, reflect::Reflect};
 
 use crate::geometry::Volume;
 
-pub const BOLTZMANN_CONSTANT: f32 = 1.38e-23_f32; // [J/K]
-pub const AVOGADRO_CONSTANT: f32 = 6.022e+23_f32; // [1/mol]
+pub const BOLTZMANN_CONSTANT: f32 = 1.380649e-23_f32; // [J/K]
+pub const AVOGADRO_CONSTANT: f32 = 6.02214076e23_f32; // [1/mol]
+pub const GAS_CONSTANT: f32 = BOLTZMANN_CONSTANT * AVOGADRO_CONSTANT; // [J/K-mol]
 
 pub const STANDARD_G: f32 = 9.80665; // [m/s^2] standard gravitational acceleration
 pub const EARTH_RADIUS_M: f32 = 6371007.2; // [m] mean radius of Earth
@@ -49,6 +50,10 @@ impl Temperature {
 
     pub fn celsius(&self) -> f32 {
         self.kelvin() - 273.15
+    }
+
+    pub fn standard(&self) -> Self {
+        Temperature(273.15)
     }
 }
 
@@ -105,12 +110,24 @@ impl Pressure {
         Pressure(kilopascals * 1000.0)
     }
 
+    pub fn from_atmospheres(atmospheres: f32) -> Self {
+        Pressure(atmospheres * 101325.0)
+    }
+
     pub fn pascals(&self) -> f32 {
         self.0
     }
 
     pub fn kilopascals(&self) -> f32 {
         self.pascals() / 1000.0
+    }
+
+    pub fn atmospheres(&self) -> f32 {
+        self.pascals() / 101325.0
+    }
+
+    pub fn standard(&self) -> Self {
+        Pressure::from_atmospheres(1.0)
     }
 }
 

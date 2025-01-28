@@ -72,6 +72,31 @@ impl Atmosphere {
             &GasSpecies::air(),
         )
     }
+
+    pub fn standard_temperature() -> Temperature {
+        Temperature::from_celsius(20.0)
+    }
+
+    pub fn standard_pressure() -> Pressure {
+        Pressure::from_atmospheres(1.0)
+    }
+
+    /// Density (kg/m³) of air at standard conditions.
+    pub fn standard_density() -> Density {
+        ideal_gas_density(
+            Atmosphere::standard_temperature(),
+            Atmosphere::standard_pressure(),
+            &GasSpecies::air(),
+        )
+    }
+
+    pub fn debug_density() -> Density {
+        ideal_gas_density(
+            Atmosphere::standard_temperature(),
+            Atmosphere::standard_pressure(),
+            &GasSpecies::debug(),
+        )
+    }
 }
 
 #[derive(Debug)]

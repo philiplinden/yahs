@@ -33,6 +33,14 @@ impl Volume {
     pub fn m3(&self) -> f32 {
         self.0
     }
+
+    pub fn from_cubic_meters(cubic_meters: f32) -> Self {
+        Self(cubic_meters)
+    }
+
+    pub fn sphere(radius: f32) -> Self {
+        Self(sphere_volume(radius))
+    }
 }
 
 impl Add<Volume> for Volume {

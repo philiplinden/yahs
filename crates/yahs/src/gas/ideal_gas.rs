@@ -4,20 +4,18 @@
 use std::ops::{Add, Div, Mul, Sub};
 
 use avian3d::{
-    prelude::*,
     math::{Scalar, PI},
+    prelude::*,
 };
 use bevy::prelude::*;
 
 use crate::{
     gas::Atmosphere,
     geometry::Volume,
-    thermodynamics::{
-        Density, Pressure, Temperature, AVOGADRO_CONSTANT, BOLTZMANN_CONSTANT,
-    },
+    thermodynamics::{Density, Pressure, Temperature, GAS_CONSTANT, STANDARD_G},
 };
 
-pub const R: f32 = BOLTZMANN_CONSTANT * AVOGADRO_CONSTANT; // [J/K-mol] Ideal gas constant
+const R: f32 = GAS_CONSTANT; // [J/K-mol] Ideal gas constant shortened for convenience
 
 /// Volume (m³) of an ideal gas from its temperature (K), pressure (Pa),
 /// mass (kg) and molar mass (kg/mol).
@@ -58,7 +56,8 @@ impl Plugin for IdealGasPlugin {
                 update_ideal_gas_from_atmosphere,
                 update_volume_from_pressure,
                 update_volume_from_temperature,
-            ).chain(),
+            )
+                .chain(),
         );
     }
 }
@@ -114,6 +113,15 @@ impl GasSpecies {
             molar_mass: MolarMass(0.0040026),
         }
     }
+
+    pub fn debug() -> Self {
+        let debug_species = DebugGasSpecies::default();
+        GasSpecies {
+            name: debug_species.name,
+            abbreviation: debug_species.abbreviation,
+            molar_mass: debug_species.molar_mass,
+        }
+    }
 }
 
 impl Default for GasSpecies {
@@ -130,6 +138,85 @@ impl GasSpecies {
             abbreviation,
             molar_mass,
         }
+    }
+}
+
+/// Imaginary gas species for debugging.
+/// This gas species can be initialized to result in desired properties based
+/// on a given set of parameters. By default it is initialized to the molar
+/// mass of an imaginary gas that weighs 1 N for 1 kg at 1 atm and 20°C.
+pub struct DebugGasSpecies {
+    pub name: String,
+    pub abbreviation: String,
+    pub molar_mass: MolarMass,
+}
+
+impl DebugGasSpecies {
+    /// Debug gas species.
+    pub fn new(mass: f32, radius: f32, pressure: f32, temperature: f32) -> Self {
+        let debug_pressure = Pressure::from_atmospheres(pressure).pascals(); // [Pa]
+        let debug_temperature = Temperature::from_celsius(temperature).kelvin(); // [K]
+        let debug_volume = Volume::sphere(radius).m3(); // [m³]
+        let debug_moles = debug_pressure * debug_volume / (R * debug_temperature); // [mol]
+        let debug_molar_mass = mass / debug_moles; // [kg/mol]
+
+        DebugGasSpecies {
+            name: "Debug".to_string(),
+            abbreviation: "DBG".to_string(),
+            molar_mass: MolarMass(debug_molar_mass),
+        }
+    }
+
+    /// Gas species with a given weight and radius at STP.
+    pub fn debug_stp_with_weight(self, weight: f32, radius: f32) -> Self {
+        let debug_weight = weight; // [N]
+        let debug_radius = radius; // [m]
+        let debug_pressure = Atmosphere::standard_pressure().pascals(); // [Pa]
+        let debug_temperature = Atmosphere::standard_temperature().kelvin(); // [K]
+        let debug_volume = Volume::sphere(debug_radius).m3(); // [m³]
+        let debug_mass = debug_weight / STANDARD_G; // [kg]
+        let debug_moles = debug_pressure * debug_volume / (R * debug_temperature); // [mol]
+        let debug_molar_mass = debug_mass / debug_moles; // [kg/mol]
+        DebugGasSpecies {
+            name: "Debug".to_string(),
+            abbreviation: "DBG".to_string(),
+            molar_mass: MolarMass(debug_molar_mass),
+        }
+    }
+
+    /// Gas species with a given buoyancy and radius at STP.
+    pub fn debug_stp_with_buoyancy(self, buoyancy: f32, radius: f32) -> Self {
+        let debug_radius = radius; // [m]
+        let debug_volume = Volume::sphere(debug_radius).m3(); // [m³]
+        let air_density_at_stp = Atmosphere::standard_density().kg_per_m3(); // [kg/m³]
+        let air_weight_at_stp = debug_volume * air_density_at_stp * STANDARD_G; // [N]
+        let debug_weight = buoyancy * air_weight_at_stp; // [N]
+        let debug_pressure = Atmosphere::standard_pressure().pascals(); // [Pa]
+        let debug_temperature = Atmosphere::standard_temperature().kelvin(); // [K]
+        let debug_mass = debug_weight / STANDARD_G; // [kg]
+        let debug_moles = debug_pressure * debug_volume / (R * debug_temperature); // [mol]
+        let debug_molar_mass = debug_mass / debug_moles; // [kg/mol]
+        DebugGasSpecies {
+            name: "Debug".to_string(),
+            abbreviation: "DBG".to_string(),
+            molar_mass: MolarMass(debug_molar_mass),
+        }
+    }
+}
+
+impl Default for DebugGasSpecies {
+    /// The molar mass of an imaginary gas that weighs 1 N for 1 kg at 1 atm
+    /// and 20°C.
+    ///
+    /// mass [kg] = 1 N / 9.80665 m/s^2
+    /// volume [m³] = 4/3 * π * 1 m^3
+    /// n [mol] = PV/RT
+    /// M [kg/mol] = mass / n
+    ///
+    /// This is surprisingly close to the molar mass of neon (20.1797 g/mol).
+    fn default() -> Self {
+        let debug_mass = 1.0 / STANDARD_G; // [kg]
+        DebugGasSpecies::new(debug_mass, 1.0, 1.0, 20.0)
     }
 }
 
@@ -160,7 +247,10 @@ impl IdealGasBundle {
     }
 }
 
-fn init_ideal_gas_density(mut commands: Commands, mut query: Query<(Entity, &Pressure, &Temperature, &GasSpecies), Added<IdealGas>>) {
+fn init_ideal_gas_density(
+    mut commands: Commands,
+    mut query: Query<(Entity, &Pressure, &Temperature, &GasSpecies), Added<IdealGas>>,
+) {
     for (entity, pressure, temperature, species) in query.iter_mut() {
         let density = ideal_gas_density(*temperature, *pressure, species);
         commands.entity(entity).insert(density);
@@ -168,7 +258,10 @@ fn init_ideal_gas_density(mut commands: Commands, mut query: Query<(Entity, &Pre
 }
 
 fn update_ideal_gas_from_atmosphere(
-    mut query: Query<(&mut Pressure, &mut Temperature, &Position), (With<IdealGas>, Changed<Position>)>,
+    mut query: Query<
+        (&mut Pressure, &mut Temperature, &Position),
+        (With<IdealGas>, Changed<Position>),
+    >,
     atmosphere: Res<Atmosphere>,
 ) {
     for (mut pressure, mut temperature, position) in query.iter_mut() {
@@ -178,7 +271,10 @@ fn update_ideal_gas_from_atmosphere(
 }
 
 fn update_volume_from_pressure(
-    mut query: Query<(&mut Volume, &Pressure, &Temperature, &Mass, &GasSpecies), (With<IdealGas>, Changed<Pressure>)>,
+    mut query: Query<
+        (&mut Volume, &Pressure, &Temperature, &Mass, &GasSpecies),
+        (With<IdealGas>, Changed<Pressure>),
+    >,
 ) {
     for (mut volume, pressure, temperature, mass, species) in query.iter_mut() {
         volume.0 = ideal_gas_volume(*temperature, *pressure, *mass, species).m3();
@@ -186,7 +282,10 @@ fn update_volume_from_pressure(
 }
 
 fn update_volume_from_temperature(
-    mut query: Query<(&mut Volume, &Pressure, &Temperature, &Mass, &GasSpecies), (With<IdealGas>, Changed<Temperature>)>,
+    mut query: Query<
+        (&mut Volume, &Pressure, &Temperature, &Mass, &GasSpecies),
+        (With<IdealGas>, Changed<Temperature>),
+    >,
 ) {
     for (mut volume, pressure, temperature, mass, species) in query.iter_mut() {
         volume.0 = ideal_gas_volume(*temperature, *pressure, *mass, species).m3();

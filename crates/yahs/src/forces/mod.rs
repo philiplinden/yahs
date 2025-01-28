@@ -7,7 +7,7 @@ use bevy::prelude::*;
 
 // Re-export common forces
 pub use aero::Drag;
-pub use body::{Buoyancy, Weight};
+pub use body::{Buoyancy, Weight, gravity};
 
 use crate::{
     gas::Atmosphere,

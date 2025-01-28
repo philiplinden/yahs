@@ -63,7 +63,7 @@ impl Force for Weight {
 }
 
 /// Force (N) from gravity at an altitude (m) above mean sea level.
-fn gravity(position: Vec3) -> Vec3 {
+pub fn gravity(position: Vec3) -> Vec3 {
     let altitude = position.y; // [m]
     Vec3::NEG_Y * STANDARD_G * (EARTH_RADIUS_M / (EARTH_RADIUS_M + altitude))
 }
