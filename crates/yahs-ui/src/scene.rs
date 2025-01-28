@@ -24,7 +24,7 @@ fn spawn_balloon(
     });
     let sphere = Sphere::default();
     let shape = meshes.add(sphere.mesh().ico(5).unwrap());
-    let species = GasSpecies::helium();
+    let species = DebugGasSpecies::debug_stp_with_buoyancy(1.0, 1.0).into();
     commands.spawn((
         Name::new("Balloon"),
         Balloon::default(),

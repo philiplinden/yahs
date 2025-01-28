@@ -6,10 +6,6 @@ pub use volume::*;
 
 use bevy::prelude::*;
 
-pub struct GeometryToolsPlugin;
-
-impl Plugin for GeometryToolsPlugin {
-    fn build(&self, app: &mut App) {
-        app.register_type::<Volume>();
-    }
+pub(super) fn plugin(app: &mut App) {
+    app.register_type::<Volume>();
 }

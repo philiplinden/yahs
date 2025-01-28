@@ -1,3 +1,5 @@
+#![allow(dead_code)]
+
 use bevy::{
     math::{
         primitives::{Capsule3d, Cone, Cuboid, Cylinder, Sphere},

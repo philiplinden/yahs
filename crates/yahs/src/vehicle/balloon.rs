@@ -4,28 +4,29 @@ use avian3d::{math::PI, prelude::*};
 use bevy::prelude::*;
 
 use crate::{
+    debug,
     gas::IdealGas,
-    forces::{Weight, Drag, Buoyancy},
+    forces::{Forces, BuoyancyForce, WeightForce, DragForce},
     geometry::{Volume, sphere_radius_from_volume}
 };
 
-pub struct BalloonPlugin;
-
-impl Plugin for BalloonPlugin {
-    fn build(&self, app: &mut App) {
-        app.add_systems(
-            Update,
+pub(crate) fn plugin(app: &mut App) {
+    app.add_systems(
+        Update,
+        (
             update_balloon_from_gas,
-        );
-    }
+            add_forces_to_balloon,
+            debug::notify_on_added::<Balloon>,
+        )
+    );
 }
 
 /// The balloon is a surface that contains an [`IdealGas`]. [`Balloon`]
-/// is a dynamic [`RigidBody`] with [`Weight`], [`Drag`], and [`Buoyancy`] forces.
+/// is a dynamic [`RigidBody`] with [`Forces`].
 /// The [`Balloon`] can have an [`ArbitraryShape`] that can be updated based on the
 /// pressure of the [`IdealGas`] it contains, like to account for stretching.
 #[derive(Component, Debug, Clone, PartialEq)]
-#[require(IdealGas, RigidBody(|| RigidBody::Dynamic), Weight, Drag, Buoyancy)]
+#[require(IdealGas, RigidBody(|| RigidBody::Dynamic), Forces)]
 pub struct Balloon {
     // The 3d shape of the balloon constructed from a [`PrimitiveShape`].
     // TODO: Accept other shapes that implement [`Measured3d`]
@@ -97,5 +98,15 @@ impl Default for Envelope {
 fn update_balloon_from_gas(mut query: Query<(&mut Balloon, &Volume), With<IdealGas>>) {
     for (mut balloon, volume) in query.iter_mut() {
         balloon.set_volume(volume);
+    }
+}
+
+fn add_forces_to_balloon(mut commands: Commands, query: Query<Entity, Added<Balloon>>) {
+    for entity in query.iter() {
+        commands.entity(entity).insert((
+            BuoyancyForce,
+            WeightForce,
+            DragForce,
+        ));
     }
 }

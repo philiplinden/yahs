@@ -11,6 +11,7 @@ pub(crate) fn sphere_radius_from_volume(volume: f32) -> f32 {
     f32::powf(volume * 3.0 / (4.0 * PI), 1.0 / 3.0)
 }
 
+#[allow(dead_code)]
 pub(crate) fn shell_volume(internal_radius: f32, thickness: f32) -> f32 {
     let external_radius = internal_radius + thickness;
     let internal_volume = sphere_volume(internal_radius);
@@ -32,6 +33,14 @@ impl Volume {
 
     pub fn m3(&self) -> f32 {
         self.0
+    }
+
+    pub fn from_cubic_meters(cubic_meters: f32) -> Self {
+        Self(cubic_meters)
+    }
+
+    pub fn sphere(radius: f32) -> Self {
+        Self(sphere_volume(radius))
     }
 }
 

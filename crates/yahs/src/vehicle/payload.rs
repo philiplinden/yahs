@@ -3,21 +3,21 @@
 use avian3d::prelude::*;
 use bevy::prelude::*;
 
-use crate::forces::{Drag, Force, Weight};
+use crate::debug;
+use crate::forces::Forces;
 
-pub struct PayloadPlugin;
-
-impl Plugin for PayloadPlugin {
-    fn build(&self, _app: &mut App) {
-        // app.add_systems(Startup, spawn_payload);
-    }
+pub(crate) fn plugin(app: &mut App) {
+    app.register_type::<Payload>();
+    app.register_type::<Tether>();
+    app.add_systems(Update, debug::notify_on_added::<Payload>);
+    // app.add_systems(Startup, spawn_payload);
 }
 
 /// A thing carried by the balloon.
-#[derive(Component, Default)]
-#[require(Transform, RigidBody(|| RigidBody::Dynamic), Weight, Drag)]
+#[derive(Component, Default, Reflect)]
+#[require(Transform, RigidBody(|| RigidBody::Dynamic), Forces)]
 pub struct Payload;
 
 /// A tether that connects the balloon to the payload.
-#[derive(Component, Default)]
+#[derive(Component, Default, Reflect)]
 pub struct Tether;

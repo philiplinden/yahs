@@ -12,18 +12,12 @@ use super::{ideal_gas_density, GasSpecies};
 use crate::{
     thermodynamics::{Density, Pressure, Temperature},
     core::SimState,
-    vehicle::Balloon,
+    vehicle::balloon::Balloon,
 };
 
-pub struct AtmospherePlugin;
-impl Plugin for AtmospherePlugin {
-    fn build(&self, app: &mut App) {
-        app.insert_resource(Atmosphere);
-        app.add_systems(
-            Update,
-            pause_on_out_of_bounds,
-        );
-    }
+pub(crate) fn plugin(app: &mut App) {
+    app.insert_resource(Atmosphere);
+    app.add_systems(Update, pause_on_out_of_bounds);
 }
 
 fn pause_on_out_of_bounds(
@@ -70,6 +64,31 @@ impl Atmosphere {
             self.temperature(position),
             self.pressure(position),
             &GasSpecies::air(),
+        )
+    }
+
+    pub fn standard_temperature() -> Temperature {
+        Temperature::from_celsius(20.0)
+    }
+
+    pub fn standard_pressure() -> Pressure {
+        Pressure::from_atmospheres(1.0)
+    }
+
+    /// Density (kg/m³) of air at standard conditions.
+    pub fn standard_density() -> Density {
+        ideal_gas_density(
+            Atmosphere::standard_temperature(),
+            Atmosphere::standard_pressure(),
+            &GasSpecies::air(),
+        )
+    }
+
+    pub fn debug_density() -> Density {
+        ideal_gas_density(
+            Atmosphere::standard_temperature(),
+            Atmosphere::standard_pressure(),
+            &GasSpecies::debug(),
         )
     }
 }

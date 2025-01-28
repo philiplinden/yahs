@@ -12,9 +12,9 @@ impl PluginGroup for SimulatorPlugins {
         PluginGroupBuilder::start::<Self>()
             .add(CorePhysicsPlugin)
             .add(time::TimeScalePlugin)
-            .add(gas::AtmospherePlugin)
-            .add(vehicle::BalloonPlugin)
-            .add(vehicle::PayloadPlugin)
+            .add(gas::atmosphere_plugin)
+            .add(vehicle::balloon::plugin)
+            .add(vehicle::payload::plugin)
     }
 }
 
@@ -25,10 +25,10 @@ impl Plugin for CorePhysicsPlugin {
         // third party plugins
         app.add_plugins((
             PhysicsPlugins::default(),
-            thermodynamics::ThermodynamicsPlugin,
-            gas::IdealGasPlugin,
-            forces::ForcesPlugin,
-            geometry::GeometryToolsPlugin,
+            thermodynamics::plugin,
+            gas::ideal_gas_plugin,
+            forces::plugin,
+            geometry::plugin,
         ));
         app.init_state::<SimState>();
     }
@@ -37,8 +37,8 @@ impl Plugin for CorePhysicsPlugin {
 #[allow(dead_code)]
 #[derive(States, Debug, Default, Clone, Copy, Hash, PartialEq, Eq)]
 pub enum SimState {
-    #[default]
     Stopped,
+    #[default]
     Running,
     Faulted,
 }
