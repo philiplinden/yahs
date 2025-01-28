@@ -31,9 +31,9 @@ fn setup_hud(mut commands: Commands) {
         .spawn(Node {
             width: Val::Percent(100.0),
             height: Val::Percent(100.0),
-            justify_content: JustifyContent::SpaceBetween,
+            flex_direction: FlexDirection::Column,
+            justify_content: JustifyContent::FlexEnd,
             align_items: AlignItems::Start,
-            margin: UiRect::axes(Val::Px(15.), Val::Px(5.)),
             ..Default::default()
         })
         .with_children(|builder| {
