@@ -3,7 +3,7 @@ use bevy::{
     prelude::*,
 };
 
-use yahs::prelude::{Balloon, Force, Weight, Buoyancy, Drag, Trajectory};
+use yahs::prelude::{Balloon, Forces, Trajectory, ForceVector};
 use crate::colors::ColorPalette;
 
 const ARROW_SCALE: f32 = 0.1;
@@ -19,19 +19,11 @@ impl Plugin for KinematicsGizmos {
     }
 }
 
-fn force_arrows(weights: Query<&Weight>, buoys: Query<&Buoyancy>, drags: Query<&Drag>, mut gizmos: Gizmos) {
+fn force_arrows(forces: Query<&Forces>, mut gizmos: Gizmos) {
     let mut arrows = Vec::new();
 
-    for weight in weights.iter() {
-        arrows.push(new_force_arrow(weight, ColorPalette::VibrantRed.color()));
-    }
-
-    for buoyancy in buoys.iter() {
-        arrows.push(new_force_arrow(buoyancy, ColorPalette::BrightBlue.color()));
-    }
-
-    for drag in drags.iter() {
-        arrows.push(new_force_arrow(drag, ColorPalette::LivelyGreen.color()));
+    for force in forces.iter().flat_map(|f| &f.vectors) {
+        arrows.push(new_force_arrow(force.clone(), force.color.unwrap_or(ColorPalette::VibrantRed.color())));
     }
 
     for (start, end, color) in arrows {
@@ -39,10 +31,10 @@ fn force_arrows(weights: Query<&Weight>, buoys: Query<&Buoyancy>, drags: Query<&
     }
 }
 
-fn new_force_arrow(force: &dyn Force, default_color: Color) -> (Vec3, Vec3, Color) {
-    let start = force.point_of_application();
-    let end = start + force.force() * ARROW_SCALE;
-    let color = match force.color() {
+fn new_force_arrow(force: ForceVector, default_color: Color) -> (Vec3, Vec3, Color) {
+    let start = force.point;
+    let end = start + force.force * ARROW_SCALE;
+    let color = match force.color {
         Some(c) => c,
         None => default_color,
     };

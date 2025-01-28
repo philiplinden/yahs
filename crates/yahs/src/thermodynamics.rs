@@ -18,15 +18,11 @@ pub const GAS_CONSTANT: f32 = BOLTZMANN_CONSTANT * AVOGADRO_CONSTANT; // [J/K-mo
 pub const STANDARD_G: f32 = 9.80665; // [m/s^2] standard gravitational acceleration
 pub const EARTH_RADIUS_M: f32 = 6371007.2; // [m] mean radius of Earth
 
-pub struct ThermodynamicsPlugin;
-
-impl Plugin for ThermodynamicsPlugin {
-    fn build(&self, app: &mut App) {
-        app.register_type::<Temperature>();
-        app.register_type::<Pressure>();
-        app.register_type::<Density>();
-        app.add_systems(FixedUpdate, update_density);
-    }
+pub(super) fn plugin(app: &mut App) {
+    app.register_type::<Temperature>();
+    app.register_type::<Pressure>();
+    app.register_type::<Density>();
+    app.add_systems(FixedUpdate, update_density);
 }
 
 /// Temperature (K)

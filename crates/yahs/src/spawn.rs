@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 use avian3d::prelude::*;
 use crate::{
-    vehicle::Balloon,
+    vehicle::balloon::Balloon,
     gas::IdealGasBundle,
 };
 

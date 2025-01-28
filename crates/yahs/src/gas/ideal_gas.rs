@@ -43,23 +43,19 @@ pub fn ideal_gas_density(
     )
 }
 
-pub struct IdealGasPlugin;
-
-impl Plugin for IdealGasPlugin {
-    fn build(&self, app: &mut App) {
-        app.register_type::<GasSpecies>();
-        app.register_type::<MolarMass>();
-        app.add_systems(
-            PreUpdate,
-            (
-                init_ideal_gas_density,
-                update_ideal_gas_from_atmosphere,
-                update_volume_from_pressure,
-                update_volume_from_temperature,
-            )
-                .chain(),
-        );
-    }
+pub(crate) fn plugin(app: &mut App) {
+    app.register_type::<GasSpecies>();
+    app.register_type::<MolarMass>();
+    app.add_systems(
+        PreUpdate,
+        (
+            init_ideal_gas_density,
+            update_ideal_gas_from_atmosphere,
+            update_volume_from_pressure,
+            update_volume_from_temperature,
+        )
+            .chain(),
+    );
 }
 
 /// Molar mass (kg/mol) of a substance.

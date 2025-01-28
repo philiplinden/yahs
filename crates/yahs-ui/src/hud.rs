@@ -1,6 +1,6 @@
 use avian3d::prelude::*;
 use bevy::prelude::*;
-use yahs::prelude::{Balloon, Buoyancy, Drag, Force, Volume, Density, SimState, Weight};
+use yahs::prelude::{Balloon, Forces, Volume, Density, SimState};
 use crate::controls::KeyBindingsConfig;
 
 pub struct HudPlugin;
@@ -66,10 +66,7 @@ fn update_hud(
         (
             &Name,
             &Transform,
-            &Weight,
-            &Buoyancy,
-            &Drag,
-            &ExternalForce,
+            &Forces,
             &LinearVelocity,
             &Volume,
             &Density,
@@ -88,16 +85,13 @@ fn update_hud(
         text.push_str(&format!("Sim State: {:?}\n", state.get()));
         text.push_str(&format!("Physics Time: {:.2} s\n", elapsed_time));
 
-        for (name, transform, weight, buoyancy, drag, net_force, velocity, volume, density) in balloons.iter() {
+        for (name, transform, forces, velocity, volume, density) in balloons.iter() {
             text.push_str(&format!("\n{}\n", name.as_str()));
             text.push_str(&format!("Position: {:} m\n", transform.translation));
             text.push_str(&format!("Velocity: {:?} m/s\n", velocity.0));
             text.push_str(&format!("Density: {:.2} kg/m3\n", density.kg_per_m3()));
             text.push_str(&format!("Volume: {:.2} m3\n", volume.m3()));
-            text.push_str(&format!("Weight: {:.2} N\n", weight.force()));
-            text.push_str(&format!("Buoyancy: {:.2} N\n", buoyancy.force()));
-            text.push_str(&format!("Drag: {:.2} N\n", drag.force()));
-            text.push_str(&format!("Net Force: {:.2} N\n", net_force.force()));
+            text.push_str(&format!("Forces: {:?}\n", forces.vectors.iter().map(|f| f.name.clone()).collect::<Vec<_>>()));
             text.push_str("\n");
         }
 
