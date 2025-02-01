@@ -5,6 +5,9 @@ use bevy::{
     prelude::*,
 };
 
+#[cfg(feature = "dev")]
+use avian3d::debug_render::PhysicsDebugPlugin;
+
 pub struct SimulatorPlugins;
 
 impl PluginGroup for SimulatorPlugins {
@@ -27,15 +30,19 @@ impl Plugin for CorePhysicsPlugin {
             PhysicsPlugins::default(),
             thermodynamics::plugin,
             gas::ideal_gas_plugin,
-            forces::plugin,
+            // forces::plugin,
             geometry::plugin,
         ));
         app.init_state::<SimState>();
+
+        #[cfg(feature = "dev")]
+        app.add_plugins(PhysicsDebugPlugin::default());
     }
 }
 
 #[allow(dead_code)]
 #[derive(States, Debug, Default, Clone, Copy, Hash, PartialEq, Eq)]
+
 pub enum SimState {
     Stopped,
     #[default]

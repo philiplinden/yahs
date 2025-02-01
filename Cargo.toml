@@ -21,11 +21,11 @@ license-file = "LICENSE-APACHE"
 
 [workspace.dependencies]
 # Shared dependencies with fixed versions
-bevy = { version = "0.15", default-features = false, features = [
+bevy = { version = "0.15.1", default-features = false, features = [
     "bevy_state",
     "multi_threaded"
 ] }
-avian3d = "0.2"
+avian3d = "0.2.1"
 tracing = "0.1"
 bevy_console = "0.13.1"
 

@@ -3,6 +3,7 @@ use bevy::prelude::*;
 use std::f32::consts::PI;
 
 use yahs::prelude::*;
+use super::camera::Targetable;
 
 pub struct ScenePlugin;
 
@@ -29,6 +30,7 @@ fn spawn_balloon(
         Name::new("Balloon"),
         Balloon::default(),
         IdealGasBundle {
+
             species,
             ..default()
         },
@@ -37,8 +39,11 @@ fn spawn_balloon(
         Transform::from_translation(Vec3::new(0.0, 1.0, 0.0)),
         MeshMaterial3d(debug_material),
         Mesh3d(shape),
+        Targetable,
     ));
 }
+
+
 
 fn setup_lighting(mut commands: Commands) {
     debug!("spawning sunlight");

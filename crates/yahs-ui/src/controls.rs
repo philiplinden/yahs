@@ -22,9 +22,8 @@ pub struct KeyBindingsConfig {
 #[derive(Reflect)]
 pub struct CameraControls {
     pub hold_look: MouseButton,
-    pub tap_cycle_target: KeyCode,
-    pub tap_clear_target: KeyCode,
-    pub tap_focus_target: KeyCode,
+    pub hold_show_targets: KeyCode,
+    pub tap_select_target: MouseButton,
     pub tap_forward: KeyCode,
     pub tap_back: KeyCode,
     pub tap_left: KeyCode,
@@ -60,9 +59,8 @@ impl Default for CameraControls {
     fn default() -> Self {
         Self {
             hold_look: MouseButton::Right,
-            tap_cycle_target: KeyCode::Tab,
-            tap_clear_target: KeyCode::KeyT,
-            tap_focus_target: KeyCode::KeyF,
+            hold_show_targets: KeyCode::AltLeft,
+            tap_select_target: MouseButton::Left,
             tap_forward: KeyCode::KeyW,
             tap_back: KeyCode::KeyS,
             tap_left: KeyCode::KeyA,

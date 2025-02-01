@@ -115,7 +115,7 @@ fn update_settings_text(
         text.push_str(&format!("Slower: {:?}\n", key_bindings.time_controls.slower));
         text.push_str(&format!("Reset Speed: {:?}\n", key_bindings.time_controls.reset_speed));
         text.push_str(&format!("Step Once: {:?}\n", key_bindings.time_controls.step_once));
-
+        text.push_str(&format!("Rotate Camera: {:?} Mouse\n", key_bindings.camera_controls.hold_look));
         settings_text.0 = text; // Update the settings text
     } else {
         error!("No settings text entity found. Ensure that the settings text is set up correctly.");

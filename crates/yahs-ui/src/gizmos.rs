@@ -14,7 +14,7 @@ impl Plugin for KinematicsGizmos {
     fn build(&self, app: &mut App) {
         app.add_systems(
             PostUpdate,
-            (force_arrows, orientation_indicator, position_reference, draw_trajectory)
+            (force_arrows, position_reference, draw_trajectory)
         );
     }
 }
@@ -41,6 +41,7 @@ fn new_force_arrow(force: ForceVector, default_color: Color) -> (Vec3, Vec3, Col
     (start, end, color)
 }
 
+#[allow(dead_code)]
 fn orientation_indicator(query: Query<&Transform, With<Balloon>>, mut gizmos: Gizmos) {
     for transform in query.iter() {
         gizmos.cross(transform.translation, 2.0, LIME);

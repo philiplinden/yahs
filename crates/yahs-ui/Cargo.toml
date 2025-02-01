@@ -24,6 +24,8 @@ bevy = { workspace = true, features = [
     "bevy_window",
     "bevy_winit",
     "bevy_gizmos",
+    "bevy_picking",
+    "bevy_mesh_picking_backend",
     "default_font",
     "png",
     "tonemapping_luts",
@@ -31,7 +33,7 @@ bevy = { workspace = true, features = [
 ] }
 avian3d = { workspace = true }
 bevy_console = { workspace = true, optional = true }
-bevy-inspector-egui = { version = "0.28", optional = true, features = [
+bevy-inspector-egui = { version = "0.29.1", optional = true, features = [
     "highlight_changes",
 ] }
 
