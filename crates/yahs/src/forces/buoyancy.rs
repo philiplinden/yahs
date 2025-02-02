@@ -22,12 +22,11 @@ pub struct BuoyancyForce;
 
 pub(super) fn update_buoyancy_force(
     atmosphere: Res<Atmosphere>,
-    mut bodies: Query<(&mut Forces, &Position, &Balloon), With<BuoyancyForce>>,
+    mut bodies: Query<(&mut Forces, &Position, &Volume), With<BuoyancyForce>>,
 ) {
-    for (mut forces, position, balloon) in bodies.iter_mut() {
+    for (mut forces, position, volume) in bodies.iter_mut() {
         let ambient_density = atmosphere.density(position.0);
-        let displaced_volume = Volume(balloon.shape.volume());
-        let buoyancy_force = buoyancy(position.0, displaced_volume, ambient_density);
+        let buoyancy_force = buoyancy(position.0, *volume, ambient_density);
 
         if let Some(force) = forces.vectors.iter_mut().find(|f| f.force_type == ForceType::Buoyancy) {
             force.force = buoyancy_force;

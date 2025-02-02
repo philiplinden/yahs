@@ -5,7 +5,9 @@ mod weight;
 
 use avian3d::{math::Quaternion, prelude::*};
 use bevy::prelude::*;
+use std::ops::{Add, AddAssign};
 
+use crate::core::SimState;
 use crate::debug;
 
 // Re-export common forces
@@ -15,21 +17,27 @@ pub use weight::{gravity, weight, WeightForce};
 
 pub(crate) fn plugin(app: &mut App) {
     app.insert_resource(Gravity(Vec3::ZERO));
+    app.register_type::<Forces>();
     app.add_systems(
         Update,
         (
-            debug::notify_on_added::<Forces>,
             debug::notify_on_added::<WeightForce>,
             debug::notify_on_added::<BuoyancyForce>,
             debug::notify_on_added::<DragForce>,
         ),
     );
-    app.add_systems(FixedUpdate, (
-        weight::update_weight_force,
-        buoyancy::update_buoyancy_force,
-        aero::update_drag_force,
-        apply_external_force,
-    ).chain().in_set(PhysicsSet::Prepare));
+    app.add_systems(
+        FixedUpdate,
+        (
+            weight::update_weight_force,
+            buoyancy::update_buoyancy_force,
+            aero::update_drag_force,
+            apply_external_force,
+        )
+            .chain()
+            .in_set(PhysicsSet::Prepare)
+            .run_if(in_state(SimState::Running)),
+    );
 }
 
 /// A collection of force vectors that will be applied to an entity
@@ -140,15 +148,48 @@ impl From<ForceVector> for Isometry3d {
     }
 }
 
-fn apply_external_force(mut query: Query<(Entity, &mut Forces, &mut ExternalForce)>) {
-    for (entity, forces, mut external_force) in query.iter_mut() {
-        let net_force = forces.net_force();
-        if net_force.force.is_nan() || net_force.force.length() > 1000.0 {
-            warn!("Entity {:?} has suspicious force: {:?}", entity, net_force.force);
-        } else {
-            external_force.clear();
-            external_force.apply_force(net_force.force);
+impl Add for ForceVector {
+    type Output = Self;
+
+    fn add(self, other: Self) -> Self {
+        ForceVector {
+            name: "Combined Force".to_string(),
+            force: self.force + other.force,
+            point: self.point + other.point,
+            color: None,
+            force_type: ForceType::Net,
         }
+    }
+}
+
+impl AddAssign for ForceVector {
+    fn add_assign(&mut self, other: Self) {
+        self.force += other.force;
+        self.point += other.point;
+        self.name = "Combined Force".to_string();
+        self.color = None;
+        self.force_type = ForceType::Net;
+    }
+}
+
+/// Sum all forces for an entity and its children and apply the net force as an
+/// external force to the rigid body.
+///
+/// FIXME: I think this double dips when adding forces from children.
+fn apply_external_force(
+    mut query: Query<(&Forces, &mut ExternalForce, &Children), Without<Parent>>,
+    children_forces: Query<&Forces, With<Parent>>,
+) {
+    for (forces, mut external_force, children) in query.iter_mut() {
+        let mut total_forces = forces.net_force();
+        for &child in children.iter() {
+            if let Ok(child_forces) = children_forces.get(child) {
+                total_forces += child_forces.net_force();
+            }
+        }
+        external_force.clear();
+        external_force.apply_force(total_forces.force);
 
     }
+
 }

@@ -8,6 +8,7 @@ use crate::{
     vehicle::balloon::Balloon,
     forces::{ForceVector, ForceType, Forces},
     thermodynamics::Density,
+    geometry::{sphere_radius_from_volume, Volume},
 };
 
 
@@ -19,19 +20,21 @@ pub fn drag(velocity: Vec3, ambient_density: f32, drag_area: f32, drag_coeff: f3
 }
 
 #[derive(Component, Default)]
-#[require(Position, LinearVelocity, Balloon, Forces)]
+#[require(Position, LinearVelocity, Volume, Forces)]
 pub struct DragForce;
 
 pub(super) fn update_drag_force(
     atmosphere: Res<Atmosphere>,
-    mut bodies: Query<(&mut Forces, &Position, &LinearVelocity, &Balloon), With<DragForce>>,
+    mut bodies: Query<(&mut Forces, &Position, &LinearVelocity, &Volume), With<DragForce>>,
 ) {
-    for (mut forces, position, velocity, balloon) in bodies.iter_mut() {
+    for (mut forces, position, velocity, volume) in bodies.iter_mut() {
+        let radius = sphere_radius_from_volume(volume.0);
+        let drag_area = PI * radius * radius; // cross-sectional area
         let drag_force = drag(
             velocity.0,
             atmosphere.density(position.0).kg_per_m3(),
-            PI * balloon.shape.diameter(),
-            1.17, // default drag coefficient for a sphere
+            drag_area,
+            0.47, // standard drag coefficient for a sphere
         );
 
         if let Some(force) = forces.vectors.iter_mut().find(|f| f.force_type == ForceType::Drag) {

@@ -4,6 +4,8 @@ mod scene;
 mod hud;
 mod colors;
 mod gizmos;
+
+#[cfg(feature = "console")]
 mod console;
 
 use camera::CameraPlugin;
@@ -11,6 +13,9 @@ use controls::ControlsPlugin;
 use scene::ScenePlugin;
 use hud::HudPlugin;
 use gizmos::KinematicsGizmos;
+
+
+#[cfg(feature = "console")]
 use console::DevConsolePlugin;
 
 use bevy::{
@@ -18,6 +23,9 @@ use bevy::{
     asset::AssetMetaCheck,
     log::LogPlugin,
 };
+
+#[cfg(feature = "inspect")]
+use bevy_inspector_egui::quick::WorldInspectorPlugin;
 
 use yahs::prelude::SimulatorPlugins;
 
@@ -53,5 +61,7 @@ impl Plugin for AppPlugins {
         app.add_plugins(DevConsolePlugin);
         #[cfg(not(feature = "console"))]
         app.add_plugins(LogPlugin::default());
+        #[cfg(feature = "inspect")]
+        app.add_plugins(WorldInspectorPlugin::new());
     }
 }

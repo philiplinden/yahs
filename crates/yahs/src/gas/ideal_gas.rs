@@ -10,6 +10,9 @@ use avian3d::{
 use bevy::prelude::*;
 
 use crate::{
+    core::SimState,
+    debug,
+    forces::{BuoyancyForce, Forces, WeightForce},
     gas::Atmosphere,
     geometry::Volume,
     thermodynamics::{Density, Pressure, Temperature, GAS_CONSTANT, STANDARD_G},
@@ -49,12 +52,16 @@ pub(crate) fn plugin(app: &mut App) {
     app.add_systems(
         PreUpdate,
         (
-            init_ideal_gas_density,
-            update_ideal_gas_from_atmosphere,
-            update_volume_from_pressure,
-            update_volume_from_temperature,
-        )
-            .chain(),
+            (
+                init_ideal_gas_density,
+                update_ideal_gas_from_atmosphere,
+                update_volume_from_pressure,
+                update_volume_from_temperature,
+            )
+                .chain()
+                .run_if(in_state(SimState::Running)),
+            debug::notify_on_added::<IdealGas>,
+        ),
     );
 }
 
@@ -227,7 +234,17 @@ impl Into<GasSpecies> for DebugGasSpecies {
 }
 
 #[derive(Component, Default, Debug, Clone, PartialEq, Reflect)]
-#[require(Temperature, Pressure, Volume, Density, Mass, GasSpecies)]
+#[require(
+    Temperature,
+    Pressure,
+    Volume,
+    Density,
+    Mass,
+    GasSpecies,
+    Forces,
+    WeightForce,
+    BuoyancyForce,
+)]
 pub struct IdealGas;
 
 /// Properties of an ideal gas. For properties per unit mass, set the mass to 1.

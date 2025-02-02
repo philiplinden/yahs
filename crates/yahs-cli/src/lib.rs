@@ -1,6 +1,8 @@
-use bevy_console::{reply, ConsoleCommand};
+use bevy::prelude::*;
+use bevy_console::{reply, ConsoleCommand, AddConsoleCommand};
 use clap::{Parser, Subcommand};
 use tracing::info;
+use yahs::prelude::*;
 
 #[derive(Parser)]
 #[command(name = "yahs")]
@@ -11,59 +13,47 @@ pub struct Cli {
 
 #[derive(Subcommand)]
 pub enum Commands {
-    Start(StartCommand),
-    Get(GetCommand),
-    Set(SetCommand),
+    Go(GoCommand),
+    Stop(StopCommand),
 }
 
-/// Start a new simulation process
+/// Start the simulation
 #[derive(Parser, ConsoleCommand)]
-#[command(name = "start")]
-pub struct StartCommand {
-    #[arg(short, long, value_name = "TOML", default_value = "config/default.toml")]
-    pub config: String,
+#[command(name = "go")]
+pub struct GoCommand {}
 
-    #[arg(short, long, value_name = "CSV", default_value = "./out.csv")]
-    pub outpath: String,
-}
-
-/// Inspect a physics parameter
+/// Stop the simulation
 #[derive(Parser, ConsoleCommand)]
-#[command(name = "get")]
-pub struct GetCommand {
-    /// Parameter to inspect
-    pub param: String,
-}
+#[command(name = "stop")] 
+pub struct StopCommand {}
 
-/// Modify a physics parameter
-#[derive(Parser, ConsoleCommand)]
-#[command(name = "set")]
-pub struct SetCommand {
-    /// Parameter to modify
-    pub param: String,
-    /// New value
-    pub value: String,
-}
-
-pub fn start_command(mut cmd: ConsoleCommand<StartCommand>) {
-    if let Some(Ok(args)) = cmd.take() {
-        info!("Starting simulation with config: {:?}", args.config);
-        info!("Output file: {:?}", args.outpath);
-        reply!(cmd, "Started simulation");
+pub fn go_command(
+    mut cmd: ConsoleCommand<GoCommand>,
+    mut next_state: ResMut<NextState<SimState>>,
+) {
+    if let Some(Ok(_)) = cmd.take() {
+        info!("Starting simulation");
+        next_state.set(SimState::Running);
+        reply!(cmd, "Simulation started");
     }
 }
 
-// Add handlers for get and set commands
-pub fn get_command(mut cmd: ConsoleCommand<GetCommand>) {
-    if let Some(Ok(args)) = cmd.take() {
-        info!("Getting parameter: {:?}", args.param);
-        reply!(cmd, "Parameter value retrieved");
+pub fn stop_command(
+    mut cmd: ConsoleCommand<StopCommand>,
+    mut next_state: ResMut<NextState<SimState>>,
+) {
+    if let Some(Ok(_)) = cmd.take() {
+        info!("Stopping simulation");
+        next_state.set(SimState::Stopped);
+        reply!(cmd, "Simulation stopped");
     }
 }
 
-pub fn set_command(mut cmd: ConsoleCommand<SetCommand>) {
-    if let Some(Ok(args)) = cmd.take() {
-        info!("Setting parameter {} to {}", args.param, args.value);
-        reply!(cmd, "Parameter updated");
+pub struct CliPlugin;
+
+impl Plugin for CliPlugin {
+    fn build(&self, app: &mut App) {
+        app.add_console_command::<GoCommand, _>(go_command)
+           .add_console_command::<StopCommand, _>(stop_command);
     }
 }
