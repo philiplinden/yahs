@@ -32,7 +32,7 @@ pub(crate) fn plugin(app: &mut App) {
             weight::update_weight_force,
             buoyancy::update_buoyancy_force,
             aero::update_drag_force,
-            apply_external_force,
+            apply_forces,
         )
             .chain()
             .in_set(PhysicsSet::Prepare)
@@ -172,24 +172,25 @@ impl AddAssign for ForceVector {
     }
 }
 
-/// Sum all forces for an entity and its children and apply the net force as an
-/// external force to the rigid body.
-///
-/// FIXME: I think this double dips when adding forces from children.
-fn apply_external_force(
-    mut query: Query<(&Forces, &mut ExternalForce, &Children), Without<Parent>>,
-    children_forces: Query<&Forces, With<Parent>>,
+/// Consolidate force application into a single system
+fn apply_forces(
+    mut query: Query<(
+        &mut ExternalForce,
+        &Forces,
+        &Children,
+    )>,
+    child_forces: Query<&Forces>,
 ) {
-    for (forces, mut external_force, children) in query.iter_mut() {
-        let mut total_forces = forces.net_force();
+    for (mut ext_force, forces, children) in query.iter_mut() {
+        let mut total_force = forces.net_force();
+        
+        // Add child forces
         for &child in children.iter() {
-            if let Ok(child_forces) = children_forces.get(child) {
-                total_forces += child_forces.net_force();
+            if let Ok(child_force) = child_forces.get(child) {
+                total_force += child_force.net_force();
             }
         }
-        external_force.clear();
-        external_force.apply_force(total_forces.force);
 
+        ext_force.set_force(total_force.force);
     }
-
 }

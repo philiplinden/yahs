@@ -13,8 +13,12 @@ pub struct Cli {
 
 #[derive(Subcommand)]
 pub enum Commands {
+    /// Start the simulation
     Go(GoCommand),
+    /// Stop the simulation
     Stop(StopCommand),
+    /// Step the simulation forward
+    Step(StepCommand),
 }
 
 /// Start the simulation
@@ -26,6 +30,13 @@ pub struct GoCommand {}
 #[derive(Parser, ConsoleCommand)]
 #[command(name = "stop")] 
 pub struct StopCommand {}
+
+#[derive(Parser, ConsoleCommand)]
+#[command(name = "step")]
+pub struct StepCommand {
+    #[arg(default_value = "0.1")]
+    pub step_size: f32,
+}
 
 pub fn go_command(
     mut cmd: ConsoleCommand<GoCommand>,
@@ -49,11 +60,23 @@ pub fn stop_command(
     }
 }
 
+pub fn step_command(
+    mut cmd: ConsoleCommand<StepCommand>,
+    mut event_writer: EventWriter<StepPhysicsEvent>,
+) {
+    if let Some(Ok(args)) = cmd.take() {
+        info!("Stepping simulation by {}", args.step_size);
+        event_writer.send(StepPhysicsEvent(args.step_size));
+        reply!(cmd, "Stepped simulation by {}", args.step_size);
+    }
+}
+
 pub struct CliPlugin;
 
 impl Plugin for CliPlugin {
     fn build(&self, app: &mut App) {
         app.add_console_command::<GoCommand, _>(go_command)
-           .add_console_command::<StopCommand, _>(stop_command);
+           .add_console_command::<StopCommand, _>(stop_command)
+           .add_console_command::<StepCommand, _>(step_command);
     }
 }

@@ -4,6 +4,7 @@ mod scene;
 mod hud;
 mod colors;
 mod gizmos;
+mod plot;
 
 #[cfg(feature = "console")]
 mod console;
