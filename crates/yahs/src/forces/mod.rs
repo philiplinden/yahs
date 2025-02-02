@@ -28,9 +28,8 @@ pub(crate) fn plugin(app: &mut App) {
         weight::update_weight_force,
         buoyancy::update_buoyancy_force,
         aero::update_drag_force,
-        update_net_acceleration,
+        apply_external_force,
     ).chain().in_set(PhysicsSet::Prepare));
-    app.add_systems(Last, clear_forces);
 }
 
 /// A collection of force vectors that will be applied to an entity
@@ -60,7 +59,7 @@ impl Forces {
             force: self.vectors.iter().map(|f| f.force).sum(),
             point: self.vectors.iter().map(|f| f.point).sum(),
             color: None,
-            force_type: ForceType::Generic,
+            force_type: ForceType::Net,
         }
     }
 }
@@ -71,6 +70,7 @@ pub enum ForceType {
     Weight,
     Buoyancy,
     Drag,
+    Net,
     Generic,
 }
 
@@ -140,16 +140,15 @@ impl From<ForceVector> for Isometry3d {
     }
 }
 
-fn update_net_acceleration(mut query: Query<(&mut Forces, &mut LinearVelocity, &Mass)>, time: Res<Time<Physics>>) {
-    for (forces, mut velocity, mass) in query.iter_mut() {
+fn apply_external_force(mut query: Query<(Entity, &mut Forces, &mut ExternalForce)>) {
+    for (entity, forces, mut external_force) in query.iter_mut() {
         let net_force = forces.net_force();
-        let net_acceleration = net_force.force / mass.0;
-        velocity.0 += net_acceleration * time.delta_secs();
-    }
-}
+        if net_force.force.is_nan() || net_force.force.length() > 1000.0 {
+            warn!("Entity {:?} has suspicious force: {:?}", entity, net_force.force);
+        } else {
+            external_force.clear();
+            external_force.apply_force(net_force.force);
+        }
 
-fn clear_forces(mut query: Query<&mut Forces>) {
-    for mut forces in query.iter_mut() {
-        forces.clear();
     }
 }
