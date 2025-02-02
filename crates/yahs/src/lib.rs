@@ -5,7 +5,6 @@ pub mod gas;
 pub mod geometry;
 pub mod thermodynamics;
 pub mod time;
-pub mod trajectory;
 pub mod vehicle;
 pub mod debug;
 pub mod prelude {
@@ -15,6 +14,5 @@ pub mod prelude {
     pub use crate::geometry::Volume;
     pub use crate::thermodynamics::{Density, Pressure, Temperature};
     pub use crate::time::{StepPhysicsEvent, TimeScaleOptions};
-    pub use crate::trajectory::Trajectory;
     pub use crate::vehicle::{balloon::Balloon, payload::{Payload, PayloadBundle}, tether};
 }

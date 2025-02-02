@@ -48,7 +48,11 @@ impl Default for Balloon {
 
 impl Balloon {
     fn set_volume(&mut self, volume: &Volume) {
-        self.shape.radius = sphere_radius_from_volume(volume.m3());
+        let old_volume = self.shape.volume();
+        if old_volume != volume.m3() {
+            info!("Volume changing from {} to {}", old_volume, volume.m3());
+            self.shape.radius = sphere_radius_from_volume(volume.m3());
+        }
     }
 }
 
@@ -107,23 +111,21 @@ fn balloon_mass_from_envelope(mut balloons: Query<(&mut Mass, &Balloon), Added<B
 
 fn update_balloon_volume_from_gas(
     mut balloons: Query<(&mut Volume, &Children), (With<Balloon>, Without<IdealGas>)>,
-    gases: Query<Entity, With<IdealGas>>,
-    gas_volumes: Query<&mut Volume, With<IdealGas>>,
+    gases: Query<&Volume, With<IdealGas>>,
 ) {
     for (mut balloon_volume, children) in balloons.iter_mut() {
         // Get the first child with IdealGas component
         for &child in children {
-            if let Ok(gas) = gases.get(child) {
-                if let Some(gas_volume) = gas_volumes.get(gas).ok() {
-                    *balloon_volume = *gas_volume;
-                    break;
-                }
+            if let Ok(gas_volume) = gases.get(child) {
+                *balloon_volume = *gas_volume;
+                break;
             }
+
         }
     }
 }
 
-fn update_balloon_shape_from_volume(mut balloons: Query<(&mut Balloon, &Volume)>) {
+fn update_balloon_shape_from_volume(mut balloons: Query<(&mut Balloon, &Volume), Changed<Volume>>) {
     for (mut balloon, volume) in balloons.iter_mut() {
         balloon.set_volume(volume);
     }

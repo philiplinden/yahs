@@ -32,6 +32,8 @@ bevy = { workspace = true, features = [
     "wayland",
 ] }
 avian3d = { workspace = true }
+bevy_egui = "0.32.0"
+egui_plot = "0.30.0"
 bevy_console = { workspace = true, optional = true }
 bevy-inspector-egui = { version = "0.29.1", optional = true, features = [
     "highlight_changes",

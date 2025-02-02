@@ -3,7 +3,7 @@ use bevy::{
     prelude::*,
 };
 
-use yahs::prelude::{Balloon, Forces, Trajectory, ForceVector};
+use yahs::prelude::{Balloon, Forces, ForceVector};
 use crate::colors::ColorPalette;
 
 const ARROW_SCALE: f32 = 0.1;
@@ -14,7 +14,7 @@ impl Plugin for KinematicsGizmos {
     fn build(&self, app: &mut App) {
         app.add_systems(
             PostUpdate,
-            (force_arrows, position_reference, draw_trajectory)
+            (force_arrows, position_reference)
         );
     }
 }
@@ -66,15 +66,4 @@ fn position_reference(mut gizmos: Gizmos) {
         Vec2::new(spacing, spacing),
         ColorPalette::MediumBase.color(),
     );
-}
-
-/// Draws the trajectory of the balloon by connecting points in the trajectory.
-fn draw_trajectory(query: Query<(&Trajectory, &Transform)>, mut gizmos: Gizmos) {
-    for (trajectory, transform) in query.iter() {
-        let mut start = transform.translation;
-        for point in &trajectory.points {
-            gizmos.line(start, *point, ColorPalette::VividYellow.color());
-            start = *point;
-        }
-    }
 }
