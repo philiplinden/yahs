@@ -28,7 +28,7 @@ pub(crate) fn plugin(app: &mut App) {
         weight::update_weight_force,
         buoyancy::update_buoyancy_force,
         aero::update_drag_force,
-        update_external_force,
+        update_net_acceleration,
     ).chain().in_set(PhysicsSet::Prepare));
     app.add_systems(Last, clear_forces);
 }
@@ -60,8 +60,18 @@ impl Forces {
             force: self.vectors.iter().map(|f| f.force).sum(),
             point: self.vectors.iter().map(|f| f.point).sum(),
             color: None,
+            force_type: ForceType::Generic,
         }
     }
+}
+
+/// Identifies different types of forces for tracking and updating
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Reflect)]
+pub enum ForceType {
+    Weight,
+    Buoyancy,
+    Drag,
+    Generic,
 }
 
 /// A force vector component that will be summed and applied as an external
@@ -74,6 +84,7 @@ pub struct ForceVector {
     pub force: Vec3,
     pub point: Vec3,
     pub color: Option<Color>,
+    pub force_type: ForceType,
 }
 
 impl Default for ForceVector {
@@ -83,6 +94,7 @@ impl Default for ForceVector {
             force: Vec3::ZERO,
             point: Vec3::ZERO,
             color: None,
+            force_type: ForceType::Generic,
         }
     }
 }
@@ -94,6 +106,7 @@ impl Into<ForceVector> for Vec3 {
             force: self,
             point: Vec3::ZERO,
             color: None,
+            force_type: ForceType::Generic,
         }
     }
 }
@@ -111,6 +124,7 @@ impl Into<ForceVector> for Isometry3d {
             force: (self.rotation * Vec3::Y).normalize_or_zero(),
             point: self.translation.into(),
             color: None,
+            force_type: ForceType::Generic,
         }
     }
 }
@@ -126,13 +140,11 @@ impl From<ForceVector> for Isometry3d {
     }
 }
 
-fn update_external_force(mut query: Query<(&mut ExternalForce, &mut ExternalTorque, &mut Forces)>) {
-    for (mut ext_force, mut ext_torque, forces) in query.iter_mut() {
-        // Clear previous frame's forces
-        ext_force.clear();
-        ext_torque.clear();
+fn update_net_acceleration(mut query: Query<(&mut Forces, &mut LinearVelocity, &Mass)>, time: Res<Time<Physics>>) {
+    for (forces, mut velocity, mass) in query.iter_mut() {
         let net_force = forces.net_force();
-        ext_force.apply_force_at_point(net_force.force, net_force.point, Vec3::ZERO);
+        let net_acceleration = net_force.force / mass.0;
+        velocity.0 += net_acceleration * time.delta_secs();
     }
 }
 

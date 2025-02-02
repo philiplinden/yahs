@@ -3,7 +3,7 @@ use bevy::prelude::*;
 
 use crate::{
     vehicle::balloon::Balloon,
-    forces::{ForceVector, Forces, Mass},
+    forces::{ForceVector, ForceType, Forces, Mass},
     thermodynamics::{EARTH_RADIUS_M, STANDARD_G},
 };
 
@@ -23,15 +23,22 @@ pub fn weight(position: Vec3, mass: f32) -> Vec3 {
 #[require(Mass, Position, Forces)]
 pub struct WeightForce;
 
-
 pub(super) fn update_weight_force(mut bodies: Query<(&mut Forces, &Position, &Mass), With<WeightForce>>) {
     for (mut forces, position, mass) in bodies.iter_mut() {
-        let force = ForceVector {
-            name: "Weight".to_string(),
-            force: weight(position.0, mass.0),
-            point: position.0,
-            color: Some(Color::srgb(0.0, 1.0, 0.0)),
-        };
-        forces.add(force);
+        // Try to find and update existing weight force
+        if let Some(weight_force) = forces.vectors.iter_mut().find(|f| f.force_type == ForceType::Weight) {
+            weight_force.force = weight(position.0, mass.0);
+            weight_force.point = position.0;
+        } else {
+            // Create new weight force if none exists
+            let force = ForceVector {
+                name: "Weight".to_string(),
+                force: weight(position.0, mass.0),
+                point: position.0,
+                color: Some(Color::srgb(0.0, 1.0, 0.0)),
+                force_type: ForceType::Weight,
+            };
+            forces.add(force);
+        }
     }
 }

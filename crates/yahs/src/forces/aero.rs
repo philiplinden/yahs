@@ -6,9 +6,10 @@ use bevy::prelude::*;
 use crate::{
     gas::Atmosphere,
     vehicle::balloon::Balloon,
-    forces::{ForceVector, Forces},
+    forces::{ForceVector, ForceType, Forces},
     thermodynamics::Density,
 };
+
 
 /// Force (N) due to drag as a solid body moves through a fluid.
 pub fn drag(velocity: Vec3, ambient_density: f32, drag_area: f32, drag_coeff: f32) -> Vec3 {
@@ -26,17 +27,25 @@ pub(super) fn update_drag_force(
     mut bodies: Query<(&mut Forces, &Position, &LinearVelocity, &Balloon), With<DragForce>>,
 ) {
     for (mut forces, position, velocity, balloon) in bodies.iter_mut() {
-        let force = ForceVector {
-            name: "Drag".to_string(),
-            force: drag(
-                velocity.0,
-                atmosphere.density(position.0).kg_per_m3(),
-                PI * balloon.shape.diameter(),
-                1.17, // default drag coefficient for a sphere
-            ),
-            point: position.0,
-            color: Some(Color::srgb(1.0, 1.0, 0.0)),
-        };
-        forces.add(force);
+        let drag_force = drag(
+            velocity.0,
+            atmosphere.density(position.0).kg_per_m3(),
+            PI * balloon.shape.diameter(),
+            1.17, // default drag coefficient for a sphere
+        );
+
+        if let Some(force) = forces.vectors.iter_mut().find(|f| f.force_type == ForceType::Drag) {
+            force.force = drag_force;
+            force.point = position.0;
+        } else {
+            let force = ForceVector {
+                name: "Drag".to_string(),
+                force: drag_force,
+                point: position.0,
+                color: Some(Color::srgb(1.0, 1.0, 0.0)),
+                force_type: ForceType::Drag,
+            };
+            forces.add(force);
+        }
     }
 }

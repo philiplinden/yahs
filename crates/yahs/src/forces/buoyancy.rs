@@ -4,7 +4,7 @@ use bevy::prelude::*;
 use crate::{
     gas::Atmosphere,
     vehicle::balloon::Balloon,
-    forces::{ForceVector, Forces},
+    forces::{ForceVector, ForceType, Forces},
     geometry::Volume,
     thermodynamics::Density,
 };
@@ -27,12 +27,20 @@ pub(super) fn update_buoyancy_force(
     for (mut forces, position, balloon) in bodies.iter_mut() {
         let ambient_density = atmosphere.density(position.0);
         let displaced_volume = Volume(balloon.shape.volume());
-        let force = ForceVector {
-            name: "Buoyancy".to_string(),
-            force: buoyancy(position.0, displaced_volume, ambient_density),
-            point: position.0,
-            color: Some(Color::srgb(0.0, 0.0, 1.0)),
-        };
-        forces.add(force);
+        let buoyancy_force = buoyancy(position.0, displaced_volume, ambient_density);
+
+        if let Some(force) = forces.vectors.iter_mut().find(|f| f.force_type == ForceType::Buoyancy) {
+            force.force = buoyancy_force;
+            force.point = position.0;
+        } else {
+            let force = ForceVector {
+                name: "Buoyancy".to_string(),
+                force: buoyancy_force,
+                point: position.0,
+                color: Some(Color::srgb(0.0, 0.0, 1.0)),
+                force_type: ForceType::Buoyancy,
+            };
+            forces.add(force);
+        }
     }
 }

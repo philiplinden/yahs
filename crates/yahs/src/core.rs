@@ -30,7 +30,7 @@ impl Plugin for CorePhysicsPlugin {
             PhysicsPlugins::default(),
             thermodynamics::plugin,
             gas::ideal_gas_plugin,
-            // forces::plugin,
+            forces::plugin,
             geometry::plugin,
         ));
         app.init_state::<SimState>();
