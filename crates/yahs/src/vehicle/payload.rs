@@ -15,7 +15,7 @@ pub(crate) fn plugin(app: &mut App) {
 
 /// A thing carried by the balloon.
 #[derive(Component, Default, Reflect)]
-#[require(Transform, RigidBody(|| RigidBody::Dynamic), Forces)]
+#[require(Transform, RigidBody(|| RigidBody::Dynamic), Forces, TransformInterpolation)]
 pub struct Payload;
 
 /// A tether that connects the balloon to the payload.

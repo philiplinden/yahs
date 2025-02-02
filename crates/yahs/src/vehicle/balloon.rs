@@ -26,7 +26,7 @@ pub(crate) fn plugin(app: &mut App) {
 /// The [`Balloon`] can have an [`ArbitraryShape`] that can be updated based on the
 /// pressure of the [`IdealGas`] it contains, like to account for stretching.
 #[derive(Component, Debug, Clone, PartialEq)]
-#[require(IdealGas, RigidBody(|| RigidBody::Dynamic), Forces)]
+#[require(IdealGas, RigidBody(|| RigidBody::Dynamic), Forces, TransformInterpolation)]
 pub struct Balloon {
     // The 3d shape of the balloon constructed from a [`PrimitiveShape`].
     // TODO: Accept other shapes that implement [`Measured3d`]

@@ -1,3 +1,4 @@
+use avian3d::prelude::*;
 use bevy::{
     input::mouse::{AccumulatedMouseMotion, AccumulatedMouseScroll, MouseScrollUnit},
     prelude::*,
@@ -18,7 +19,14 @@ impl Plugin for CameraPlugin {
 
 /// The main camera component.
 #[derive(Component, Default, Reflect)]
-#[require(Camera3d, PerspectiveProjection, CameraController, Transform)]
+#[require(
+    Camera3d,
+    PerspectiveProjection,
+    CameraController,
+    Transform,
+    TransformInterpolation,
+    RotationInterpolation,
+)]
 pub struct MainCamera;
 
 fn setup(mut commands: Commands) {
@@ -33,12 +41,16 @@ struct CameraControllerPlugin;
 
 impl Plugin for CameraControllerPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(Update, (
-            handle_cursor_grab,
-            handle_camera_rotation,
-            handle_camera_zoom,
-            update_camera_position,
-        ).chain());
+        app.add_systems(
+            FixedUpdate,
+            (
+                handle_cursor_grab,
+                handle_camera_rotation,
+                handle_camera_zoom,
+                update_camera_position,
+            )
+                .chain(),
+        );
     }
 }
 
@@ -69,13 +81,11 @@ pub struct CameraAttachment {
     pub relative_pos: Vec3,
 }
 
-
 impl Default for CameraAttachment {
     fn default() -> Self {
         Self {
             relative_pos: Vec3::new(0.0, 0.0, 10.0),
         }
-
     }
 }
 
@@ -84,12 +94,11 @@ fn update_camera_position(
     attachments: Query<(&CameraAttachment, &Transform), Without<MainCamera>>,
 ) {
     let mut camera_transform = camera.single_mut();
-    
-    if let Ok((attachment, attached_transform)) = attachments.get_single() {        
+
+    if let Ok((attachment, attached_transform)) = attachments.get_single() {
         camera_transform.translation = attached_transform.translation + attachment.relative_pos;
     }
 }
-
 
 fn handle_cursor_grab(
     mut windows: Query<&mut Window>,
@@ -132,9 +141,11 @@ fn handle_camera_rotation(
         return;
     };
 
-    let delta_pitch = (accumulated_mouse_motion.delta.y * RADIANS_PER_DOT * camera_controller.sensitivity)
-        .clamp(-PI / 2., PI / 2.);
-    let delta_yaw = accumulated_mouse_motion.delta.x * RADIANS_PER_DOT * camera_controller.sensitivity;
+    let delta_pitch =
+        (accumulated_mouse_motion.delta.y * RADIANS_PER_DOT * camera_controller.sensitivity)
+            .clamp(-PI / 2., PI / 2.);
+    let delta_yaw =
+        accumulated_mouse_motion.delta.x * RADIANS_PER_DOT * camera_controller.sensitivity;
 
     // Rotate the relative position vector
     attachment.relative_pos = Quat::from_euler(EulerRot::YXZ, -delta_yaw, -delta_pitch, 0.0)
@@ -143,8 +154,6 @@ fn handle_camera_rotation(
     // Look at the attached object's position
     camera_transform.look_at(host_transform.translation, Vec3::Y);
 }
-
-
 
 fn handle_camera_zoom(
     accumulated_mouse_scroll: Res<AccumulatedMouseScroll>,
@@ -173,6 +182,7 @@ fn handle_camera_zoom(
     };
 
     // Scale the relative position vector
-    let new_length = attachment.relative_pos.length() - scroll_amount * camera_controller.scroll_factor;
+    let new_length =
+        attachment.relative_pos.length() - scroll_amount * camera_controller.scroll_factor;
     attachment.relative_pos = attachment.relative_pos.normalize() * new_length;
 }
