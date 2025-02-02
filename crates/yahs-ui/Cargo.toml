@@ -1,6 +1,6 @@
 [package]
 name = "yahs-ui"
-version = "0.4.0"
+version = "0.2.0"
 description = "UI for the YAHS simulator"
 edition = "2021"
 authors = { workspace = true }
@@ -38,7 +38,7 @@ bevy-inspector-egui = { version = "0.29.1", optional = true, features = [
 ] }
 
 [features]
-default = ["dev", "console"]
+default = ["dev"]
 dev = [
     "avian3d/debug-plugin",
     "bevy/bevy_dev_tools",

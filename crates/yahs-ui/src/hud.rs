@@ -1,6 +1,6 @@
 use avian3d::prelude::*;
 use bevy::prelude::*;
-use yahs::prelude::{Balloon, Forces, Volume, Density, SimState};
+use yahs::prelude::{Balloon, Forces, Volume, Density, SimState, IdealGas};
 use crate::controls::KeyBindingsConfig;
 
 pub struct HudPlugin;
@@ -64,16 +64,17 @@ fn update_hud(
     state: Res<State<SimState>>,
     balloons: Query<
         (
-            &Name,
+            Entity,
             &Transform,
             &Forces,
             &LinearVelocity,
-            &Volume,
-            &Density,
+            &Children,
         ),
         With<Balloon>,
     >,
     mut query: Query<&mut Text, With<KinematicsText>>,
+    children_forces: Query<&Forces, With<Parent>>,
+    gases: Query<(&Volume, &Density), With<IdealGas>>,
 ) {
     let elapsed_time = time.elapsed_secs();
 
@@ -85,14 +86,26 @@ fn update_hud(
         text.push_str(&format!("Sim State: {:?}\n", state.get()));
         text.push_str(&format!("Physics Time: {:.4} s\n", elapsed_time));
 
-        for (name, transform, forces, velocity, volume, density) in balloons.iter() {
-            text.push_str(&format!("\n{}\n", name.as_str()));
+        for (entity, transform, forces, velocity, children) in balloons.iter() {
+            text.push_str(&format!("\n{:?}\n", entity));
             text.push_str(&format!("Position: {:.4} m\n", transform.translation));
             text.push_str(&format!("Velocity: {:.4} m/s\n", velocity.0));
-            text.push_str(&format!("Density: {:.4} kg/m3\n", density.kg_per_m3()));
-            text.push_str(&format!("Volume: {:.4} m3\n", volume.m3()));
-            text.push_str(&format!("Forces: {:.4} N from {:?} forces", forces.net_force().force, forces.vectors.len()));
+            
+            let mut num_forces = forces.vectors.len();
+            let mut total_force = forces.net_force();
+            for &child in children.iter() {
+                if let Ok(child_forces) = children_forces.get(child) {
+                    total_force += child_forces.net_force();
+                    num_forces += child_forces.vectors.len();
+                }
+                if let Ok((volume, density)) = gases.get(child) {   
+                    text.push_str(&format!("Density: {:.4} kg/m3\n", density.kg_per_m3()));
+                    text.push_str(&format!("Volume: {:.4} m3\n", volume.m3()));
+                }
+            }
+            text.push_str(&format!("Forces: {:.4} N from {:?} forces", total_force.force, num_forces));
             text.push_str("\n");
+
         }
 
         kinematics_text.0 = text; // Update the HUD text

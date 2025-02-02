@@ -10,15 +10,20 @@ use bevy::prelude::*;
 
 use super::{ideal_gas_density, GasSpecies};
 use crate::{
-    thermodynamics::{Density, Pressure, Temperature},
     core::SimState,
+    thermodynamics::{Density, Pressure, Temperature},
     vehicle::balloon::Balloon,
 };
 
 pub(crate) fn plugin(app: &mut App) {
     app.insert_resource(Atmosphere);
-    app.add_systems(Update, pause_on_out_of_bounds);
+    app.add_systems(
+        Update,
+        pause_on_out_of_bounds.run_if(in_state(SimState::Running)),
+    );
 }
+
+
 
 fn pause_on_out_of_bounds(
     positions: Query<&Position, With<Balloon>>,

@@ -5,19 +5,22 @@ use bevy::prelude::*;
 
 use crate::{
     debug,
+    forces::{BuoyancyForce, DragForce, Forces, WeightForce},
     gas::IdealGas,
-    forces::{Forces, BuoyancyForce, WeightForce, DragForce},
-    geometry::{Volume, sphere_radius_from_volume}
+    geometry::{shell_volume, sphere_radius_from_volume, Volume},
 };
 
 pub(crate) fn plugin(app: &mut App) {
+    app.register_type::<Balloon>();
+    app.register_type::<Envelope>();
     app.add_systems(
-        Update,
+        PreUpdate,
         (
-            update_balloon_from_gas,
-            add_forces_to_balloon,
-            debug::notify_on_added::<Balloon>,
+            update_balloon_volume_from_gas,
+            update_balloon_shape_from_volume,
+            balloon_mass_from_envelope,
         )
+            .chain(),
     );
 }
 
@@ -25,8 +28,8 @@ pub(crate) fn plugin(app: &mut App) {
 /// is a dynamic [`RigidBody`] with [`Forces`].
 /// The [`Balloon`] can have an [`ArbitraryShape`] that can be updated based on the
 /// pressure of the [`IdealGas`] it contains, like to account for stretching.
-#[derive(Component, Debug, Clone, PartialEq)]
-#[require(IdealGas, RigidBody(|| RigidBody::Dynamic), Forces, TransformInterpolation)]
+#[derive(Component, Debug, Reflect, Clone)]
+#[require(RigidBody(|| RigidBody::Dynamic), Mass, Volume, Forces, WeightForce, DragForce)]
 pub struct Balloon {
     // The 3d shape of the balloon constructed from a [`PrimitiveShape`].
     // TODO: Accept other shapes that implement [`Measured3d`]
@@ -51,7 +54,7 @@ impl Balloon {
 
 /// The envelope is the material that composes the outer surface of the balloon.
 /// TODO: Implement multiple material types, such as latex, polyurethane, etc.
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, Reflect)]
 pub struct Envelope {
     // temperature (K) where the given material fails
     pub max_temperature: f32,
@@ -95,18 +98,33 @@ impl Default for Envelope {
     }
 }
 
-fn update_balloon_from_gas(mut query: Query<(&mut Balloon, &Volume), With<IdealGas>>) {
-    for (mut balloon, volume) in query.iter_mut() {
-        balloon.set_volume(volume);
+fn balloon_mass_from_envelope(mut balloons: Query<(&mut Mass, &Balloon), Added<Balloon>>) {
+    for (mut mass, balloon) in balloons.iter_mut() {
+        mass.0 = balloon.envelope.density
+            * shell_volume(balloon.envelope.thickness, balloon.shape.radius);
     }
 }
 
-fn add_forces_to_balloon(mut commands: Commands, query: Query<Entity, Added<Balloon>>) {
-    for entity in query.iter() {
-        commands.entity(entity).insert((
-            BuoyancyForce,
-            WeightForce,
-            DragForce,
-        ));
+fn update_balloon_volume_from_gas(
+    mut balloons: Query<(&mut Volume, &Children), (With<Balloon>, Without<IdealGas>)>,
+    gases: Query<Entity, With<IdealGas>>,
+    gas_volumes: Query<&mut Volume, With<IdealGas>>,
+) {
+    for (mut balloon_volume, children) in balloons.iter_mut() {
+        // Get the first child with IdealGas component
+        for &child in children {
+            if let Ok(gas) = gases.get(child) {
+                if let Some(gas_volume) = gas_volumes.get(gas).ok() {
+                    *balloon_volume = *gas_volume;
+                    break;
+                }
+            }
+        }
+    }
+}
+
+fn update_balloon_shape_from_volume(mut balloons: Query<(&mut Balloon, &Volume)>) {
+    for (mut balloon, volume) in balloons.iter_mut() {
+        balloon.set_volume(volume);
     }
 }

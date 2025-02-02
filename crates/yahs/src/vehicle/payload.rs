@@ -4,20 +4,37 @@ use avian3d::prelude::*;
 use bevy::prelude::*;
 
 use crate::debug;
-use crate::forces::Forces;
+use crate::forces::{DragForce, Forces, WeightForce};
 
 pub(crate) fn plugin(app: &mut App) {
     app.register_type::<Payload>();
-    app.register_type::<Tether>();
-    app.add_systems(Update, debug::notify_on_added::<Payload>);
-    // app.add_systems(Startup, spawn_payload);
+    app.add_systems(
+        Update, debug::notify_on_added::<Payload>,
+    );
 }
 
 /// A thing carried by the balloon.
 #[derive(Component, Default, Reflect)]
-#[require(Transform, RigidBody(|| RigidBody::Dynamic), Forces, TransformInterpolation)]
-pub struct Payload;
+#[require(Transform, RigidBody(|| RigidBody::Dynamic), Forces, WeightForce)]
+pub struct Payload {
+    pub shape: Cuboid,
+}
 
-/// A tether that connects the balloon to the payload.
-#[derive(Component, Default, Reflect)]
-pub struct Tether;
+#[derive(Bundle)]
+pub struct PayloadBundle {
+    name: Name,
+    payload: Payload,
+    mass: Mass,
+    transform: Transform,
+}
+
+impl PayloadBundle {
+    pub fn new(shape: Cuboid, mass: Mass, transform: Transform) -> Self {
+        PayloadBundle {
+            name: Name::new("Payload"),
+            payload: Payload { shape },
+            mass,
+            transform,
+        }
+    }
+}
