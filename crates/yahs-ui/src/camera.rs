@@ -12,7 +12,7 @@ pub struct CameraPlugin;
 impl Plugin for CameraPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(Startup, setup);
-        app.add_plugins((CameraControllerPlugin, CameraTargetingPlugin));
+        app.add_plugins(CameraControllerPlugin);
     }
 }
 
@@ -29,52 +29,16 @@ fn setup(mut commands: Commands) {
     ));
 }
 
-struct CameraTargetingPlugin;
-
-impl Plugin for CameraTargetingPlugin {
-    fn build(&self, app: &mut App) {
-        app.init_resource::<CameraTarget>();
-        app.register_type::<Targetable>();
-        app.add_systems(Update, target_the_first_thing_you_find);
-    }
-}
-
-#[derive(Component, Debug, Reflect)]
-pub struct Targetable;
-
-#[derive(Resource, Debug)]
-pub struct CameraTarget(Option<Vec3>);
-
-impl Default for CameraTarget {
-    fn default() -> Self {
-        Self(None)
-    }
-}
-
-impl CameraTarget {
-    pub fn set(&mut self, target: Vec3) {
-        self.0 = Some(target);
-    }
-
-    pub fn get(&self) -> Option<Vec3> {
-        self.0
-    }
-}
-
-fn target_the_first_thing_you_find(
-    mut camera_target: ResMut<CameraTarget>,
-    targets: Query<&Transform, Added<Targetable>>,
-) {
-    if let Ok(target) = targets.get_single() {
-        camera_target.set(target.translation);
-    }
-}
-
 struct CameraControllerPlugin;
 
 impl Plugin for CameraControllerPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(Update, run_camera_controller);
+        app.add_systems(Update, (
+            handle_cursor_grab,
+            handle_camera_rotation,
+            handle_camera_zoom,
+            update_camera_position,
+        ).chain());
     }
 }
 
@@ -100,97 +64,115 @@ impl Default for CameraController {
 /// degrees/radians and then sticking with it because it felt nice.
 pub const RADIANS_PER_DOT: f32 = 1.0 / 180.0;
 
-#[allow(clippy::too_many_arguments)]
-fn run_camera_controller(
-    mut windows: Query<&mut Window>,
-    accumulated_mouse_motion: Res<AccumulatedMouseMotion>,
-    accumulated_mouse_scroll: Res<AccumulatedMouseScroll>,
-    mouse_button_input: Res<ButtonInput<MouseButton>>,
-    key_input: Res<ButtonInput<KeyCode>>,
-    query: Single<(&mut Transform, &CameraController), With<MainCamera>>,
-    targeted: Res<CameraTarget>,
+#[derive(Component)]
+pub struct CameraAttachment {
+    pub relative_pos: Vec3,
+}
+
+
+impl Default for CameraAttachment {
+    fn default() -> Self {
+        Self {
+            relative_pos: Vec3::new(0.0, 0.0, 10.0),
+        }
+
+    }
+}
+
+fn update_camera_position(
+    mut camera: Query<&mut Transform, With<MainCamera>>,
+    attachments: Query<(&CameraAttachment, &Transform), Without<MainCamera>>,
 ) {
-    let (mut camera_transform, camera_controller) = query.into_inner();
+    let mut camera_transform = camera.single_mut();
+    
+    if let Ok((attachment, attached_transform)) = attachments.get_single() {        
+        camera_transform.translation = attached_transform.translation + attachment.relative_pos;
+    }
+}
 
-    // Handle key input
-    let mut axis_input = Vec3::ZERO;
-    if key_input.pressed(camera_controller.controls.tap_forward) {
-        axis_input.z += 1.0;
-    }
-    if key_input.pressed(camera_controller.controls.tap_back) {
-        axis_input.z -= 1.0;
-    }
 
-    if key_input.pressed(camera_controller.controls.tap_right) {
-        axis_input.x += 1.0;
-    }
-    if key_input.pressed(camera_controller.controls.tap_left) {
-        axis_input.x -= 1.0;
-    }
-    if key_input.pressed(camera_controller.controls.tap_up) {
-        axis_input.y += 1.0;
-    }
-
-    if key_input.pressed(camera_controller.controls.tap_down) {
-        axis_input.y -= 1.0;
-    }
-
+fn handle_cursor_grab(
+    mut windows: Query<&mut Window>,
+    mouse_button_input: Res<ButtonInput<MouseButton>>,
+    camera: Query<&CameraController, With<MainCamera>>,
+) {
+    let camera_controller = camera.single();
     let looking = mouse_button_input.pressed(camera_controller.controls.hold_look);
 
-    // Handle cursor grab
-    if looking {
-        for mut window in &mut windows {
-            if !window.focused {
-                continue;
-            }
-
+    for mut window in &mut windows {
+        if looking && window.focused {
             window.cursor_options.grab_mode = CursorGrabMode::Locked;
             window.cursor_options.visible = false;
-        }
-    } else {
-        for mut window in &mut windows {
+        } else {
             window.cursor_options.grab_mode = CursorGrabMode::None;
             window.cursor_options.visible = true;
         }
     }
+}
 
-    let look_target = match targeted.get() {
-        Some(target) => target,
-        None => camera_transform.translation,
-    };
-
-    // Handle mouse input
-    if accumulated_mouse_motion.delta != Vec2::ZERO && looking {
-        let delta_pitch =
-            (accumulated_mouse_motion.delta.y * RADIANS_PER_DOT * camera_controller.sensitivity)
-                .clamp(-PI / 2., PI / 2.);
-        let delta_yaw =
-            accumulated_mouse_motion.delta.x * RADIANS_PER_DOT * camera_controller.sensitivity;
-
-        // Calculate the current distance from target
-        let current_distance = (camera_transform.translation - look_target).length();
-        
-        // Rotate around target
-        camera_transform.rotate_around(
-            look_target,
-            Quat::from_euler(EulerRot::YXZ, -delta_yaw, -delta_pitch, 0.0),
-        );
-
-        // Maintain distance from target
-        let direction = (camera_transform.translation - look_target).normalize();
-        camera_transform.translation = look_target + direction * current_distance;
+fn handle_camera_rotation(
+    accumulated_mouse_motion: Res<AccumulatedMouseMotion>,
+    mouse_button_input: Res<ButtonInput<MouseButton>>,
+    mut camera: Query<(&CameraController, &mut Transform), With<MainCamera>>,
+    mut attachments: Query<(&mut CameraAttachment, &Transform), Without<MainCamera>>,
+) {
+    let (camera_controller, mut camera_transform) = camera.single_mut();
+    let looking = mouse_button_input.pressed(camera_controller.controls.hold_look);
+    if !looking || accumulated_mouse_motion.delta == Vec2::ZERO {
+        return;
     }
 
-    // Handle scroll zoom
+    // Try to get a single camera attachment. This will:
+    // - Return Ok(attachment) if exactly one attachment exists
+    // - Return Err if zero or multiple attachments exist
+    let (mut attachment, host_transform) = if let Ok(a) = attachments.get_single_mut() {
+        a
+    } else {
+        // Exit the function if we don't have exactly one attachment
+        return;
+    };
+
+    let delta_pitch = (accumulated_mouse_motion.delta.y * RADIANS_PER_DOT * camera_controller.sensitivity)
+        .clamp(-PI / 2., PI / 2.);
+    let delta_yaw = accumulated_mouse_motion.delta.x * RADIANS_PER_DOT * camera_controller.sensitivity;
+
+    // Rotate the relative position vector
+    attachment.relative_pos = Quat::from_euler(EulerRot::YXZ, -delta_yaw, -delta_pitch, 0.0)
+        .mul_vec3(attachment.relative_pos);
+
+    // Look at the attached object's position
+    camera_transform.look_at(host_transform.translation, Vec3::Y);
+}
+
+
+
+fn handle_camera_zoom(
+    accumulated_mouse_scroll: Res<AccumulatedMouseScroll>,
+    camera: Query<&CameraController, With<MainCamera>>,
+    mut attachments: Query<&mut CameraAttachment, Without<MainCamera>>,
+) {
+    let camera_controller = camera.single();
+
     let scroll_amount = match accumulated_mouse_scroll.unit {
         MouseScrollUnit::Line => accumulated_mouse_scroll.delta.y,
         MouseScrollUnit::Pixel => accumulated_mouse_scroll.delta.y / 16.0,
     };
 
-    if scroll_amount != 0.0 {
-        let direction = (camera_transform.translation - look_target).normalize();
-        let new_distance = (camera_transform.translation - look_target).length() - 
-            scroll_amount * camera_controller.scroll_factor;
-        camera_transform.translation = look_target + direction * new_distance;
+    if scroll_amount == 0.0 {
+        return;
     }
+
+    // Try to get a single camera attachment. This will:
+    // - Return Ok(attachment) if exactly one attachment exists
+    // - Return Err if zero or multiple attachments exist
+    let mut attachment = if let Ok(a) = attachments.get_single_mut() {
+        a
+    } else {
+        // Exit the function if we don't have exactly one attachment
+        return;
+    };
+
+    // Scale the relative position vector
+    let new_length = attachment.relative_pos.length() - scroll_amount * camera_controller.scroll_factor;
+    attachment.relative_pos = attachment.relative_pos.normalize() * new_length;
 }

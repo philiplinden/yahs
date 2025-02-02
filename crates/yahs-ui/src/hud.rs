@@ -83,15 +83,15 @@ fn update_hud(
 
         // Display physics time
         text.push_str(&format!("Sim State: {:?}\n", state.get()));
-        text.push_str(&format!("Physics Time: {:.2} s\n", elapsed_time));
+        text.push_str(&format!("Physics Time: {:.4} s\n", elapsed_time));
 
         for (name, transform, forces, velocity, volume, density) in balloons.iter() {
             text.push_str(&format!("\n{}\n", name.as_str()));
-            text.push_str(&format!("Position: {:} m\n", transform.translation));
-            text.push_str(&format!("Velocity: {:?} m/s\n", velocity.0));
-            text.push_str(&format!("Density: {:.2} kg/m3\n", density.kg_per_m3()));
-            text.push_str(&format!("Volume: {:.2} m3\n", volume.m3()));
-            text.push_str(&format!("Forces: {:.2} N from {:?} forces", forces.net_force().force.length(), forces.vectors.len()));
+            text.push_str(&format!("Position: {:.4} m\n", transform.translation));
+            text.push_str(&format!("Velocity: {:.4} m/s\n", velocity.0));
+            text.push_str(&format!("Density: {:.4} kg/m3\n", density.kg_per_m3()));
+            text.push_str(&format!("Volume: {:.4} m3\n", volume.m3()));
+            text.push_str(&format!("Forces: {:.4} N from {:?} forces", forces.net_force().force, forces.vectors.len()));
             text.push_str("\n");
         }
 

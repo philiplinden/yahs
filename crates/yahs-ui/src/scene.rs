@@ -2,8 +2,8 @@ use avian3d::prelude::*;
 use bevy::prelude::*;
 use std::f32::consts::PI;
 
-use yahs::prelude::*;
-use super::camera::Targetable;
+use yahs::{prelude::*, vehicle::balloon::Envelope};
+use super::camera::CameraAttachment;
 
 pub struct ScenePlugin;
 
@@ -23,27 +23,24 @@ fn spawn_balloon(
         base_color: Color::srgb(1.0, 0.0, 0.0),
         ..default()
     });
-    let sphere = Sphere::default();
+    let radius = 1.0;
+    let sphere = Sphere { radius };
     let shape = meshes.add(sphere.mesh().ico(5).unwrap());
-    let species = DebugGasSpecies::debug_stp_with_buoyancy(1.0, 1.0).into();
+    let species = GasSpecies::helium();
     commands.spawn((
         Name::new("Balloon"),
-        Balloon::default(),
+        Balloon { shape: sphere, envelope: Envelope::default() },
         IdealGasBundle {
-
             species,
+            mass: Mass(1.0),
             ..default()
         },
-        RigidBody::Dynamic,
-        Collider::sphere(sphere.radius),
         Transform::from_translation(Vec3::new(0.0, 1.0, 0.0)),
         MeshMaterial3d(debug_material),
         Mesh3d(shape),
-        Targetable,
+        CameraAttachment::default(),
     ));
 }
-
-
 
 fn setup_lighting(mut commands: Commands) {
     debug!("spawning sunlight");
