@@ -18,7 +18,6 @@ bevy = { workspace = true, features = [
     "bevy_asset",
     "bevy_core_pipeline",
     "bevy_pbr",
-    "bevy_render",
     "bevy_text",
     "bevy_ui",
     "bevy_window",

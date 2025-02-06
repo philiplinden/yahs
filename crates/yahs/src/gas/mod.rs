@@ -6,7 +6,7 @@ use bevy::prelude::*;
 // re-export
 pub use atmosphere::Atmosphere;
 pub use ideal_gas::{
-    DebugGasSpecies, GasSpecies, IdealGas, IdealGasBundle, ideal_gas_density, MolarMass,
+    DebugGasSpecies, GasSpecies, IdealGas, ideal_gas_density, MolarMass,
 };
 
 pub(crate) use atmosphere::plugin as atmosphere_plugin;

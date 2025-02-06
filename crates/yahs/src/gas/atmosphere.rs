@@ -11,7 +11,7 @@ use bevy::prelude::*;
 use super::{ideal_gas_density, GasSpecies};
 use crate::{
     core::SimState,
-    thermodynamics::{Density, Pressure, Temperature},
+    units::{DensityUnit, PressureUnit, TemperatureUnit},
     vehicle::balloon::Balloon,
 };
 
@@ -22,8 +22,6 @@ pub(crate) fn plugin(app: &mut App) {
         pause_on_out_of_bounds.run_if(in_state(SimState::Running)),
     );
 }
-
-
 
 fn pause_on_out_of_bounds(
     positions: Query<&Position, With<Balloon>>,
@@ -46,25 +44,25 @@ impl Atmosphere {
     pub const MIN_ALTITUDE: f32 = -56.0; // small margin to avoid panics
 
     /// Temperature (K) of the atmosphere at a position.
-    pub fn temperature(&self, position: Vec3) -> Temperature {
+    pub fn temperature(&self, position: Vec3) -> TemperatureUnit {
         // TODO: Look up temperature based on latitude, longitude, not just altitude
         coesa_temperature(position.y).unwrap_or_else(|e| {
             error!("Atmosphere temperature out of bounds: {}", e);
-            Temperature::STANDARD
+            TemperatureUnit::STANDARD
         }) // we should handle this better
     }
 
     /// Pressure (Pa) of the atmosphere at a position.
-    pub fn pressure(&self, position: Vec3) -> Pressure {
+    pub fn pressure(&self, position: Vec3) -> PressureUnit {
         // TODO: Look up pressure based on latitude, longitude, not just altitude
         coesa_pressure(position.y).unwrap_or_else(|e| {
             error!("Atmosphere pressure out of bounds: {}", e);
-            Pressure::STANDARD
+            PressureUnit::STANDARD
         }) // we should handle this better
     }
 
     /// Density (kg/m³) of the atmosphere at a position.
-    pub fn density(&self, position: Vec3) -> Density {
+    pub fn density(&self, position: Vec3) -> DensityUnit {
         ideal_gas_density(
             self.temperature(position),
             self.pressure(position),
@@ -72,16 +70,16 @@ impl Atmosphere {
         )
     }
 
-    pub fn standard_temperature() -> Temperature {
-        Temperature::from_celsius(20.0)
+    pub fn standard_temperature() -> TemperatureUnit {
+        TemperatureUnit::from_celsius(20.0)
     }
 
-    pub fn standard_pressure() -> Pressure {
-        Pressure::from_atmospheres(1.0)
+    pub fn standard_pressure() -> PressureUnit {
+        PressureUnit::from_atmospheres(1.0)
     }
 
     /// Density (kg/m³) of air at standard conditions.
-    pub fn standard_density() -> Density {
+    pub fn standard_density() -> DensityUnit {
         ideal_gas_density(
             Atmosphere::standard_temperature(),
             Atmosphere::standard_pressure(),
@@ -89,7 +87,7 @@ impl Atmosphere {
         )
     }
 
-    pub fn debug_density() -> Density {
+    pub fn debug_density() -> DensityUnit {
         ideal_gas_density(
             Atmosphere::standard_temperature(),
             Atmosphere::standard_pressure(),
@@ -120,13 +118,13 @@ impl std::fmt::Display for AtmosphereError {
 /// Temperature (K) of the atmosphere at a given altitude (m).
 /// Only valid for altitudes below 85,000 meters.
 /// Based on the US Standard Atmosphere, 1976. (aka COESA)
-fn coesa_temperature(altitude: f32) -> Result<Temperature, AtmosphereError> {
+fn coesa_temperature(altitude: f32) -> Result<TemperatureUnit, AtmosphereError> {
     if (-57.0..11000.0).contains(&altitude) {
-        Ok(Temperature::from_celsius(15.04 - 0.00649 * altitude))
+        Ok(TemperatureUnit::from_celsius(15.04 - 0.00649 * altitude))
     } else if (11000.0..25000.0).contains(&altitude) {
-        Ok(Temperature::from_celsius(-56.46))
+        Ok(TemperatureUnit::from_celsius(-56.46))
     } else if (25000.0..85000.0).contains(&altitude) {
-        Ok(Temperature::from_celsius(-131.21 + 0.00299 * altitude))
+        Ok(TemperatureUnit::from_celsius(-131.21 + 0.00299 * altitude))
     } else {
         Err(AtmosphereError::OutOfBounds(altitude))
     }
@@ -135,9 +133,9 @@ fn coesa_temperature(altitude: f32) -> Result<Temperature, AtmosphereError> {
 /// Pressure (Pa) of the atmosphere at a given altitude (m).
 /// Only valid for altitudes below 85,000 meters.
 /// Based on the US Standard Atmosphere, 1976. (aka COESA)
-fn coesa_pressure(altitude: f32) -> Result<Pressure, AtmosphereError> {
+fn coesa_pressure(altitude: f32) -> Result<PressureUnit, AtmosphereError> {
     if (-57.0..11000.0).contains(&altitude) {
-        Ok(Pressure::from_kilopascals(
+        Ok(PressureUnit::from_kilopascals(
             101.29
                 * f32::powf(
                     coesa_temperature(altitude).unwrap_or_default().kelvin() / 288.08,
@@ -145,11 +143,11 @@ fn coesa_pressure(altitude: f32) -> Result<Pressure, AtmosphereError> {
                 ),
         ))
     } else if (11000.0..25000.0).contains(&altitude) {
-        Ok(Pressure::from_kilopascals(
+        Ok(PressureUnit::from_kilopascals(
             22.65 * f32::exp(1.73 - 0.000157 * altitude),
         ))
     } else if (25000.0..85000.0).contains(&altitude) {
-        Ok(Pressure::from_kilopascals(
+        Ok(PressureUnit::from_kilopascals(
             2.488
                 * f32::powf(
                     coesa_temperature(altitude).unwrap_or_default().kelvin() / 216.6,

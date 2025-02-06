@@ -23,7 +23,8 @@ license-file = "LICENSE-APACHE"
 # Shared dependencies with fixed versions
 bevy = { version = "0.15.1", default-features = false, features = [
     "bevy_state",
-    "multi_threaded"
+    "bevy_render", # needed for working with meshes, even without rendering
+    "multi_threaded",
 ] }
 avian3d = "0.2.1"
 tracing = "0.1"

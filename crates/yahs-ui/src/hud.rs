@@ -2,7 +2,7 @@ use crate::{controls::KeyBindingsConfig, plot::{PlotData, update_plots}};
 use avian3d::prelude::*;
 use bevy::prelude::*;
 use bevy_egui::{egui, EguiContexts, EguiPlugin};
-use yahs::prelude::{Balloon, Density, Forces, IdealGas, SimState, Volume};
+use yahs::prelude::{Balloon, Forces, SimState};
 
 pub struct HudPlugin;
 
@@ -10,7 +10,7 @@ impl Plugin for HudPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugins(EguiPlugin)
             .init_resource::<PlotData>()
-            .add_systems(Update, (update_hud, update_plots));
+            .add_systems(Update, (update_hud, update_plots).chain());
     }
 }
 
@@ -21,7 +21,6 @@ fn update_hud(
     key_bindings: Res<KeyBindingsConfig>,
     balloons: Query<(Entity, &Transform, &Forces, &LinearVelocity, &Children), With<Balloon>>,
     children_forces: Query<&Forces, With<Parent>>,
-    gases: Query<(&Volume, &Density), With<IdealGas>>,
 ) {
     egui::Window::new("System Info")
         .anchor(egui::Align2::LEFT_TOP, egui::vec2(10.0, 10.0))
@@ -45,10 +44,6 @@ fn update_hud(
                     if let Ok(child_forces) = children_forces.get(child) {
                         total_force += child_forces.net_force();
                         num_forces += child_forces.vectors.len();
-                    }
-                    if let Ok((volume, density)) = gases.get(child) {
-                        ui.label(format!("Density: {:.4} kg/m3", density.kg_per_m3()));
-                        ui.label(format!("Volume: {:.4} m3", volume.m3()));
                     }
                 }
                 ui.label(format!(

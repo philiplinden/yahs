@@ -7,21 +7,14 @@ use crate::{
     debug,
     forces::{BuoyancyForce, DragForce, Forces, WeightForce},
     gas::IdealGas,
-    geometry::{shell_volume, sphere_radius_from_volume, Volume},
+    geometry::{shell_volume, sphere_radius_from_volume},
+    units::{VolumeUnit, MassUnit},
 };
+
 
 pub(crate) fn plugin(app: &mut App) {
     app.register_type::<Balloon>();
-    app.register_type::<Envelope>();
-    app.add_systems(
-        PreUpdate,
-        (
-            update_balloon_volume_from_gas,
-            update_balloon_shape_from_volume,
-            balloon_mass_from_envelope,
-        )
-            .chain(),
-    );
+    app.register_type::<Skin>();
 }
 
 /// The balloon is a surface that contains an [`IdealGas`]. [`Balloon`]
@@ -29,37 +22,29 @@ pub(crate) fn plugin(app: &mut App) {
 /// The [`Balloon`] can have an [`ArbitraryShape`] that can be updated based on the
 /// pressure of the [`IdealGas`] it contains, like to account for stretching.
 #[derive(Component, Debug, Reflect, Clone)]
-#[require(RigidBody(|| RigidBody::Dynamic), Mass, Volume, Forces, WeightForce, DragForce)]
+#[require(RigidBody(|| RigidBody::Dynamic), Mass, Forces, WeightForce, DragForce, BuoyancyForce)]
 pub struct Balloon {
     // The 3d shape of the balloon constructed from a [`PrimitiveShape`].
     // TODO: Accept other shapes that implement [`Measured3d`]
-    pub shape: Sphere,
-    pub envelope: Envelope,
+    pub mesh: Handle<Mesh>,
+    pub skin: Skin,
+    pub gas: IdealGas,
 }
 
 impl Default for Balloon {
     fn default() -> Self {
         Balloon {
-            shape: Sphere::new(1.0),
-            envelope: Envelope::default(),
+            mesh: Handle::default(), // Use default instead of placeholder
+            skin: Skin::default(),
+            gas: IdealGas::default(),
         }
     }
 }
 
-impl Balloon {
-    fn set_volume(&mut self, volume: &Volume) {
-        let old_volume = self.shape.volume();
-        if old_volume != volume.m3() {
-            info!("Volume changing from {} to {}", old_volume, volume.m3());
-            self.shape.radius = sphere_radius_from_volume(volume.m3());
-        }
-    }
-}
-
-/// The envelope is the material that composes the outer surface of the balloon.
+/// The skin is the material that composes the outer surface of the balloon.
 /// TODO: Implement multiple material types, such as latex, polyurethane, etc.
 #[derive(Debug, Clone, Reflect)]
-pub struct Envelope {
+pub struct Skin {
     // temperature (K) where the given material fails
     pub max_temperature: f32,
     // density (kg/m³) of the envelope material
@@ -84,9 +69,9 @@ pub struct Envelope {
     pub thickness: f32,
 }
 
-impl Default for Envelope {
+impl Default for Skin {
     fn default() -> Self {
-        Envelope {
+        Skin {
             max_temperature: 373.0,
             density: 920.0,
             emissivity: 0.9,
@@ -102,31 +87,8 @@ impl Default for Envelope {
     }
 }
 
-fn balloon_mass_from_envelope(mut balloons: Query<(&mut Mass, &Balloon), Added<Balloon>>) {
-    for (mut mass, balloon) in balloons.iter_mut() {
-        mass.0 = balloon.envelope.density
-            * shell_volume(balloon.envelope.thickness, balloon.shape.radius);
-    }
-}
-
-fn update_balloon_volume_from_gas(
-    mut balloons: Query<(&mut Volume, &Children), (With<Balloon>, Without<IdealGas>)>,
-    gases: Query<&Volume, With<IdealGas>>,
-) {
-    for (mut balloon_volume, children) in balloons.iter_mut() {
-        // Get the first child with IdealGas component
-        for &child in children {
-            if let Ok(gas_volume) = gases.get(child) {
-                *balloon_volume = *gas_volume;
-                break;
-            }
-
-        }
-    }
-}
-
-fn update_balloon_shape_from_volume(mut balloons: Query<(&mut Balloon, &Volume), Changed<Volume>>) {
-    for (mut balloon, volume) in balloons.iter_mut() {
-        balloon.set_volume(volume);
+impl Skin {
+    pub fn mass_for_surface_area(&self, surface_area: f32) -> MassUnit {
+        MassUnit(surface_area * self.density * self.thickness)
     }
 }

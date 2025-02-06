@@ -33,26 +33,14 @@ fn spawn_balloon(
     let radius = 1.0;
     let sphere = Sphere { radius };
     let shape = meshes.add(sphere.mesh().ico(5).unwrap());
-    let species = GasSpecies::helium();
     commands
         .spawn((
             Name::new("Balloon"),
-            Balloon {
-                shape: sphere,
-                ..default()
-            },
+            Balloon::default(),
             Transform::from_translation(Vec3::new(0.0, 3.0, 0.0)),
             MeshMaterial3d(debug_material.clone()),
             Mesh3d(shape),
             CameraAttachment::default(),
-        ))
-        .with_child((
-            IdealGas,
-            IdealGasBundle {
-                species,
-                mass: Mass(0.001),
-                ..default()
-            },
         ));
 }
 

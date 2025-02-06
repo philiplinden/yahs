@@ -7,8 +7,8 @@ use crate::{
     gas::Atmosphere,
     vehicle::balloon::Balloon,
     forces::{ForceVector, ForceType, Forces},
-    thermodynamics::Density,
-    geometry::{sphere_radius_from_volume, Volume},
+    units::VolumeUnit,
+    geometry::{sphere_radius_from_volume, HasMeshVolume, MeshVolume},
 };
 
 
@@ -20,15 +20,18 @@ pub fn drag(velocity: Vec3, ambient_density: f32, drag_area: f32, drag_coeff: f3
 }
 
 #[derive(Component, Default)]
-#[require(Position, LinearVelocity, Volume, Forces)]
+#[require(Position, LinearVelocity, HasMeshVolume, Forces)]
 pub struct DragForce;
 
 pub(super) fn update_drag_force(
     atmosphere: Res<Atmosphere>,
-    mut bodies: Query<(&mut Forces, &Position, &LinearVelocity, &Volume), With<DragForce>>,
+    mut bodies: Query<(&mut Forces, &Position, &LinearVelocity, &HasMeshVolume), With<DragForce>>,
+    meshes: Res<Assets<Mesh>>,
 ) {
-    for (mut forces, position, velocity, volume) in bodies.iter_mut() {
-        let radius = sphere_radius_from_volume(volume.0);
+    for (mut forces, position, velocity, mesh_volume) in bodies.iter_mut() {
+        let mesh = meshes.get(&mesh_volume.handle).unwrap();
+        let radius = sphere_radius_from_volume(mesh.volume().m3());
+
         let drag_area = PI * radius * radius; // cross-sectional area
         let drag_force = drag(
             velocity.0,

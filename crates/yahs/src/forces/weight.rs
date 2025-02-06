@@ -4,7 +4,7 @@ use bevy::prelude::*;
 use crate::{
     vehicle::balloon::Balloon,
     forces::{ForceVector, ForceType, Forces, Mass},
-    thermodynamics::{EARTH_RADIUS_M, STANDARD_G},
+    constants::{EARTH_RADIUS_M, STANDARD_G},
 };
 
 /// Force (N) from gravity at an altitude (m) above mean sea level.

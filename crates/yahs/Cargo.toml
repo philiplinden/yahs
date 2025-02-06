@@ -1,6 +1,6 @@
 [package]
 name = "yahs"
-version = "0.5.0"
+version = "0.6.0"
 description = "High Altitude Balloon simulation plugin for Bevy"
 edition = "2021"
 authors = { workspace = true }
