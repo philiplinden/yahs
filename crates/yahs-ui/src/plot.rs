@@ -67,9 +67,9 @@ pub fn update_plots(
     mut plot_data: ResMut<PlotData>,
     time: Res<Time<Physics>>,
     mut contexts: EguiContexts,
-    balloons: Query<(&Transform, &Forces, &LinearVelocity, &Children), With<Balloon>>,
+    balloons: Query<(&Transform, &Forces, &LinearVelocity), With<Balloon>>,
 ) {
-    if let Some((transform, forces, velocity, children)) = balloons.iter().next() {
+    if let Some((transform, forces, velocity)) = balloons.iter().next() {
         plot_data.push_data(
             time.elapsed_secs() as f64,
             transform.translation.y as f64,

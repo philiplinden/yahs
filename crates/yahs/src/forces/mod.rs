@@ -174,17 +174,9 @@ impl AddAssign for ForceVector {
 
 /// Consolidate force application into a single system
 fn apply_forces(
-    mut query: Query<(&mut ExternalForce, &Forces, &Children)>,
-    child_forces: Query<&Forces>,
+    mut query: Query<(&mut ExternalForce, &Forces)>
 ) {
-    for (mut external_force, forces, children) in query.iter_mut() {
-        let mut net_force = forces.net_force();
-        // Add child forces
-        for &child in children.iter() {
-            if let Ok(child_force) = child_forces.get(child) {
-                net_force += child_force.net_force();
-            }
-        }
-        external_force.apply_force(net_force.force);
+    for (mut external_force, forces) in query.iter_mut() {
+        external_force.apply_force(forces.net_force().force);
     }
 }
