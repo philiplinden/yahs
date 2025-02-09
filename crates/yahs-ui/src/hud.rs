@@ -1,4 +1,7 @@
-use crate::{controls::KeyBindingsConfig, plot::{PlotData, update_plots}};
+use crate::{
+    controls::KeyBindingsConfig, 
+    plot::update_plots,
+};
 use avian3d::prelude::*;
 use bevy::prelude::*;
 use bevy_egui::{egui, EguiContexts, EguiPlugin};
@@ -9,7 +12,6 @@ pub struct HudPlugin;
 impl Plugin for HudPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugins(EguiPlugin)
-            .init_resource::<PlotData>()
             .add_systems(Update, (update_hud, update_plots).chain());
     }
 }

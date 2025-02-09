@@ -6,7 +6,7 @@ use bevy::prelude::*;
 use crate::{
     debug,
     forces::{BuoyancyForce, DragForce, Forces, WeightForce},
-    gas::IdealGas,
+    gas::{Atmosphere, IdealGas},
     geometry::{shell_volume, sphere_radius_from_volume, sphere_surface_area},
     units::{AreaUnit, DensityUnit, MassUnit, VolumeUnit},
 };
@@ -15,7 +15,9 @@ pub(crate) fn plugin(app: &mut App) {
     app.register_type::<Balloon>();
     app.register_type::<Skin>();
     app.add_systems(PreUpdate, update_balloon_from_gas);
+    app.add_systems(FixedUpdate, update_gas_from_atmosphere);
 }
+
 
 /// The balloon is a surface that contains an [`IdealGas`]. [`Balloon`]
 /// is a dynamic [`RigidBody`] with [`Forces`].
@@ -130,5 +132,12 @@ fn update_balloon_from_gas(mut balloon: Query<(&mut Balloon, &mut Mass)>) {
         let volume = balloon.gas.volume();
         balloon.update_volume(volume);
         mass.0 = balloon.mass().kg();
+    }
+}
+
+fn update_gas_from_atmosphere(mut query: Query<(&mut Balloon, &Position)>, atmosphere: Res<Atmosphere>) {
+    for (mut balloon, position) in query.iter_mut() {
+        balloon.gas.pressure = atmosphere.pressure(position.0);
+        balloon.gas.temperature = atmosphere.temperature(position.0);
     }
 }

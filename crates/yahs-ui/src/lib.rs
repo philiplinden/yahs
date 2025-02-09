@@ -14,7 +14,7 @@ use controls::ControlsPlugin;
 use scene::ScenePlugin;
 use hud::HudPlugin;
 use gizmos::KinematicsGizmos;
-
+use plot::PlotPlugin;
 
 #[cfg(feature = "console")]
 use console::DevConsolePlugin;
@@ -57,12 +57,14 @@ impl Plugin for AppPlugins {
             CameraPlugin,
             KinematicsGizmos,
             HudPlugin,
+            PlotPlugin,
         ));
         #[cfg(feature = "console")]
         app.add_plugins(DevConsolePlugin);
         #[cfg(not(feature = "console"))]
         app.add_plugins(LogPlugin::default());
         #[cfg(feature = "inspect")]
+
         app.add_plugins(WorldInspectorPlugin::new());
     }
 }
