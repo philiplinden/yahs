@@ -7,26 +7,27 @@ use crate::{
     debug,
     forces::{BuoyancyForce, DragForce, Forces, WeightForce},
     gas::IdealGas,
-    geometry::{shell_volume, sphere_radius_from_volume},
-    units::{VolumeUnit, MassUnit},
+    geometry::{shell_volume, sphere_radius_from_volume, sphere_surface_area},
+    units::{AreaUnit, DensityUnit, MassUnit, VolumeUnit},
 };
-
 
 pub(crate) fn plugin(app: &mut App) {
     app.register_type::<Balloon>();
     app.register_type::<Skin>();
+    app.add_systems(PreUpdate, update_balloon_from_gas);
 }
 
 /// The balloon is a surface that contains an [`IdealGas`]. [`Balloon`]
 /// is a dynamic [`RigidBody`] with [`Forces`].
-/// The [`Balloon`] can have an [`ArbitraryShape`] that can be updated based on the
-/// pressure of the [`IdealGas`] it contains, like to account for stretching.
+/// The total mass of the balloon is the sum of the mass of the skin and the
+/// mass of the gas.
 #[derive(Component, Debug, Reflect, Clone)]
 #[require(RigidBody(|| RigidBody::Dynamic), Mass, Forces, WeightForce, DragForce, BuoyancyForce)]
 pub struct Balloon {
     // The 3d shape of the balloon constructed from a [`PrimitiveShape`].
     // TODO: Accept other shapes that implement [`Measured3d`]
     pub mesh: Handle<Mesh>,
+    pub hack_volume: VolumeUnit,
     pub skin: Skin,
     pub gas: IdealGas,
 }
@@ -35,9 +36,46 @@ impl Default for Balloon {
     fn default() -> Self {
         Balloon {
             mesh: Handle::default(), // Use default instead of placeholder
+            hack_volume: VolumeUnit::ZERO,
             skin: Skin::default(),
             gas: IdealGas::default(),
         }
+    }
+}
+
+impl Balloon {
+    pub fn mass(&self) -> MassUnit {
+        self.gas.mass + self.skin_mass()
+    }
+
+    pub fn volume(&self) -> VolumeUnit {
+        self.hack_volume
+    }
+
+    pub fn update_volume(&mut self, volume: VolumeUnit) {
+        // self.mesh.set_attribute(Mesh::ATTRIBUTE_POSITION, volume.m3());
+        self.hack_volume = volume;
+    }
+
+    pub fn density(&self) -> DensityUnit {
+        self.mass() / self.volume()
+    }
+
+    pub fn skin_volume(&self) -> VolumeUnit {
+        VolumeUnit::from_cubic_meters(shell_volume(
+            sphere_radius_from_volume(self.volume().m3()),
+            self.skin.thickness,
+        ))
+    }
+
+    pub fn skin_mass(&self) -> MassUnit {
+        MassUnit::from_kilograms(self.skin_volume().m3() * self.skin.density)
+    }
+
+    pub fn surface_area(&self) -> AreaUnit {
+        AreaUnit::from_square_meters(sphere_surface_area(
+            sphere_radius_from_volume(self.volume().m3()),
+        ))
     }
 }
 
@@ -87,8 +125,10 @@ impl Default for Skin {
     }
 }
 
-impl Skin {
-    pub fn mass_for_surface_area(&self, surface_area: f32) -> MassUnit {
-        MassUnit(surface_area * self.density * self.thickness)
+fn update_balloon_from_gas(mut balloon: Query<(&mut Balloon, &mut Mass)>) {
+    for (mut balloon, mut mass) in balloon.iter_mut() {
+        let volume = balloon.gas.volume();
+        balloon.update_volume(volume);
+        mass.0 = balloon.mass().kg();
     }
 }

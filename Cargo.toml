@@ -21,7 +21,7 @@ license-file = "LICENSE-APACHE"
 
 [workspace.dependencies]
 # Shared dependencies with fixed versions
-bevy = { version = "0.15.1", default-features = false, features = [
+bevy = { version = "0.15.2", default-features = false, features = [
     "bevy_state",
     "bevy_render", # needed for working with meshes, even without rendering
     "multi_threaded",

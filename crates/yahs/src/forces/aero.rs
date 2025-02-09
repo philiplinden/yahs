@@ -1,6 +1,6 @@
 //! Forces applied to rigid bodies due to aerodynamic drag.
 
-use avian3d::{math::PI, prelude::*};
+use avian3d::prelude::*;
 use bevy::prelude::*;
 
 use crate::{
@@ -8,7 +8,8 @@ use crate::{
     vehicle::balloon::Balloon,
     forces::{ForceVector, ForceType, Forces},
     units::VolumeUnit,
-    geometry::{sphere_radius_from_volume, HasMeshVolume, MeshVolume},
+    geometry::sphere_radius_from_volume,
+    constants::PI,
 };
 
 
@@ -20,19 +21,19 @@ pub fn drag(velocity: Vec3, ambient_density: f32, drag_area: f32, drag_coeff: f3
 }
 
 #[derive(Component, Default)]
-#[require(Position, LinearVelocity, HasMeshVolume, Forces)]
+#[require(Position, LinearVelocity, Forces)]
 pub struct DragForce;
 
 pub(super) fn update_drag_force(
     atmosphere: Res<Atmosphere>,
-    mut bodies: Query<(&mut Forces, &Position, &LinearVelocity, &HasMeshVolume), With<DragForce>>,
-    meshes: Res<Assets<Mesh>>,
+    mut bodies: Query<(&mut Forces, &Position, &LinearVelocity, &Balloon), With<DragForce>>,
 ) {
-    for (mut forces, position, velocity, mesh_volume) in bodies.iter_mut() {
-        let mesh = meshes.get(&mesh_volume.handle).unwrap();
-        let radius = sphere_radius_from_volume(mesh.volume().m3());
+    for (mut forces, position, velocity, balloon) in bodies.iter_mut() {
+        let radius = sphere_radius_from_volume(balloon.volume().m3());
+
 
         let drag_area = PI * radius * radius; // cross-sectional area
+
         let drag_force = drag(
             velocity.0,
             atmosphere.density(position.0).kg_per_m3(),

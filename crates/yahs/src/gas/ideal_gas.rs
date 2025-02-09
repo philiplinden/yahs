@@ -231,7 +231,6 @@ pub struct IdealGas {
     pub mass: MassUnit,
     pub temperature: TemperatureUnit,
     pub pressure: PressureUnit,
-    pub volume: VolumeUnit,
 }
 
 impl IdealGas {
@@ -240,14 +239,24 @@ impl IdealGas {
         temperature: TemperatureUnit,
         pressure: PressureUnit,
         mass: MassUnit,
-        volume: VolumeUnit,
     ) -> Self {
         IdealGas {
             species,
             temperature,
             pressure,
             mass,
-            volume,
         }
+    }
+
+    pub fn volume(&self) -> VolumeUnit {
+        ideal_gas_volume(self.temperature, self.pressure, self.mass, &self.species)
+    }
+
+    pub fn density(&self) -> DensityUnit {
+        ideal_gas_density(self.temperature, self.pressure, &self.species)
+    }
+
+    pub fn with_mass(self, mass: f32) -> Self {
+        Self { mass: MassUnit::from_kilograms(mass), ..self }
     }
 }

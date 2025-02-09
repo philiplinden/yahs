@@ -36,11 +36,15 @@ fn spawn_balloon(
     commands
         .spawn((
             Name::new("Balloon"),
-            Balloon::default(),
+            Balloon {
+                gas: IdealGas::default().with_mass(1.0),
+                ..default()
+            },
             Transform::from_translation(Vec3::new(0.0, 3.0, 0.0)),
             MeshMaterial3d(debug_material.clone()),
             Mesh3d(shape),
             CameraAttachment::default(),
+
         ));
 }
 

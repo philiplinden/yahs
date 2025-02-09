@@ -219,6 +219,27 @@ impl Div<Scalar> for VolumeUnit {
     }
 }
 
+/// The area of a body in square meters.
+#[derive(Debug, Default, Clone, Copy, PartialEq, Reflect)]
+pub struct AreaUnit(pub Scalar);
+
+impl AreaUnit {
+    pub const ZERO: Self = Self(0.0);
+
+    pub fn square_meters(&self) -> f32 {
+        self.0
+    }
+
+    pub fn m2(&self) -> f32 {
+        self.0
+    }
+
+    pub fn from_square_meters(square_meters: f32) -> Self {
+        Self(square_meters)
+    }
+}
+
+
 /// The mass of a body in kilograms.
 #[derive(Debug, Default, Clone, Copy, PartialEq, Reflect)]
 pub struct MassUnit(pub Scalar);
@@ -273,6 +294,14 @@ impl Div<Scalar> for MassUnit {
 
     fn div(self, rhs: Scalar) -> Self::Output {
         MassUnit(self.0 / rhs)
+    }
+}
+
+impl Div<VolumeUnit> for MassUnit {
+    type Output = DensityUnit;
+
+    fn div(self, rhs: VolumeUnit) -> Self::Output {
+        DensityUnit(self.0 / rhs.0)
     }
 }
 

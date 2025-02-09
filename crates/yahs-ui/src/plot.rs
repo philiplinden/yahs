@@ -93,6 +93,7 @@ pub fn update_plots(
                     plot_ui.line(
                         Line::new(plot_data.get_plot_points(&plot_data.altitude))
                             .name("Altitude (m)")
+
                             .width(2.0),
                     );
                     plot_ui.line(

@@ -1,14 +1,12 @@
 use avian3d::prelude::*;
-use bevy::{prelude::*, render::mesh::Mesh};
+use bevy::prelude::*;
 
 use crate::{
     forces::{ForceType, ForceVector, Forces},
     gas::Atmosphere,
-    geometry::{HasMeshVolume, MeshVolume},
     units::{DensityUnit, VolumeUnit},
     vehicle::balloon::Balloon,
 };
-
 
 /// Upward force (N) vector due to atmosphere displaced by the given gas volume.
 /// The direction of this force is always world-space up (it opposes gravity).
@@ -22,24 +20,19 @@ pub fn buoyancy(
 }
 
 #[derive(Component, Default)]
-#[require(Position, Forces, HasMeshVolume)]
+#[require(Position, Forces)]
 pub struct BuoyancyForce;
 
 pub(super) fn update_buoyancy_force(
     atmosphere: Res<Atmosphere>,
-    meshes: Res<Assets<Mesh>>,
-    mut bodies: Query<(&mut Forces, &Position, &HasMeshVolume), With<BuoyancyForce>>,
+    mut bodies: Query<(&mut Forces, &Position, &Balloon), With<BuoyancyForce>>,
 ) {
-    for (mut forces, position, mesh_volume) in bodies.iter_mut() {
+
+    for (mut forces, position, balloon) in bodies.iter_mut() {
         let ambient_density = atmosphere.density(position.0);
 
         // Get the mesh and calculate its volume
-        let Some(mesh) = meshes.get(&mesh_volume.handle) else {
-            continue;
-        };
-
-        let volume = mesh.volume();
-
+        let volume = balloon.volume();
 
         let buoyancy_force = buoyancy(position.0, volume, ambient_density);
 
