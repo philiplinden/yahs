@@ -72,12 +72,12 @@ fn spawn_payload(
 
 #[allow(dead_code)]
 fn spawn_tether(
-    commands: Commands,
+    mut commands: Commands,
     balloon_entity: Query<Entity, With<Balloon>>,
     payload_entity: Query<Entity, With<Payload>>,
 ) {
-    tether::link_entities(
-        commands,
+    Tether::link_entities(
+        &mut commands,
         10.0,
         balloon_entity.get_single().unwrap(),
         payload_entity.get_single().unwrap(),
