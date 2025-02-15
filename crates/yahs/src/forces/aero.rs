@@ -15,9 +15,7 @@ use crate::{
 
 /// Force (N) due to drag as a solid body moves through a fluid.
 pub fn drag(velocity: Vec3, ambient_density: f32, drag_area: f32, drag_coeff: f32) -> Vec3 {
-    let drag_direction = -velocity.normalize_or_zero(); // oppose the object's velocity
-    let drag_magnitude = drag_coeff / 2.0 * ambient_density * velocity.length_squared() * drag_area;
-    drag_direction * drag_magnitude
+    -0.5 * drag_coeff * ambient_density * drag_area * velocity.length() * velocity
 }
 
 #[derive(Component, Default)]

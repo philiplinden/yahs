@@ -35,7 +35,7 @@ pub(crate) fn plugin(app: &mut App) {
             apply_forces,
         )
             .chain()
-            .in_set(PhysicsSet::Prepare)
+            .in_set(PhysicsStepSet::First)
             .run_if(in_state(SimState::Running)),
     );
 }
@@ -177,6 +177,6 @@ fn apply_forces(
     mut query: Query<(&mut ExternalForce, &Forces)>
 ) {
     for (mut external_force, forces) in query.iter_mut() {
-        external_force.apply_force(forces.net_force().force);
+        external_force.apply_force(forces.net_force().force).with_persistence(false);
     }
 }

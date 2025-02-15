@@ -33,6 +33,7 @@ bevy = { workspace = true, features = [
 avian3d = { workspace = true }
 bevy_egui = "0.32.0"
 egui_plot = "0.30.0"
+big_space = { workspace = true, features = [ "camera" ]}
 bevy_console = { workspace = true, optional = true }
 bevy-inspector-egui = { version = "0.29.1", optional = true, features = [
     "highlight_changes",
@@ -44,6 +45,7 @@ dev = [
     "avian3d/debug-plugin",
     "bevy/bevy_dev_tools",
     "yahs/dev",
+    "big_space/debug",
 ]
 console = [ "yahs-cli", "bevy_console" ]
-inspect = ["bevy-inspector-egui"]
+inspect = [ "bevy-inspector-egui" ]

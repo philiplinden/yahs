@@ -10,7 +10,8 @@ use egui_plot::{
     PlotPoints,
 };
 use std::collections::VecDeque;
-use yahs::prelude::{Balloon, Forces, ForceType};
+use yahs::prelude::{Balloon, Forces, ForceType, SimState};
+use std::collections::HashMap;
 
 const MAX_HISTORY: usize = 1000; // Store last 1000 data points
 
@@ -21,7 +22,8 @@ impl Plugin for PlotPlugin {
         app
             .init_resource::<KinematicsPlotData>()
             .init_resource::<ForcesPlotData>()
-            .init_resource::<GasPropertiesPlotData>();
+            .init_resource::<GasPropertiesPlotData>()
+            .init_resource::<PlotVisibility>();
     }
 }
 
@@ -174,6 +176,92 @@ impl GasPropertiesPlotData {
     }
 }
 
+// Modify PlotValue to include all plot types we want to show
+#[derive(Clone)]
+enum PlotValue {
+    Position,
+    Velocity,
+    Forces,
+    Volume,
+    Temperature,
+    Pressure,
+}
+
+// Add this struct to store plot metadata
+struct PlotMetadata {
+    name: &'static str,
+    unit: &'static str,
+    id: &'static str,
+}
+
+impl PlotValue {
+    fn all() -> Vec<PlotValue> {
+        vec![
+            PlotValue::Position,
+            PlotValue::Velocity,
+            PlotValue::Forces,
+            PlotValue::Volume,
+            PlotValue::Temperature,
+            PlotValue::Pressure,
+        ]
+    }
+
+    fn metadata(&self) -> PlotMetadata {
+        match self {
+            PlotValue::Position => PlotMetadata {
+                name: "Position",
+                unit: "m",
+                id: "position_plot",
+            },
+            PlotValue::Velocity => PlotMetadata {
+                name: "Velocity",
+                unit: "m/s",
+                id: "velocity_plot",
+            },
+            PlotValue::Forces => PlotMetadata {
+                name: "Forces",
+                unit: "N",
+                id: "force_plots",
+            },
+            PlotValue::Volume => PlotMetadata {
+                name: "Volume",
+                unit: "m³",
+                id: "volume_plot",
+            },
+            PlotValue::Temperature => PlotMetadata {
+                name: "Temperature",
+                unit: "K",
+                id: "temperature_plot",
+            },
+            PlotValue::Pressure => PlotMetadata {
+                name: "Pressure",
+                unit: "Pa",
+                id: "pressure_plot",
+            },
+        }
+    }
+}
+
+fn show_value_plot(
+    contexts: &mut EguiContexts,
+    time: &VecDeque<f64>,
+    values: &VecDeque<f64>,
+    plot_value: PlotValue,
+) {
+    let metadata = plot_value.metadata();
+    let points: PlotPoints = time.iter()
+        .zip(values.iter())
+        .map(|(&t, &v)| [t, v])
+        .collect();
+
+    show_plot_window(
+        contexts,
+        metadata.name,
+        metadata.id,
+        vec![(points, &format!("{} ({})", metadata.name, metadata.unit))],
+    );
+}
+
 fn show_plot_window(
     contexts: &mut EguiContexts,
     title: &str,
@@ -202,67 +290,103 @@ fn show_plot_window(
         });
 }
 
+// Add this near the top with other resources
+#[derive(Resource, Default)]
+pub struct PlotVisibility {
+    visible_plots: HashMap<String, bool>,
+}
+
+// Add this function to show the control window
+fn show_plot_control_window(
+    contexts: &mut EguiContexts,
+    plot_visibility: &mut PlotVisibility,
+) {
+    egui::Window::new("Plot Controls")
+        .default_size([200.0, 400.0])
+        .resizable(true)
+        .movable(true)
+        .show(contexts.ctx_mut(), |ui| {
+            ui.heading("Show/Hide Plots");
+            ui.separator();
+
+            // Generate checkboxes for all plot types
+            for plot_type in PlotValue::all() {
+                let metadata = plot_type.metadata();
+                ui.checkbox(
+                    plot_visibility.visible_plots.entry(metadata.name.to_string()).or_insert(false),
+                    metadata.name,
+                );
+            }
+        });
+}
+
 pub fn update_plots(
     mut kinematics_data: ResMut<KinematicsPlotData>,
     mut forces_data: ResMut<ForcesPlotData>,
     mut gas_data: ResMut<GasPropertiesPlotData>,
+    mut plot_visibility: ResMut<PlotVisibility>,
     time: Res<Time<Physics>>,
     mut contexts: EguiContexts,
     balloons: Query<(&Transform, &Forces, &LinearVelocity, &Balloon), With<Balloon>>,
+    sim_state: Res<State<SimState>>,
 ) {
-    if let Some((transform, forces, velocity, balloon)) = balloons.iter().next() {
-        let current_time = time.elapsed_secs() as f64;
-        
-        kinematics_data.push_data(
-            current_time,
-            transform.translation.y as f64,
-            velocity.0.y as f64,
-        );
+    if *sim_state == SimState::Running {
+        if let Some((transform, forces, velocity, balloon)) = balloons.iter().next() {
+            let current_time = time.elapsed_secs() as f64;
+            
+            kinematics_data.push_data(
+                current_time,
+                transform.translation.y as f64,
+                velocity.0.y as f64,
+            );
 
-        forces_data.push_data(current_time, forces);
+            forces_data.push_data(current_time, forces);
 
-        // Add gas properties data
-        gas_data.push_data(
-            current_time,
-            balloon.volume().m3() as f64,
-            balloon.gas.temperature.kelvin() as f64,
-            balloon.gas.pressure.pascals() as f64,
-        );
+            gas_data.push_data(
+                current_time,
+                balloon.volume().m3() as f64,
+                balloon.gas.temperature.kelvin() as f64,
+                balloon.gas.pressure.pascals() as f64,
+            );
+        }
     }
 
-    // Kinematics plot
-    show_plot_window(
-        &mut contexts,
-        "Kinematics",
-        "kinematics_plots",
-        vec![
-            (kinematics_data.get_plot_points(&kinematics_data.altitude), "Altitude (m)"),
-            (kinematics_data.get_plot_points(&kinematics_data.velocity), "Velocity (m/s)"),
-        ],
-    );
+    show_plot_control_window(&mut contexts, &mut plot_visibility);
 
-    // Forces plot
-    show_plot_window(
-        &mut contexts,
-        "Forces",
-        "force_plots",
-        vec![
-            (forces_data.get_plot_points(&forces_data.net_force), "Net Force (N)"),
-            (forces_data.get_plot_points(&forces_data.buoyancy), "Buoyancy (N)"),
-            (forces_data.get_plot_points(&forces_data.drag), "Drag (N)"),
-            (forces_data.get_plot_points(&forces_data.weight), "Weight (N)"),
-        ],
-    );
-
-    // Gas properties plot
-    show_plot_window(
-        &mut contexts,
-        "Gas Properties",
-        "gas_properties_plots",
-        vec![
-            (gas_data.get_plot_points(&gas_data.volume), "Volume (m³)"),
-            (gas_data.get_plot_points(&gas_data.temperature), "Temperature (K)"),
-            (gas_data.get_plot_points(&gas_data.pressure), "Pressure (Pa)"),
-        ],
-    );
+    // Show enabled plots
+    for plot_type in PlotValue::all() {
+        let metadata = plot_type.metadata();
+        if *plot_visibility.visible_plots.get(metadata.name).unwrap_or(&false) {
+            match plot_type {
+                PlotValue::Position => {
+                    show_value_plot(&mut contexts, &kinematics_data.time, &kinematics_data.altitude, PlotValue::Position);
+                }
+                PlotValue::Velocity => {
+                    show_value_plot(&mut contexts, &kinematics_data.time, &kinematics_data.velocity, PlotValue::Velocity);
+                }
+                PlotValue::Forces => {
+                    show_plot_window(
+                        &mut contexts,
+                        metadata.name,
+                        metadata.id,
+                        vec![
+                            (forces_data.get_plot_points(&forces_data.net_force), "Net Force (N)"),
+                            (forces_data.get_plot_points(&forces_data.buoyancy), "Buoyancy (N)"),
+                            (forces_data.get_plot_points(&forces_data.drag), "Drag (N)"),
+                            (forces_data.get_plot_points(&forces_data.weight), "Weight (N)"),
+                        ],
+                    );
+                }
+                PlotValue::Volume => {
+                    show_value_plot(&mut contexts, &gas_data.time, &gas_data.volume, PlotValue::Volume);
+                }
+                PlotValue::Temperature => {
+                    show_value_plot(&mut contexts, &gas_data.time, &gas_data.temperature, PlotValue::Temperature);
+                }
+                PlotValue::Pressure => {
+                    show_value_plot(&mut contexts, &gas_data.time, &gas_data.pressure, PlotValue::Pressure);
+                }
+            }
+        }
+    }
 } 

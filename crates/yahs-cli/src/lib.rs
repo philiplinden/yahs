@@ -1,7 +1,6 @@
 use bevy::prelude::*;
 use bevy_console::{reply, ConsoleCommand, AddConsoleCommand};
 use clap::{Parser, Subcommand};
-use tracing::info;
 use yahs::prelude::*;
 
 #[derive(Parser)]

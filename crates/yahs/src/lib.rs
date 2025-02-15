@@ -8,7 +8,7 @@ pub mod constants;
 pub mod time;
 pub mod vehicle;
 pub mod debug;
-
+pub mod space;
 
 pub mod prelude {
     pub use crate::core::{SimState, SimulatorPlugins};

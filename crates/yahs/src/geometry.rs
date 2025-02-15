@@ -3,9 +3,9 @@ use bevy::{prelude::*, render::mesh::Mesh};
 use crate::constants::PI;
 use crate::units::VolumeUnit;
 
-pub(super) fn plugin(app: &mut App) {
-    app.register_type::<HasMeshVolume>();
-}
+// pub(super) fn plugin(app: &mut App) {
+//     app.register_type::<HasMeshVolume>();
+// }
 
 pub(crate) fn sphere_volume(radius: f32) -> f32 {
     (4.0 / 3.0) * PI * f32::powf(radius, 3.0)
@@ -75,11 +75,12 @@ impl MeshVolume for Mesh {
 /// https://docs.rs/bevy/latest/bevy/math/bounding/struct.RayCast3d.html
 /// https://github.com/bevyengine/bevy/blob/latest/examples/math/sampling_primitives.rs
 /// https://github.com/aevyrie/bevy_mod_raycast
-
+#[allow(dead_code)]
 trait ProjectedArea {
     fn projected_area(&self, direction: Vec3) -> f32;
 }
 
+#[allow(dead_code)]
 fn generate_projection_plane(
     center: Vec3,
     normal: Vec3,

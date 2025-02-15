@@ -28,6 +28,7 @@ impl Plugin for CorePhysicsPlugin {
         // third party plugins
         app.add_plugins((
             PhysicsPlugins::default(),
+            space::plugin,
             gas::ideal_gas_plugin,
             forces::plugin,
         ));

@@ -9,6 +9,7 @@ license = { workspace = true }
 [dependencies]
 bevy = { workspace = true }
 avian3d = { workspace = true }
+big_space = { workspace = true }
 
 [features]
 default = [
@@ -18,4 +19,5 @@ dev = [
     "bevy/dynamic_linking",
     "bevy/bevy_debug_stepping",
     "avian3d/debug-plugin",
+    "big_space/debug",
 ]
