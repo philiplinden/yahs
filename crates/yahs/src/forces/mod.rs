@@ -8,7 +8,7 @@ use bevy::prelude::*;
 use std::ops::{Add, AddAssign};
 
 use crate::core::SimState;
-use crate::debug;
+use crate::{debug, time};
 
 // Re-export common forces
 pub use aero::{drag, DragForce};
@@ -174,9 +174,24 @@ impl AddAssign for ForceVector {
 
 /// Consolidate force application into a single system
 fn apply_forces(
-    mut query: Query<(&mut ExternalForce, &Forces)>
+    mut query: Query<(&mut ExternalForce, &Forces, &mut LinearVelocity)>,
+    time_scale: Res<time::TimeScaleOptions>,
 ) {
-    for (mut external_force, forces) in query.iter_mut() {
-        external_force.apply_force(forces.net_force().force).with_persistence(false);
+    for (mut external_force, forces, mut velocity) in query.iter_mut() {
+        let net_force = forces.net_force().force;
+
+        // HACK!!!
+        // Apply damping to the velocity to prevent oscillation artifacts when
+        // there are stepwise changes in force. This is a hack. Set this as low
+        // as possible while still preventing artifacts. I thought it might be
+        // related to the force vectors acting in world space but that doesn't
+        // seem to be the case. Instead, it seems to be related to the pphysics
+        // time step, with larger time steps causing more artifacts. It is
+        // recommended to scale the damping factor with the time step multiplier
+        // to minimize artifacts.
+        let damping_factor = (0.05 * time_scale.multiplier).clamp(0.0, 1.0);
+        velocity.0 *= 1.0 - damping_factor;
+
+        external_force.apply_force(net_force);
     }
 }

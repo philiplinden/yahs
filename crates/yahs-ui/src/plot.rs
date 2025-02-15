@@ -276,8 +276,7 @@ fn show_plot_window(
         .show(contexts.ctx_mut(), |ui| {
             Plot::new(plot_id)
                 .legend(egui_plot::Legend::default())
-                .include_y(0.0)
-                .auto_bounds([true, true].into())
+                .auto_bounds([true, true].into()) // Enable auto bounds for both axes
                 .show(ui, |plot_ui| {
                     for (points, name) in lines {
                         plot_ui.line(

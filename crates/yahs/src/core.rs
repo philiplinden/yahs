@@ -1,5 +1,5 @@
 use super::*;
-use avian3d::prelude::{PhysicsPlugins, PhysicsSet};
+use avian3d::prelude::{PhysicsPlugins, PhysicsSet, PhysicsInterpolationPlugin};
 use bevy::{
     app::{PluginGroup, PluginGroupBuilder},
     prelude::*,
@@ -27,7 +27,7 @@ impl Plugin for CorePhysicsPlugin {
     fn build(&self, app: &mut App) {
         // third party plugins
         app.add_plugins((
-            PhysicsPlugins::default(),
+            PhysicsPlugins::default().set(PhysicsInterpolationPlugin::interpolate_all()),
             space::plugin,
             gas::ideal_gas_plugin,
             forces::plugin,

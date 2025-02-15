@@ -16,7 +16,7 @@ impl Plugin for TimeScalePlugin {
     }
 }
 
-const DEFAULT_MULTIPLIER: f32 = 1.0;
+const DEFAULT_MULTIPLIER: f32 = 100.0;
 
 #[derive(Resource)]
 pub struct TimeScaleOptions {
