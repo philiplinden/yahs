@@ -1,18 +1,18 @@
 [package]
-name = "yahs-ui"
-version = "0.2.0"
-description = "UI for the YAHS simulator"
+name = "buoy-ui"
+version = "0.1.0"
+description = "UI for the Buoy simulator"
 edition = "2021"
 authors = { workspace = true }
 license = { workspace = true }
-default-run = "yahs-ui"
+default-run = "buoy-ui"
 
 [[bin]]
-name = "yahs-ui"
+name = "buoy-ui"
 path = "src/main.rs"
 
 [dependencies]
-yahs = { path = "../yahs" }
+buoy-core = { path = "../buoy-core" }
 bevy = { workspace = true, features = [
     "bevy_asset",
     "bevy_core_pipeline",
@@ -40,7 +40,7 @@ default = ["dev"]
 dev = [
     "avian3d/debug-plugin",
     "bevy/bevy_dev_tools",
-    "yahs/dev",
+    "buoy-core/dev",
     "big_space/debug",
 ]
 inspect = [ "bevy-inspector-egui" ]

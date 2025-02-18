@@ -1,4 +1,4 @@
-# yahs-ui
+# buoy-ui
 
 3D rendered simulation viewport.
 

@@ -1,7 +1,7 @@
 [package]
-name = "yahs"
-version = "0.6.0"
-description = "High Altitude Balloon simulation plugin for Bevy"
+name = "buoy-core"
+version = "0.1.0"
+description = "Core logic for buoyancy simulation"
 edition = "2021"
 authors = { workspace = true }
 license = { workspace = true }
@@ -10,6 +10,7 @@ license = { workspace = true }
 bevy = { workspace = true }
 avian3d = { workspace = true }
 big_space = { workspace = true }
+uom = "0.36.0"
 
 [features]
 default = [

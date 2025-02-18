@@ -1,14 +1,10 @@
 use bevy::prelude::*;
 
-use yahs::prelude::{SimState, TimeScaleOptions, StepPhysicsEvent};
+use buoy_core::prelude::{SimState, TimeScaleOptions, StepPhysicsEvent};
 
-pub struct ControlsPlugin;
-
-impl Plugin for ControlsPlugin {
-    fn build(&self, app: &mut App) {
-        app.init_resource::<KeyBindingsConfig>();
-        app.add_plugins((PausePlayPlugin, ChangeTimeScalePlugin, StepPhysicsPlugin));
-    }
+pub fn plugin(app: &mut App) {
+    app.init_resource::<KeyBindingsConfig>();
+    app.add_plugins((PausePlayPlugin, ChangeTimeScalePlugin, StepPhysicsPlugin));
 }
 
 #[allow(dead_code)]

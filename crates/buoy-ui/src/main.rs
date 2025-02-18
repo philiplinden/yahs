@@ -5,6 +5,6 @@ use bevy::prelude::*;
 
 fn main() {
     App::new()
-        .add_plugins(yahs_ui::AppPlugins)
+        .add_plugins(buoy_ui::AppPlugins)
         .run();
 }

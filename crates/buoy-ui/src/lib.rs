@@ -1,11 +1,5 @@
-mod camera;
 mod controls;
-mod scene;
 mod colors;
-
-use camera::CameraPlugin;
-use controls::ControlsPlugin;
-use scene::ScenePlugin;
 
 use bevy::{
     prelude::*,
@@ -15,8 +9,6 @@ use bevy::{
 
 #[cfg(feature = "inspect")]
 use bevy_inspector_egui::quick::WorldInspectorPlugin;
-
-use yahs::prelude::SimulatorPlugins;
 
 pub struct AppPlugins;
 
@@ -39,10 +31,8 @@ impl Plugin for AppPlugins {
                     .into(),
                     ..default()
                 }).build().disable::<LogPlugin>(), // we set this elsewhere
-            SimulatorPlugins,
-            ControlsPlugin,
-            ScenePlugin,
-            CameraPlugin,
+            buoy_core::BuoyPlugin,
+            controls::plugin,
         ));
 
         #[cfg(feature = "inspect")]

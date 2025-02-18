@@ -1,35 +1,31 @@
-# yet another HAB simulator
+# buoy
 
-A high altitude balloon flight simulator built in
-[Bevy](https://bevyengine.org/) with Rust, inspired by
-[tkschuler/EarthSHAB](https://github.com/tkschuler/EarthSHAB) and
-[mfc-apps](https://github.com/Brickworks/mfc-apps).
-
-[devlog](docs/devlog.md)
+A buoyancy simulation environment built with [Bevy](https://bevyengine.org/) in
+Rust.
 
 ## Usage
 
 ### As a library
 
-Add `yahs` to your `Cargo.toml`:
+Add `buoy` to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-yahs = "0.4.0"
+buoy = "0.1.0"
 ```
 
-Then, add the `SimulatorPlugins` to your Bevy app:
+Then, add the `BuoyPlugin` to your Bevy app:
 
 ```rust
-use yahs::prelude::SimulatorPlugins;
+use buoy::prelude::BuoyPlugin;
 
 fn main() {
-    App::new().add_plugins(SimulatorPlugins);
+    App::new().add_plugins(BuoyPlugin);
 }
 ```
 
 Then you can use all of the components and systems from the
-[`yahs`](./crates/yahs/README.md) crate.
+[`buoy-core`](./crates/buoy-core/README.md) crate.
 
 
 ### As an application
@@ -44,8 +40,7 @@ cargo run
 You can force the standalone application to run a particular interface too:
 
 ```bash
-cargo run --bin yahs-ui
-cargo run --bin yahs-cli
+cargo run --bin buoy-ui
 ```
 
 ## License
