@@ -3,17 +3,14 @@ use bevy::prelude::*;
 
 use crate::core::SimState;
 
-pub struct TimeScalePlugin;
-
-impl Plugin for TimeScalePlugin {
-    fn build(&self, app: &mut App) {
-        app.init_resource::<TimeScaleOptions>();
-        app.add_event::<StepPhysicsEvent>();
-        app.add_systems(OnEnter(SimState::Stopped), pause);
-        app.add_systems(OnExit(SimState::Stopped), unpause);
-        app.add_systems(PreUpdate, modify_time_scale);
-        app.add_systems(Update, step_physics_once_on_event);
-    }
+pub(crate) fn plugin(app: &mut App) {
+    app.init_resource::<TimeScaleOptions>();
+    app.init_resource::<TimeScaleOptions>();
+    app.add_event::<StepPhysicsEvent>();
+    app.add_systems(OnEnter(SimState::Stopped), pause);
+    app.add_systems(OnExit(SimState::Stopped), unpause);
+    app.add_systems(PreUpdate, modify_time_scale);
+    app.add_systems(Update, step_physics_once_on_event);
 }
 
 const DEFAULT_MULTIPLIER: f32 = 100.0;

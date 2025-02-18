@@ -4,9 +4,16 @@ use big_space::prelude::*;
 use crate::units::{DistanceUnit, VolumeUnit};
 
 /// The size of the grid cells in space.
-const GRID_CELL_EDGE_LENGTH_METERS: f32 = 10.0;
+pub const GRID_CELL_EDGE_LENGTH_METERS: f32 = 10.0;
 type GridPrecision = i16;
-type WorldCell = GridCell<GridPrecision>;
+// type WorldCell = GridCell<GridPrecision>;
+
+pub(crate) fn plugin(app: &mut App) {
+    app.add_plugins(BigSpacePlugin::<GridPrecision>::default());
+
+    #[cfg(feature = "dev")]
+    app.add_plugins(FloatingOriginDebugPlugin::<i64>::default());
+}
 
 /// The edge length of one grid cell.
 pub fn get_grid_cell_edge_length() -> DistanceUnit {
@@ -29,8 +36,4 @@ pub fn get_grid_world_edge_length() -> DistanceUnit {
 pub fn get_grid_world_volume() -> VolumeUnit {
     let world_edge_length = get_grid_world_edge_length();
     VolumeUnit::from_cubic_meters(world_edge_length.0 * world_edge_length.0 * world_edge_length.0)
-}
-
-pub(crate) fn plugin(app: &mut App) {
-    app.add_plugins(BigSpacePlugin::<GridPrecision>::default());
 }

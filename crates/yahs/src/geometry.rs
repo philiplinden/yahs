@@ -1,4 +1,5 @@
 use bevy::{prelude::*, render::mesh::Mesh};
+use avian3d::math::Scalar;
 
 use crate::constants::PI;
 use crate::units::VolumeUnit;
@@ -104,4 +105,12 @@ fn generate_projection_plane(
     }));
 
     points
+}
+
+pub struct DragCoefficient(pub Scalar);
+
+impl Default for DragCoefficient {
+    fn default() -> Self {
+        DragCoefficient(0.47)
+    }
 }

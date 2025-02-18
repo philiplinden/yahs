@@ -4,10 +4,9 @@ use avian3d::{math::PI, prelude::*};
 use bevy::prelude::*;
 
 use crate::{
-    debug,
-    forces::{BuoyancyForce, DragForce, Forces, WeightForce},
-    gas::{Atmosphere, IdealGas},
-    geometry::{shell_volume, sphere_radius_from_volume, sphere_surface_area},
+    atmosphere::Atmosphere,
+    ideal_gas::IdealGas,
+    geometry::{shell_volume, sphere_radius_from_volume, sphere_surface_area, DragCoefficient},
     units::{AreaUnit, DensityUnit, MassUnit, VolumeUnit},
 };
 
@@ -24,7 +23,7 @@ pub(crate) fn plugin(app: &mut App) {
 /// The total mass of the balloon is the sum of the mass of the skin and the
 /// mass of the gas.
 #[derive(Component, Debug, Reflect, Clone)]
-#[require(RigidBody(|| RigidBody::Dynamic), Mass, Forces, WeightForce, DragForce, BuoyancyForce)]
+#[require(RigidBody(|| RigidBody::Dynamic), DragCoefficient)]
 pub struct Balloon {
     // The 3d shape of the balloon constructed from a [`PrimitiveShape`].
     // TODO: Accept other shapes that implement [`Measured3d`]

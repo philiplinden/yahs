@@ -17,7 +17,7 @@ bevy = { workspace = true, default-features = false, features = [
     "bevy_state",
 ] }
 clap = "4.5.27"
-bevy_console = { workspace = true }
+bevy_console = "0.13.1"
 
 [features]
 default = []

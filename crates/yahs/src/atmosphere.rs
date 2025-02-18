@@ -5,14 +5,13 @@
 //! - https://www.translatorscafe.com/unit-converter/en-US/calculator/altitude
 //! - https://www.grc.nasa.gov/WWW/K-12/airplane/atmosmet.html
 
-use avian3d::prelude::Position;
+use avian3d::prelude::{Position, RigidBody};
 use bevy::prelude::*;
 
-use super::{ideal_gas_density, GasSpecies};
 use crate::{
     core::SimState,
     units::{DensityUnit, PressureUnit, TemperatureUnit},
-    vehicle::balloon::Balloon,
+    ideal_gas::{ideal_gas_density, GasSpecies},
 };
 
 pub(crate) fn plugin(app: &mut App) {
@@ -24,7 +23,7 @@ pub(crate) fn plugin(app: &mut App) {
 }
 
 fn pause_on_out_of_bounds(
-    positions: Query<&Position, With<Balloon>>,
+    positions: Query<&Position, With<RigidBody>>,
     mut state: ResMut<NextState<SimState>>,
 ) {
     for position in positions.iter() {
@@ -84,14 +83,6 @@ impl Atmosphere {
             Atmosphere::standard_temperature(),
             Atmosphere::standard_pressure(),
             &GasSpecies::air(),
-        )
-    }
-
-    pub fn debug_density() -> DensityUnit {
-        ideal_gas_density(
-            Atmosphere::standard_temperature(),
-            Atmosphere::standard_pressure(),
-            &GasSpecies::debug(),
         )
     }
 }

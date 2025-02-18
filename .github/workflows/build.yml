@@ -9,6 +9,7 @@ on:
 env:
   CARGO_TERM_COLOR: always
   RUST_LOG: info
+  RUSTFLAGS: "-A dead_code"
 
 jobs:
   build:
@@ -31,7 +32,7 @@ jobs:
         run: sudo apt-get update; sudo apt-get install --no-install-recommends libasound2-dev libudev-dev libwayland-dev libxkbcommon-dev
 
       - name: Cargo Check
-        run: RUSTFLAGS="$RUSTFLAGS -A dead_code" cargo check
+        run: cargo check
 
       - name: Cargo Build
         run: cargo build --release --all-features
