@@ -8,9 +8,6 @@ use bevy::{
 };
 use uom::si::{f32::*, Quantity};
 
-#[cfg(feature = "dev")]
-use avian3d::debug_render::PhysicsDebugPlugin;
-
 pub struct BuoyPlugin;
 
 impl Plugin for BuoyPlugin {
@@ -20,9 +17,6 @@ impl Plugin for BuoyPlugin {
             SimStatePlugin,
             FormattingPlugin,
         ));
-
-        #[cfg(feature = "dev")]
-        app.add_plugins(PhysicsDebugPlugin::default());
     }
 }
 

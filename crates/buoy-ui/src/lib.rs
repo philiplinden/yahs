@@ -1,10 +1,14 @@
 mod controls;
 mod colors;
+mod camera;
+mod big_space_demo;
+
+#[cfg(feature = "dev")]
+mod debug;
 
 use bevy::{
     prelude::*,
     asset::AssetMetaCheck,
-    log::LogPlugin,
 };
 
 #[cfg(feature = "inspect")]
@@ -22,7 +26,7 @@ impl Plugin for AppPlugins {
                 })
                 .set(WindowPlugin {
                     primary_window: Window {
-                        title: "yet another hab simulator 🎈".to_string(),
+                        title: "buoy 🛟".to_string(),
                         canvas: Some("#bevy".to_string()),
                         fit_canvas_to_parent: true,
                         prevent_default_event_handling: true,
@@ -30,10 +34,15 @@ impl Plugin for AppPlugins {
                     }
                     .into(),
                     ..default()
-                }).build().disable::<LogPlugin>(), // we set this elsewhere
+                }),
             buoy_core::BuoyPlugin,
             controls::plugin,
+            camera::plugin,
+            big_space_demo::plugin,
         ));
+
+        #[cfg(feature = "dev")]
+        app.add_plugins(debug::plugin);
 
         #[cfg(feature = "inspect")]
         app.add_plugins(WorldInspectorPlugin::new());

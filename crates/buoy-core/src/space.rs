@@ -4,14 +4,11 @@ use uom::si::{f32::*, length::meter, volume::cubic_meter};
 
 /// The size of the grid cells in space.
 pub const GRID_CELL_EDGE_LENGTH_METERS: f32 = 10.0;
-type GridPrecision = i16;
+pub type GridPrecision = i128;
 // type WorldCell = GridCell<GridPrecision>;
 
 pub(crate) fn plugin(app: &mut App) {
     app.add_plugins(BigSpacePlugin::<GridPrecision>::default());
-
-    #[cfg(feature = "dev")]
-    app.add_plugins(FloatingOriginDebugPlugin::<i64>::default());
 }
 
 /// The edge length of one grid cell.
