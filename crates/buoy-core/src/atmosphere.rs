@@ -93,14 +93,6 @@ impl Atmosphere {
 
 #[derive(Debug)]
 enum AtmosphereError {
-    // v Fancy stuff from thiserror crate
-    // #[error(
-    //     "Altitude {0} m is outside of the accepted range! Must be {min}-{max} m",
-    //     min = Atmosphere::MIN_ALTITUDE,
-    //     max = Atmosphere::MAX_ALTITUDE
-    // )]
-    // OutOfBounds(f32),
-    #[allow(dead_code)]
     OutOfBounds(f32),
 }
 

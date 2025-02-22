@@ -5,7 +5,8 @@ pub mod core;
 pub mod forces;
 pub mod geometry;
 pub mod ideal_gas;
-pub mod space;
+pub mod grid;
+pub mod scene;
 pub mod time;
 pub mod format;
 
@@ -14,9 +15,9 @@ pub mod prelude {
         atmosphere::Atmosphere,
         core::{SimState, BuoyPlugin},
         forces::{drag, scale_gravity},
-        space::{GridPrecision, GRID_CELL_EDGE_LENGTH_METERS, WorldGrid},
-        time::{StepPhysicsEvent, TimeScaleOptions},
+        grid::{GridPrecision, GRID_CELL_EDGE_LENGTH_METERS},
         ideal_gas::{GasSpecies, IdealGas},
+        grid::{FluidVolumeGrid, StartingSpot},
     };
 }
 

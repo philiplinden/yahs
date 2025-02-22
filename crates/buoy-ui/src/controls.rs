@@ -1,10 +1,10 @@
 use bevy::prelude::*;
 
-use buoy_core::prelude::{SimState, TimeScaleOptions};
+use buoy_core::prelude::SimState;
 
 pub fn plugin(app: &mut App) {
     app.init_resource::<KeyBindingsConfig>();
-    app.add_plugins((PausePlayPlugin, ChangeTimeScalePlugin));
+    app.add_plugins(PausePlayPlugin);
 }
 
 #[allow(dead_code)]
@@ -26,9 +26,6 @@ pub struct DebugControls {
 #[derive(Reflect)]
 pub struct TimeControls {
     pub toggle_pause: KeyCode,
-    pub faster: KeyCode,
-    pub slower: KeyCode,
-    pub reset_speed: KeyCode,
 }
 
 // ============================ DEFAULT KEYBINDINGS ============================
@@ -49,9 +46,6 @@ impl Default for TimeControls {
     fn default() -> Self {
         Self {
             toggle_pause: KeyCode::Space,
-            faster: KeyCode::ArrowUp,
-            slower: KeyCode::ArrowDown,
-            reset_speed: KeyCode::Backspace,
         }
     }
 }
@@ -78,29 +72,5 @@ fn toggle_pause(
             SimState::Running => next_state.set(SimState::Stopped),
             _ => next_state.set(SimState::Running)
         }
-    }
-}
-
-struct ChangeTimeScalePlugin;
-
-impl Plugin for ChangeTimeScalePlugin {
-    fn build(&self, app: &mut App) {
-        app.add_systems(PreUpdate, modify_time_scale);
-    }
-}
-
-fn modify_time_scale(
-    mut time_options: ResMut<TimeScaleOptions>,
-    key_input: Res<ButtonInput<KeyCode>>,
-    key_bindings: Res<KeyBindingsConfig>,
-) {
-    if key_input.just_pressed(key_bindings.time_controls.faster) {
-        time_options.multiplier += 1.0;
-    }
-    if key_input.just_pressed(key_bindings.time_controls.slower) {
-        time_options.multiplier -= 1.0;
-    }
-    if key_input.just_pressed(key_bindings.time_controls.reset_speed) {
-        time_options.reset();
     }
 }

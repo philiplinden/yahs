@@ -15,10 +15,20 @@ uom = "0.36.0"
 [features]
 default = [
     "dev",
+    "i64",
 ]
+i32 = []
+i64 = []
+i128 = []
 dev = [
     "bevy/dynamic_linking",
     "bevy/bevy_debug_stepping",
     "avian3d/debug-plugin",
     "big_space/debug",
 ]
+
+# Precision features are mutually exclusive.
+[package.metadata.mutually_exclusive_features]
+i32 = ["i64", "i128"]
+i64 = ["i32", "i128"]
+i128 = ["i32", "i64"]
