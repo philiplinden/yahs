@@ -8,14 +8,14 @@ pub const GRID_SWITCHING_THRESHOLD_METERS: f32 = 0.5;
 
 /// The precision of the grid.
 #[cfg(all(feature = "i32", not(any(feature = "i64", feature = "i128"))))]
-pub type GridPrecision = i32;
+pub type Precision = i32;
 #[cfg(all(feature = "i64", not(any(feature = "i32", feature = "i128"))))]
-pub type GridPrecision = i64;
+pub type Precision = i64;
 #[cfg(all(feature = "i128", not(any(feature = "i32", feature = "i64"))))]
-pub type GridPrecision = i128;
+pub type Precision = i128;
 
 pub(crate) fn plugin(app: &mut App) {
-    app.add_plugins(BigSpacePlugin::<GridPrecision>::default());
+    app.add_plugins(BigSpacePlugin::<Precision>::default());
     app.add_systems(Startup, setup_worldspace);
 }
 
@@ -42,17 +42,24 @@ pub(crate) fn plugin(app: &mut App) {
 /// With threshold = 0.0, the object triggers an immediate cell switch when crossing
 /// the boundary. A positive threshold allows some movement past the boundary before
 /// switching, preventing jitter for objects that frequently cross cell edges.
-fn setup_worldspace(mut commands: Commands) {
+fn setup_worldspace(
+    mut commands: Commands,
+    mut meshes: ResMut<Assets<Mesh>>,
+    mut materials: ResMut<Assets<StandardMaterial>>,
+) {
     // Spawn the root node of the grid hierarchy. This is the grid that
     // contains the entire world.
-    let world_grid = Grid::<GridPrecision>::new(
+    let world_grid = Grid::<Precision>::new(
         GRID_CELL_EDGE_LENGTH_METERS,
         GRID_SWITCHING_THRESHOLD_METERS,
     );
     commands.spawn_big_space(world_grid, |root_grid| {
         // A dummy entity to represent the starting spot of the world.
+        root_grid.insert(RootGrid);
         root_grid.spawn_spatial((
             Name::new("Starting Spot"),
+            Mesh3d(meshes.add(Sphere::default())),
+            MeshMaterial3d(materials.add(Color::WHITE)),
             StartingSpot,
             FloatingOrigin,
             Transform::default(),
@@ -66,6 +73,10 @@ fn setup_worldspace(mut commands: Commands) {
 /// location until it is attached to a spatial entity or camera.
 #[derive(Component)]
 pub struct StartingSpot;
+
+/// A marker component for the root grid.
+#[derive(Component)]
+pub struct RootGrid;
 
 /// A marker component for a grid that contains a fluid volume.
 #[derive(Component)]

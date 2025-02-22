@@ -1,22 +1,35 @@
-use bevy::prelude::*;
+use bevy::{
+    prelude::*,
+    pbr::wireframe::{WireframeConfig, WireframePlugin},
+};
 use avian3d::debug_render::PhysicsDebugPlugin;
 use big_space::{prelude::*, camera::CameraController};
-use buoy_core::prelude::GridPrecision;
+
+use buoy_core::prelude::Precision;
+use crate::colors::ColorPalette;
+
 
 pub(crate) fn plugin(app: &mut App) {
     app.add_plugins((
         PhysicsDebugPlugin::default(), // Draws colliders
         FloatingOriginDebugPlugin::<i64>::default(), // Draws cell AABBs and grids
+        WireframePlugin::default(),
     ));
-    app.add_systems(Startup, ui_setup)
-    .add_systems(PreUpdate, ui_text_system);
+    app.add_systems(Startup, ui_setup);
+    app.add_systems(PreUpdate, ui_text_system);
+    app.insert_resource(WireframeConfig {
+        // The global wireframe config enables drawing of wireframes on every mesh,
+        // except those with `NoWireframe`. Meshes with `Wireframe` will always have a wireframe,
+        // regardless of the global configuration.
+        global: true,
+        // Controls the default color of all wireframes. Used as the default color for global wireframes.
+        // Can be changed per mesh using the `WireframeColor` component.
+        default_color: ColorPalette::LightBase.color(),
+    });
 }
 
 #[derive(Component, Reflect)]
 pub struct BigSpaceDebugText;
-
-#[derive(Component, Reflect)]
-pub struct FunFactText;
 
 fn ui_setup(mut commands: Commands) {
     commands.spawn((
@@ -35,35 +48,14 @@ fn ui_setup(mut commands: Commands) {
         },
         BigSpaceDebugText,
     ));
-
-    commands.spawn((
-        Text::default(),
-        TextFont {
-            font_size: 52.0,
-            ..default()
-        },
-        TextColor(Color::WHITE),
-        TextLayout::new_with_justify(JustifyText::Center),
-        Node {
-            position_type: PositionType::Absolute,
-            bottom: Val::Px(10.0),
-            right: Val::Px(10.0),
-            left: Val::Px(10.0),
-            ..default()
-        },
-        FunFactText,
-    ));
 }
 
 #[allow(clippy::type_complexity)]
 fn ui_text_system(
-    mut debug_text: Query<
-        (&mut Text, &GlobalTransform),
-        (With<BigSpaceDebugText>, Without<FunFactText>),
-    >,
-    grids: Grids<GridPrecision>,
+    mut debug_text: Query<(&mut Text, &GlobalTransform), With<BigSpaceDebugText>>,
+    grids: Grids<Precision>,
     time: Res<Time>,
-    origin: Query<(Entity, GridTransformReadOnly<GridPrecision>), With<FloatingOrigin>>,
+    origin: Query<(Entity, GridTransformReadOnly<Precision>), With<FloatingOrigin>>,
     camera: Query<&CameraController>,
 ) {
     let (origin_entity, origin_pos) = origin.single();

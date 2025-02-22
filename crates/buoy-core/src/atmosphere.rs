@@ -93,6 +93,7 @@ impl Atmosphere {
 
 #[derive(Debug)]
 enum AtmosphereError {
+    #[allow(dead_code)]
     OutOfBounds(f32),
 }
 
