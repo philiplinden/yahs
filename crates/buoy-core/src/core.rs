@@ -8,21 +8,14 @@ use bevy::{
 };
 use uom::si::{f32::*, Quantity};
 
-#[cfg(feature = "dev")]
-use avian3d::debug_render::PhysicsDebugPlugin;
-
 pub struct BuoyPlugin;
 
 impl Plugin for BuoyPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugins((
+            CoreSystemsPlugin,
             CorePhysicsPlugin,
-            SimStatePlugin,
-            FormattingPlugin,
         ));
-
-        #[cfg(feature = "dev")]
-        app.add_plugins(PhysicsDebugPlugin::default());
     }
 }
 
@@ -42,11 +35,14 @@ impl Plugin for CorePhysicsPlugin {
 }
 
 /// The plugin that handles the overall simulation state.
-struct SimStatePlugin;
+struct CoreSystemsPlugin;
 
-impl Plugin for SimStatePlugin {
+impl Plugin for CoreSystemsPlugin {
     fn build(&self, app: &mut App) {
         app.init_state::<SimState>();
+        app.add_plugins((
+            format::plugin,
+        ));
     }
 }
 
@@ -56,38 +52,4 @@ pub enum SimState {
     #[default]
     Running,
     Faulted,
-}
-
-struct FormattingPlugin;
-
-impl Plugin for FormattingPlugin {
-    fn build(&self, app: &mut App) {
-        app.register_type::<UomQuantity>();
-    }
-}
-
-#[derive(Component, Debug, Reflect)]
-pub struct UomQuantity {
-    value: f32,
-    unit: String,
-}
-
-impl UomQuantity {
-    pub fn new<D, U, V>(quantity: &Quantity<D, U, V>) -> Self
-    where
-        D: uom::si::Dimension + ?Sized,
-        U: uom::si::Units<V> + ?Sized + uom::si::Unit,
-        V: uom::num::Num + uom::Conversion<V> + Into<f32> + Clone,
-    {
-        Self {
-            value: quantity.value.clone().into(),
-            unit: U::abbreviation().to_string(),
-        }
-    }
-}
-
-impl Display for UomQuantity {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{} {}", self.value, self.unit)
-    }
 }

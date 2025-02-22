@@ -1,3 +1,5 @@
+#![allow(dead_code)]
+
 use crate::constants::PI;
 
 pub(crate) fn sphere_volume(radius: f32) -> f32 {
