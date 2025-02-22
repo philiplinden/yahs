@@ -14,7 +14,7 @@ pub mod prelude {
         atmosphere::Atmosphere,
         core::{SimState, BuoyPlugin},
         forces::{drag, scale_gravity},
-        space::{GridPrecision, GRID_CELL_EDGE_LENGTH_METERS},
+        space::{GridPrecision, GRID_CELL_EDGE_LENGTH_METERS, WorldGrid},
         time::{StepPhysicsEvent, TimeScaleOptions},
         ideal_gas::{GasSpecies, IdealGas},
     };

@@ -1,7 +1,6 @@
 mod controls;
 mod colors;
 mod camera;
-mod big_space_demo;
 
 #[cfg(feature = "dev")]
 mod debug;
@@ -38,7 +37,6 @@ impl Plugin for AppPlugins {
             buoy_core::BuoyPlugin,
             controls::plugin,
             camera::plugin,
-            big_space_demo::plugin,
         ));
 
         #[cfg(feature = "dev")]

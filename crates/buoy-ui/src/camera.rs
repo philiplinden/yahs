@@ -2,14 +2,34 @@ use bevy::{
     prelude::*,
     window::{CursorGrabMode, PrimaryWindow},
 };
-use big_space::camera::CameraInput;
+use big_space::{prelude::*, camera::CameraInput};
 use buoy_core::prelude::GridPrecision;
 
 pub fn plugin(app: &mut App) {
     app.add_plugins((
         big_space::camera::CameraControllerPlugin::<GridPrecision>::default(),
     ));
-    app.add_systems(PreUpdate, cursor_grab_system);
+    app.insert_resource(AmbientLight {
+        color: Color::WHITE,
+        brightness: 200.0,
+    });
+    app.add_systems(PostStartup, setup_camera)
+        .add_systems(PostUpdate, (cursor_grab_system, big_space::camera::default_camera_inputs));
+}
+
+fn setup_camera(
+    mut commands: Commands,
+    origin: Query<Entity, With<FloatingOrigin>>,
+) {
+    let origin = origin.single();
+    commands.entity(origin).insert((
+            Camera3d::default(),
+            Transform::from_xyz(0.0, 4.0, 22.0).looking_at(Vec3::ZERO, Vec3::Y),
+            big_space::camera::CameraController::default() // Built-in camera controller
+                .with_speed_bounds([0.1, 10e35])
+                .with_smoothness(0.98, 0.98)
+                .with_speed(1.0),
+    ));
 }
 
 fn cursor_grab_system(
