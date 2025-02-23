@@ -1,17 +1,14 @@
 use bevy::{
     math::DVec3,
     prelude::*,
-    window::{CursorGrabMode, PrimaryWindow},
 };
-use big_space::{camera::CameraInput, prelude::*};
+use big_space::prelude::*;
 use buoy_core::prelude::{Precision, RootGrid};
 
 pub fn plugin(app: &mut App) {
     app.add_plugins((big_space::camera::CameraControllerPlugin::<Precision>::default(),));
-    app.add_systems(PostStartup, setup_camera).add_systems(
-        PostUpdate,
-        (cursor_grab_system, big_space::camera::default_camera_inputs),
-    );
+    app.add_systems(PostStartup, setup_camera);
+    app.add_systems(PostUpdate, big_space::camera::default_camera_inputs);
 }
 
 /// Spawns the camera in the root grid and attaches the FloatingOrigin to it.
@@ -43,34 +40,9 @@ fn setup_camera(
             object_cell,
             Transform::from_translation(object_pos).looking_at(Vec3::ZERO, Vec3::Y),
             big_space::camera::CameraController::default() // Built-in camera controller
-                .with_speed_bounds([0.1, 10e35])
+                .with_speed_bounds([0.1, 10.0])
                 .with_smoothness(0.98, 0.98)
                 .with_speed(1.0),
         ))
         .set_parent(root_grid_id);
-}
-
-fn cursor_grab_system(
-    mut windows: Query<&mut Window, With<PrimaryWindow>>,
-    mut cam: ResMut<CameraInput>,
-    btn: Res<ButtonInput<MouseButton>>,
-    key: Res<ButtonInput<KeyCode>>,
-) {
-    let Some(mut window) = windows.get_single_mut().ok() else {
-        return;
-    };
-
-    if btn.just_pressed(MouseButton::Left) {
-        window.cursor_options.grab_mode = CursorGrabMode::Locked;
-        window.cursor_options.visible = false;
-        // window.mode = WindowMode::BorderlessFullscreen;
-        cam.defaults_disabled = false;
-    }
-
-    if key.just_pressed(KeyCode::Escape) {
-        window.cursor_options.grab_mode = CursorGrabMode::None;
-        window.cursor_options.visible = true;
-        // window.mode = WindowMode::Windowed;
-        cam.defaults_disabled = true;
-    }
 }

@@ -58,8 +58,6 @@ fn setup_worldspace(
         root_grid.insert(RootGrid);
         root_grid.spawn_spatial((
             Name::new("Starting Spot"),
-            Mesh3d(meshes.add(Sphere::default())),
-            MeshMaterial3d(materials.add(Color::WHITE)),
             StartingSpot,
             FloatingOrigin,
             Transform::default(),
