@@ -1,6 +1,7 @@
 mod controls;
 mod colors;
 mod camera;
+mod lighting;
 
 #[cfg(feature = "dev")]
 mod debug;
@@ -37,6 +38,7 @@ impl Plugin for AppPlugins {
             buoy_core::BuoyPlugin,
             controls::plugin,
             camera::plugin,
+            lighting::plugin,
         ));
 
         #[cfg(feature = "dev")]
